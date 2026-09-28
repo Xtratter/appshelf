@@ -1,0 +1,92 @@
+<resources>
+    <string name="app_name">AppShelf</string>
+    <string name="search">Search</string>
+    <string name="search_hint">Name or package</string>
+    <string name="save">Save the list</string>
+    <string name="more">More</string>
+    <string name="close">Close</string>
+    <string name="loading">Reading installed apps…</string>
+    <string name="nothing_found">Nothing found</string>
+    <string name="all">All</string>
+    <plurals name="apps">
+        <item quantity="one">app</item>
+        <item quantity="other">apps</item>
+    </plurals>
+    <string name="more_sources">%d more</string>
+    <string name="saved_at">Saved %1$s · %2$s</string>
+    <string name="never_saved">The list has not been saved yet. Save it (or turn on autosave) to reinstall your apps on a new phone.</string>
+
+    <string name="save_list">Save the list</string>
+    <string name="share_list">Share the list</string>
+    <string name="open_list">Open a saved list</string>
+    <string name="show_system">System apps</string>
+    <string name="theme">Theme</string>
+    <string name="about">About</string>
+    <string name="fmt_json">JSON — to restore apps later (recommended)</string>
+    <string name="fmt_md">Markdown — to read, e.g. in Obsidian</string>
+    <string name="fmt_csv">CSV — for spreadsheets</string>
+    <string name="saved_to">Saved: %s</string>
+    <string name="save_failed">Could not save: %s</string>
+
+    <string name="autosave">Autosave</string>
+    <string name="autosave_off">Autosave: off</string>
+    <string name="autosave_on">Autosave: on</string>
+    <string name="autosave_explain">Pick a file once — every time you open AppShelf, the list will be written to it again. Choose a folder you keep when changing phones: a cloud drive, a memory card or a folder you back up.</string>
+    <string name="autosave_choose">Choose file</string>
+    <string name="autosave_is_on">The list is saved to %s every time you open AppShelf.</string>
+    <string name="autosave_disable">Turn off</string>
+    <string name="autosave_other">Other file</string>
+    <string name="autosave_enabled">Autosave is on: %s</string>
+    <string name="autosave_failed">Autosave is turned off: the file is no longer available</string>
+
+    <string name="restore_title">RESTORE</string>
+    <string name="restore_missing">of %d are not installed</string>
+    <string name="restore_from">List from %s</string>
+    <string name="restore_hint">Saved list</string>
+    <string name="show_missing">Only missing</string>
+    <string name="show_all">Show all</string>
+    <string name="close_list">Close list</string>
+    <string name="open_failed">This file is not an AppShelf list</string>
+    <string name="st_installed">installed</string>
+    <string name="st_missing">install ›</string>
+
+    <string name="d_source">Source</string>
+    <string name="d_installer">Installer</string>
+    <string name="d_version">Version</string>
+    <string name="d_installed">Installed</string>
+    <string name="d_updated">Updated</string>
+    <string name="d_type">Type</string>
+    <string name="d_system">system app</string>
+    <string name="d_status">Now</string>
+    <string name="open_app">Open</string>
+    <string name="open_store">Store page</string>
+    <string name="app_settings">App info</string>
+    <string name="copy_pkg">Copy package name</string>
+    <string name="copied">Copied</string>
+    <string name="install_from">Install from %s</string>
+    <string name="store_any">a store</string>
+    <string name="no_store">No app can open this</string>
+
+    <string name="src_play">Google Play</string>
+    <string name="src_fdroid">F-Droid</string>
+    <string name="src_aurora">Aurora Store</string>
+    <string name="src_obtainium">Obtainium</string>
+    <string name="src_rustore">RuStore</string>
+    <string name="src_getapps">GetApps</string>
+    <string name="src_galaxy">Galaxy Store</string>
+    <string name="src_appgallery">AppGallery</string>
+    <string name="src_amazon">Amazon Appstore</string>
+    <string name="src_apk">APK file</string>
+    <string name="src_apk_via">APK · via %s</string>
+    <string name="src_preinstalled">Preinstalled</string>
+    <string name="src_other">Other installer</string>
+    <string name="src_unknown">Unknown</string>
+
+    <string name="th_standard">Standard</string>
+    <string name="th_system">Follow system (standard / light)</string>
+    <string name="th_amoled">AMOLED black</string>
+    <string name="th_light">Light</string>
+    <string name="th_graphite">Graphite</string>
+
+    <string name="about_text"><![CDATA[Version %1$s<br><br>A list of your installed apps — where each one came from and when it was installed — to reinstall them on a new phone.<br><br><a href="https://github.com/Xtratter/appshelf">github.com/Xtratter/appshelf</a><br>GPL-3.0-or-later]]></string>
+</resources>

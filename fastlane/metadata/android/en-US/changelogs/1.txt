@@ -1,0 +1,1 @@
+First version: list of installed apps with source and install date, save as JSON/Markdown/CSV, autosave, restore mode, liquid glass design with five themes.

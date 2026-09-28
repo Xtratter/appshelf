@@ -1,0 +1,84 @@
+<resources>
+    <string name="search">Поиск</string>
+    <string name="search_hint">Название или пакет</string>
+    <string name="save">Сохранить список</string>
+    <string name="more">Ещё</string>
+    <string name="close">Закрыть</string>
+    <string name="loading">Читаю список приложений…</string>
+    <string name="nothing_found">Ничего не найдено</string>
+    <string name="all">Все</string>
+    <plurals name="apps">
+        <item quantity="one">приложение</item>
+        <item quantity="few">приложения</item>
+        <item quantity="many">приложений</item>
+        <item quantity="other">приложения</item>
+    </plurals>
+    <string name="more_sources">ещё %d</string>
+    <string name="saved_at">Сохранено %1$s · %2$s</string>
+    <string name="never_saved">Список ещё не сохранялся. Сохраните его (или включите автосохранение), чтобы восстановить приложения на новом телефоне.</string>
+
+    <string name="save_list">Сохранить список</string>
+    <string name="share_list">Поделиться списком</string>
+    <string name="open_list">Открыть сохранённый список</string>
+    <string name="show_system">Системные приложения</string>
+    <string name="theme">Тема</string>
+    <string name="about">О приложении</string>
+    <string name="fmt_json">JSON — для восстановления (рекомендуется)</string>
+    <string name="fmt_md">Markdown — для чтения, например в Obsidian</string>
+    <string name="fmt_csv">CSV — для таблиц</string>
+    <string name="saved_to">Сохранено: %s</string>
+    <string name="save_failed">Не удалось сохранить: %s</string>
+
+    <string name="autosave">Автосохранение</string>
+    <string name="autosave_off">Автосохранение: выкл</string>
+    <string name="autosave_on">Автосохранение: вкл</string>
+    <string name="autosave_explain">Выберите файл один раз — при каждом открытии AppShelf список будет заново записываться в него. Берите папку, которая переживёт смену телефона: облачный диск, карту памяти или папку, которую вы копируете.</string>
+    <string name="autosave_choose">Выбрать файл</string>
+    <string name="autosave_is_on">Список сохраняется в %s при каждом открытии AppShelf.</string>
+    <string name="autosave_disable">Выключить</string>
+    <string name="autosave_other">Другой файл</string>
+    <string name="autosave_enabled">Автосохранение включено: %s</string>
+    <string name="autosave_failed">Автосохранение выключено: файл больше недоступен</string>
+
+    <string name="restore_title">ВОССТАНОВЛЕНИЕ</string>
+    <string name="restore_missing">из %d не установлены</string>
+    <string name="restore_from">Список от %s</string>
+    <string name="restore_hint">Сохранённый список</string>
+    <string name="show_missing">Только недостающие</string>
+    <string name="show_all">Показать все</string>
+    <string name="close_list">Закрыть список</string>
+    <string name="open_failed">Это не список AppShelf</string>
+    <string name="st_installed">установлено</string>
+    <string name="st_missing">установить ›</string>
+
+    <string name="d_source">Источник</string>
+    <string name="d_installer">Установщик</string>
+    <string name="d_version">Версия</string>
+    <string name="d_installed">Установлено</string>
+    <string name="d_updated">Обновлено</string>
+    <string name="d_type">Тип</string>
+    <string name="d_system">системное</string>
+    <string name="d_status">Сейчас</string>
+    <string name="open_app">Открыть</string>
+    <string name="open_store">Страница в магазине</string>
+    <string name="app_settings">О приложении (система)</string>
+    <string name="copy_pkg">Скопировать имя пакета</string>
+    <string name="copied">Скопировано</string>
+    <string name="install_from">Установить из %s</string>
+    <string name="store_any">магазина</string>
+    <string name="no_store">Нечем открыть</string>
+
+    <string name="src_apk">APK-файл</string>
+    <string name="src_apk_via">APK · через %s</string>
+    <string name="src_preinstalled">Предустановлено</string>
+    <string name="src_other">Другой установщик</string>
+    <string name="src_unknown">Неизвестно</string>
+
+    <string name="th_standard">Стандартная</string>
+    <string name="th_system">Как в системе (стандартная / светлая)</string>
+    <string name="th_amoled">AMOLED (чёрная)</string>
+    <string name="th_light">Светлая</string>
+    <string name="th_graphite">Графит</string>
+
+    <string name="about_text"><![CDATA[Версия %1$s<br><br>Список установленных приложений — откуда каждое и когда установлено, — чтобы восстановить их на новом телефоне.<br><br><a href="https://github.com/Xtratter/appshelf">github.com/Xtratter/appshelf</a><br>GPL-3.0-or-later]]></string>
+</resources>

@@ -1,0 +1,3 @@
+<resources>
+    <color name="accent">@android:color/system_accent1_200</color>
+</resources>

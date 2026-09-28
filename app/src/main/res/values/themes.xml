@@ -1,0 +1,50 @@
+<resources>
+    <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:colorControlActivated">@color/accent</item>
+        <item name="android:popupMenuStyle">@style/GlassPopup</item>
+        <item name="android:alertDialogTheme">@style/GlassDialog</item>
+    </style>
+
+    <style name="GlassPopup" parent="@android:style/Widget.Material.PopupMenu">
+        <item name="android:popupBackground">@drawable/popup_bg</item>
+        <item name="android:popupElevation">8dp</item>
+    </style>
+
+    <style name="GlassDialog" parent="@android:style/Theme.Material.Dialog.Alert">
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:windowMinWidthMinor">90%</item>
+    </style>
+
+    <!-- светлая тема: те же настройки, но светлые меню, диалоги и фон при запуске -->
+    <style name="AppTheme.Light" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/bg_light</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:colorAccent">@color/accent_light</item>
+        <item name="android:colorControlActivated">@color/accent_light</item>
+        <item name="android:popupMenuStyle">@style/GlassPopup.Light</item>
+        <item name="android:alertDialogTheme">@style/GlassDialog.Light</item>
+    </style>
+
+    <style name="GlassPopup.Light" parent="@android:style/Widget.Material.Light.PopupMenu">
+        <item name="android:popupBackground">@drawable/popup_bg_light</item>
+        <item name="android:popupElevation">8dp</item>
+    </style>
+
+    <style name="GlassDialog.Light" parent="@android:style/Theme.Material.Light.Dialog.Alert">
+        <item name="android:colorAccent">@color/accent_light</item>
+        <item name="android:windowMinWidthMinor">90%</item>
+    </style>
+
+    <style name="BarButton">
+        <item name="android:layout_width">44dp</item>
+        <item name="android:layout_height">44dp</item>
+        <item name="android:scaleType">center</item>
+        <item name="android:tint">#FFF2F2F6</item>
+        <item name="android:background">?android:attr/selectableItemBackgroundBorderless</item>
+    </style>
+</resources>
