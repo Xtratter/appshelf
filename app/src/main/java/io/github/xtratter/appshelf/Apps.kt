@@ -65,9 +65,17 @@ object Apps {
     }
 
     /** Модель телефона и версия Android — подпись к сохранённому списку. */
-    fun device(): String {
+    fun device(ctx: Context): String {
         val maker = Build.MANUFACTURER.replaceFirstChar { it.uppercase() }
         val model = if (Build.MODEL.startsWith(Build.MANUFACTURER, ignoreCase = true)) Build.MODEL else "$maker ${Build.MODEL}"
-        return "$model · Android ${Build.VERSION.RELEASE}"
+        // имя устройства из настроек («POCO F3») понятнее кода модели («M2012K11AG»)
+        val name = try {
+            android.provider.Settings.Global.getString(ctx.contentResolver, android.provider.Settings.Global.DEVICE_NAME)
+        } catch (e: Exception) {
+            null
+        }?.trim().orEmpty()
+        val phone = if (name.isEmpty() || name.equals(Build.MODEL, true) || name.equals(model, true)) model
+        else "$name (${Build.MODEL})"
+        return "$phone · Android ${Build.VERSION.RELEASE}"
     }
 }

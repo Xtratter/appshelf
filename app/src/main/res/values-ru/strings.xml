@@ -6,6 +6,7 @@
     <string name="close">Закрыть</string>
     <string name="loading">Читаю список приложений…</string>
     <string name="nothing_found">Ничего не найдено</string>
+    <string name="all_installed">Все приложения из списка установлены ✓</string>
     <string name="all">Все</string>
     <plurals name="apps">
         <item quantity="one">приложение</item>

@@ -1,0 +1,1 @@
+Restore mode: buttons no longer cut off, clear message when everything is installed; saved lists use the device name.

@@ -255,7 +255,8 @@ class MainActivity : Activity() {
             items += Row(a, sourceText(a), dateText(a.firstInstall), if (restoring) a.pkg in installedPkgs else null,
                 excluded = !restoring && a.pkg in excl)
         }
-        if (items.isEmpty()) items += getString(R.string.nothing_found)
+        if (items.isEmpty()) items += getString(
+            if (restoring && missingOnly && query.isEmpty() && filter == null) R.string.all_installed else R.string.nothing_found)
         adapter.update(items)
     }
 
@@ -335,7 +336,8 @@ class MainActivity : Activity() {
                     setPadding(dp(14f), dp(10f), dp(14f), dp(10f))
                 }
             }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14f) })
-            val buttons = LinearLayout(this)
+            // без выравнивания по тексту: у кнопки с уменьшенным шрифтом базовая линия ниже, и её бы сдвинуло и обрезало
+            val buttons = LinearLayout(this).apply { isBaselineAligned = false }
             buttons.addView(button(getString(R.string.save_list), true) { askSave() }, LinearLayout.LayoutParams(0, dp(44f), 1f))
             buttons.addView(button(getString(if (prefs.autosaveUri.isEmpty()) R.string.autosave_off else R.string.autosave_on), false) {
                 autosaveDialog()
@@ -357,7 +359,8 @@ class MainActivity : Activity() {
                 ).joinToString(" · ").ifEmpty { getString(R.string.restore_hint) }
                 setPadding(0, dp(2f), 0, dp(14f))
             })
-            val buttons = LinearLayout(this)
+            // без выравнивания по тексту: у кнопки с уменьшенным шрифтом базовая линия ниже, и её бы сдвинуло и обрезало
+            val buttons = LinearLayout(this).apply { isBaselineAligned = false }
             buttons.addView(button(getString(if (missingOnly) R.string.show_all else R.string.show_missing), true) {
                 missingOnly = !missingOnly; render()
             }, LinearLayout.LayoutParams(0, dp(44f), 1f))
@@ -405,7 +408,7 @@ class MainActivity : Activity() {
     private fun snapshot(): Snapshot? {
         val excl = prefs.excluded
         val apps = installed?.let { visible(it) }?.filter { it.pkg !in excl } ?: return null
-        return Snapshot(System.currentTimeMillis(), Apps.device(), ListFile.sorted(apps))
+        return Snapshot(System.currentTimeMillis(), Apps.device(this), ListFile.sorted(apps))
     }
 
     fun isExcluded(pkg: String) = pkg in prefs.excluded
