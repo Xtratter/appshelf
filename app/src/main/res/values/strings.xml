@@ -29,8 +29,8 @@
     <string name="save_failed">Could not save: %s</string>
 
     <string name="autosave">Autosave</string>
-    <string name="autosave_off">Autosave: off</string>
-    <string name="autosave_on">Autosave: on</string>
+    <string name="autosave_off">Autosave</string>
+    <string name="autosave_on">✓ Autosave</string>
     <string name="autosave_explain">Pick a file once — every time you open AppShelf, the list will be written to it again. Choose a folder you keep when changing phones: a cloud drive, a memory card or a folder you back up.</string>
     <string name="autosave_choose">Choose file</string>
     <string name="autosave_is_on">The list is saved to %s every time you open AppShelf.</string>

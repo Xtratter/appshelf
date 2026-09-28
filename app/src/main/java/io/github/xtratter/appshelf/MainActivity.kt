@@ -276,7 +276,10 @@ class MainActivity : Activity() {
         textSize = 14f
         typeface = Ui.medium
         gravity = Gravity.CENTER
-        setPadding(dp(16f), 0, dp(16f), 0)
+        setPadding(dp(14f), 0, dp(14f), 0)
+        // одна строка: если не влезает — шрифт уменьшается, а не переносится и обрезается
+        maxLines = 1
+        setAutoSizeTextTypeUniformWithConfiguration(11, 14, 1, android.util.TypedValue.COMPLEX_UNIT_SP)
         setTextColor(if (filled) Ui.ON_ACCENT else Ui.primary)
         background = if (filled) Ui.pill(this@MainActivity, Ui.primary)
         else Ui.pill(this@MainActivity, Ui.withAlpha(Ui.primary, 0.12f), Ui.withAlpha(Ui.primary, 0.35f))
@@ -304,7 +307,8 @@ class MainActivity : Activity() {
             // самые частые источники одной строкой
             val bySource = apps.groupingBy { it.source }.eachCount().entries.sortedByDescending { it.value }
             summary.addView(text(14f, Ui.TEXT2).apply {
-                text = bySource.take(4).joinToString(" · ") { getString(it.key.title) + " " + it.value } +
+                // неразрывные пробелы: «F-Droid 14» не разрывается на две строки
+                text = bySource.take(4).joinToString(" · ") { (getString(it.key.title) + " " + it.value).replace(' ', '\u00A0') } +
                     if (bySource.size > 4) " · " + getString(R.string.more_sources, bySource.size - 4) else ""
                 setPadding(0, dp(2f), 0, dp(12f))
             })

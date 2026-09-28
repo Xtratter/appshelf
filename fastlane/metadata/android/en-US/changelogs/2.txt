@@ -1,0 +1,1 @@
+The Autosave button no longer gets cut off; source counts no longer break across lines.

@@ -30,8 +30,8 @@
     <string name="save_failed">Не удалось сохранить: %s</string>
 
     <string name="autosave">Автосохранение</string>
-    <string name="autosave_off">Автосохранение: выкл</string>
-    <string name="autosave_on">Автосохранение: вкл</string>
+    <string name="autosave_off">Автосохранение</string>
+    <string name="autosave_on">✓ Автосохранение</string>
     <string name="autosave_explain">Выберите файл один раз — при каждом открытии AppShelf список будет заново записываться в него. Берите папку, которая переживёт смену телефона: облачный диск, карту памяти или папку, которую вы копируете.</string>
     <string name="autosave_choose">Выбрать файл</string>
     <string name="autosave_is_on">Список сохраняется в %s при каждом открытии AppShelf.</string>
