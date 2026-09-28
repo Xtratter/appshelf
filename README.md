@@ -14,6 +14,8 @@ which apps are missing and opens each one in the right store.
 - **Install date**, version and last update in the app card
 - **Search** by name or package, **filter chips** by source, optional system apps
 - **Save the list** as JSON (to restore later), Markdown (to read, e.g. in Obsidian) or CSV (for spreadsheets), or share it as text
+- **Choose what goes into the list**: "Choose apps…" in the save dialog — checkboxes, search and select all / none;
+  apps you leave out are not saved, shared or autosaved (you can also do it from an app's card)
 - **Autosave**: pick a file once (a cloud drive, a memory card…) and the list is rewritten there every time you open the app
 - **Restore mode**: open a saved list — see how many apps are missing, show only those, and tap to install each from its store
 - **Material 3 "liquid glass" design**: translucent cards over a soft colored background, colors follow the wallpaper

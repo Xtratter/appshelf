@@ -2,6 +2,12 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.2 — 2026-09-28
+
+- **Choose which apps go into the list**: "Choose apps…" in the save dialog opens a list with checkboxes, search and "Select all / Select none" (it applies to the apps found by the search)
+- The choice is remembered and applies to every save, "Share" and autosave; the summary shows how many apps are left out, and they look dimmed in the main list
+- "Leave out of the list" / "Include in the list" in the app card
+
 ## 1.1 — 2026-09-28
 
 - Tap the "AppShelf" title to switch to the next theme, long-press it to go back to the standard one; a hint shows which theme is on

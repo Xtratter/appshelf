@@ -247,11 +247,13 @@ class MainActivity : Activity() {
             shown = shown.filter { q in it.label.lowercase() || q in it.pkg.lowercase() }
         }
         val items = ArrayList<Any>()
+        val excl = prefs.excluded
         var section = ""
         for (a in ListFile.sorted(shown)) {
             val s = ListFile.section(a.label)
             if (s != section) { section = s; items += s }
-            items += Row(a, sourceText(a), dateText(a.firstInstall), if (restoring) a.pkg in installedPkgs else null)
+            items += Row(a, sourceText(a), dateText(a.firstInstall), if (restoring) a.pkg in installedPkgs else null,
+                excluded = !restoring && a.pkg in excl)
         }
         if (items.isEmpty()) items += getString(R.string.nothing_found)
         adapter.update(items)
@@ -316,6 +318,13 @@ class MainActivity : Activity() {
                 text = bySource.take(4).joinToString(" · ") { (getString(it.key.title) + " " + it.value).replace(' ', '\u00A0') } +
                     if (bySource.size > 4) " · " + getString(R.string.more_sources, bySource.size - 4) else ""
                 setPadding(0, dp(2f), 0, dp(12f))
+            })
+            val excl = prefs.excluded
+            val nExcl = apps.count { it.pkg in excl }
+            if (nExcl > 0) summary.addView(text(13.5f, Ui.primary, Ui.medium).apply {
+                text = getString(R.string.excluded_line, nExcl)
+                setPadding(0, 0, 0, dp(10f))
+                setOnClickListener { selectApps() }
             })
             val saved = prefs.lastSaved
             summary.addView(text(13.5f, if (saved > 0) Ui.TEXT3 else Ui.hintText).apply {
@@ -394,18 +403,44 @@ class MainActivity : Activity() {
     // ---------- сохранение ----------
 
     private fun snapshot(): Snapshot? {
-        val apps = installed?.let { visible(it) } ?: return null
+        val excl = prefs.excluded
+        val apps = installed?.let { visible(it) }?.filter { it.pkg !in excl } ?: return null
         return Snapshot(System.currentTimeMillis(), Apps.device(), ListFile.sorted(apps))
+    }
+
+    fun isExcluded(pkg: String) = pkg in prefs.excluded
+
+    fun toggleExcluded(pkg: String) {
+        val excl = prefs.excluded
+        setExcluded(if (pkg in excl) excl - pkg else excl + pkg)
+    }
+
+    /** Включить или исключить приложение из сохраняемого списка; файл автосохранения сразу обновляется. */
+    fun setExcluded(pkgs: Set<String>) {
+        prefs.excluded = pkgs
+        render()
+        autosave()
+    }
+
+    /** Выбор приложений для списка; [then] — что сделать после «Готово» (например, вернуться к сохранению). */
+    private fun selectApps(then: (() -> Unit)? = null) {
+        val apps = installed?.let { ListFile.sorted(visible(it)) } ?: return
+        SelectDialog.show(this, apps, prefs.excluded) { excl -> setExcluded(excl); then?.invoke() }
     }
 
     private fun sourceName(s: Source) = getString(s.title)
 
     private fun askSave() {
         val formats = Format.entries
-        val names = arrayOf(getString(R.string.fmt_json), getString(R.string.fmt_md), getString(R.string.fmt_csv))
+        val all = installed?.let { visible(it) } ?: return
+        val excl = prefs.excluded
+        val included = all.count { it.pkg !in excl }
+        val names = arrayOf(getString(R.string.fmt_json), getString(R.string.fmt_md), getString(R.string.fmt_csv),
+            getString(R.string.select_item, included, all.size))
         AlertDialog.Builder(this)
             .setTitle(R.string.save_list)
             .setItems(names) { _, i ->
+                if (i == formats.size) return@setItems selectApps { askSave() }
                 pendingFormat = formats[i]
                 val day = ListFile.date(System.currentTimeMillis())
                 startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
@@ -631,6 +666,7 @@ class MainActivity : Activity() {
             if (item is Row) {
                 val v = convertView as? AppItemView ?: AppItemView(this@MainActivity)
                 v.row = item
+                v.alpha = if (item.excluded) 0.5f else 1f   // не входит в сохраняемый список
                 return v
             }
             val v = convertView as? TextView ?: TextView(this@MainActivity).apply {

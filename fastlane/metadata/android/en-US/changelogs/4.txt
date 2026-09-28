@@ -1,0 +1,1 @@
+Choose which apps go into the saved list: checkboxes, search, select all / none. The choice applies to saving, sharing and autosave.

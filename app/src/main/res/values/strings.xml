@@ -25,6 +25,15 @@
     <string name="fmt_json">JSON — to restore apps later (recommended)</string>
     <string name="fmt_md">Markdown — to read, e.g. in Obsidian</string>
     <string name="fmt_csv">CSV — for spreadsheets</string>
+    <string name="select_item">Choose apps… (%1$d of %2$d in the list)</string>
+    <string name="select_title">Apps in the list</string>
+    <string name="select_count">%1$d of %2$d will be saved · tap to include or leave out</string>
+    <string name="select_all">Select all</string>
+    <string name="select_none">Select none</string>
+    <string name="done">Done</string>
+    <string name="excluded_line">Left out of the list: %d · change</string>
+    <string name="exclude">Leave out of the list</string>
+    <string name="include">Include in the list</string>
     <string name="saved_to">Saved: %s</string>
     <string name="save_failed">Could not save: %s</string>
 

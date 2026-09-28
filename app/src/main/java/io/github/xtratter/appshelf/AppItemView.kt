@@ -14,6 +14,8 @@ class Row(
     val date: String,
     /** Режим восстановления: null — обычный список, true/false — установлено ли сейчас. */
     val installed: Boolean? = null,
+    /** Не входит в сохраняемый список (пользователь исключил). */
+    val excluded: Boolean = false,
 )
 
 /**

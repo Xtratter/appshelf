@@ -26,6 +26,15 @@
     <string name="fmt_json">JSON — для восстановления (рекомендуется)</string>
     <string name="fmt_md">Markdown — для чтения, например в Obsidian</string>
     <string name="fmt_csv">CSV — для таблиц</string>
+    <string name="select_item">Выбрать приложения… (в списке %1$d из %2$d)</string>
+    <string name="select_title">Приложения в списке</string>
+    <string name="select_count">Сохранится %1$d из %2$d · нажмите, чтобы включить или убрать</string>
+    <string name="select_all">Выбрать все</string>
+    <string name="select_none">Снять все</string>
+    <string name="done">Готово</string>
+    <string name="excluded_line">Не включаются в список: %d · изменить</string>
+    <string name="exclude">Не включать в список</string>
+    <string name="include">Включать в список</string>
     <string name="saved_to">Сохранено: %s</string>
     <string name="save_failed">Не удалось сохранить: %s</string>
 

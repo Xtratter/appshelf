@@ -14,6 +14,11 @@ class Prefs(ctx: Context) {
     /** Показывать системные приложения (предустановленные, без обновлений из магазина — тоже). */
     var showSystem by bool("show_system", false)
 
+    /** Пакеты, которые не включаем в сохраняемый список (файл, «Поделиться», автосохранение). */
+    var excluded: Set<String>
+        get() = sp.getStringSet("excluded", null)?.toSet() ?: emptySet()   // копия: set из prefs менять нельзя
+        set(v) = sp.edit().putStringSet("excluded", HashSet(v)).apply()
+
     /** Файл автосохранения (content://…, выбран пользователем) — список обновляется в нём при каждом запуске. */
     var autosaveUri by str("autosave_uri", "")
     /** Когда список последний раз сохранялся (любым способом) и куда. */

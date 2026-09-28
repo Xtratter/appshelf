@@ -101,6 +101,10 @@ object DetailsDialog {
                 action(a.getString(R.string.open_app), main = true) { Store.launch(a, app.pkg) }
             action(a.getString(R.string.open_store)) { Store.open(a, app) }
             action(a.getString(R.string.app_settings)) { Store.details(a, app.pkg) }
+            if (r.installed == null) {
+                val out = a.isExcluded(app.pkg)
+                action(a.getString(if (out) R.string.include else R.string.exclude)) { a.toggleExcluded(app.pkg) }
+            }
         }
         action(a.getString(R.string.copy_pkg)) {
             a.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(app.label, app.pkg))
