@@ -87,6 +87,7 @@
     <string name="th_amoled">AMOLED black</string>
     <string name="th_light">Light</string>
     <string name="th_graphite">Graphite</string>
+    <string name="th_toast">Theme: %1$s</string>
 
     <string name="about_text"><![CDATA[Version %1$s<br><br>A list of your installed apps — where each one came from and when it was installed — to reinstall them on a new phone.<br><br><a href="https://github.com/Xtratter/appshelf">github.com/Xtratter/appshelf</a><br>GPL-3.0-or-later]]></string>
 </resources>

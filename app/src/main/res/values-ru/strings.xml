@@ -79,6 +79,7 @@
     <string name="th_amoled">AMOLED (чёрная)</string>
     <string name="th_light">Светлая</string>
     <string name="th_graphite">Графит</string>
+    <string name="th_toast">Тема: %1$s</string>
 
     <string name="about_text"><![CDATA[Версия %1$s<br><br>Список установленных приложений — откуда каждое и когда установлено, — чтобы восстановить их на новом телефоне.<br><br><a href="https://github.com/Xtratter/appshelf">github.com/Xtratter/appshelf</a><br>GPL-3.0-or-later]]></string>
 </resources>

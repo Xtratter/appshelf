@@ -166,6 +166,11 @@ class MainActivity : Activity() {
     }
 
     private fun setupTopBar() {
+        // нажатие на название — следующая тема по кругу, удержание — тема по умолчанию
+        findViewById<TextView>(R.id.title).apply {
+            setOnClickListener { val all = Theme.entries; switchTheme(all[(prefs.theme().ordinal + 1) % all.size]) }
+            setOnLongClickListener { switchTheme(Theme.STANDARD); true }
+        }
         findViewById<View>(R.id.btnSearch).setOnClickListener { showSearch(searchBox.visibility != View.VISIBLE) }
         findViewById<View>(R.id.btnSearchClose).setOnClickListener { showSearch(false) }
         findViewById<View>(R.id.btnSave).setOnClickListener { askSave() }
@@ -575,13 +580,22 @@ class MainActivity : Activity() {
             .setTitle(R.string.theme)
             .setSingleChoiceItems(themes.map { getString(it.title) }.toTypedArray(), themes.indexOf(prefs.theme())) { d, i ->
                 d.dismiss()
-                if (themes[i] != prefs.theme()) {
-                    prefs.theme = themes[i].name
-                    Ui.apply(this, themes[i])
-                    recreate()
-                }
+                if (themes[i] != prefs.theme()) changeTheme(themes[i])
             }
             .show().also { Ui.glassDialog(it) }
+    }
+
+    /** Сменить тему с подсказкой, какая теперь включена (подсказка — и когда тема та же). */
+    private fun switchTheme(t: Theme) {
+        Toast.makeText(applicationContext, getString(R.string.th_toast, getString(t.title)), Toast.LENGTH_SHORT).show()
+        if (t != prefs.theme()) changeTheme(t)
+    }
+
+    /** Пересоздаём экран с новыми цветами. */
+    private fun changeTheme(t: Theme) {
+        prefs.theme = t.name
+        Ui.apply(this, t)
+        recreate()
     }
 
     private fun about() {
