@@ -4,6 +4,7 @@ import java.io.BufferedInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.io.InputStream
+import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.net.URL
@@ -75,9 +76,7 @@ class WebDav(folderUrl: String, private val user: String, private val pass: Stri
         if (!https && !url.protocol.equals("http", true)) throw IllegalArgumentException("http:// / https://")
         val host = url.host.removeSurrounding("[", "]")
         val port = if (url.port > 0) url.port else url.defaultPort
-        val raw = Socket()
-        raw.connect(InetSocketAddress(host, port), 10_000)
-        raw.soTimeout = 20_000
+        val raw = connect(host, port)
         val sock = if (!https) raw else {
             val s = (SSLSocketFactory.getDefault() as SSLSocketFactory).createSocket(raw, host, port, true) as SSLSocket
             s.startHandshake()
@@ -114,6 +113,23 @@ class WebDav(folderUrl: String, private val user: String, private val pass: Stri
             }
         }
         return r
+    }
+
+    /** Пробуем все адреса сервера по очереди (IPv6 и IPv4): один из них может быть недоступен из этой сети. */
+    private fun connect(host: String, port: Int): Socket {
+        var last: IOException? = null
+        for (addr in InetAddress.getAllByName(host)) {
+            val s = Socket()
+            try {
+                s.connect(InetSocketAddress(addr, port), 10_000)
+                s.soTimeout = 20_000
+                return s
+            } catch (e: IOException) {
+                s.close()
+                last = e
+            }
+        }
+        throw last ?: IOException("no address for $host")
     }
 
     private fun read(inp: InputStream, method: String): Response {

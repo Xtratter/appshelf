@@ -144,6 +144,8 @@
     <string name="dav_e_host">server not found — check the address and internet</string>
     <string name="dav_e_timeout">the server does not respond</string>
     <string name="dav_e_tls">secure connection failed: %s</string>
+    <string name="dav_e_blocked">AppShelf has no network access. Allow it in Settings → Apps → AppShelf → Mobile data &amp; Wi-Fi, and in your VPN or firewall app if you use one</string>
+    <string name="dav_e_net">connection error: %s</string>
     <string name="dav_e_url">The address must start with https:// or http://</string>
 
     <string name="about_text"><![CDATA[Version %1$s<br><br>A list of your installed apps — where each one came from and when it was installed — to reinstall them on a new phone.<br><br><a href="https://github.com/Xtratter/appshelf">github.com/Xtratter/appshelf</a><br>GPL-3.0-or-later]]></string>

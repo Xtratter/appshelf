@@ -2,6 +2,12 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.3.1 — 2026-09-30
+
+- When Android, a VPN or a firewall blocks AppShelf from the network, WebDAV sync now says so and where to allow it, instead of "socket failed: ECONNREFUSED"
+- Connecting tries every address of the server (IPv6 and IPv4), not only the first one
+- The phone is named by its marketing name from the firmware ("POCO F3") when no device name is set in Android — in the WebDAV file name and in saved lists
+
 ## 1.3 — 2026-09-30
 
 - **WebDAV sync** (menu → "WebDAV sync"): the list is sent to your own server — Nextcloud, ownCloud, Yandex Disk, a NAS

@@ -74,6 +74,9 @@ object Sync {
         is SocketTimeoutException, is ConnectException -> ctx.getString(R.string.dav_e_timeout)
         is SSLException -> ctx.getString(R.string.dav_e_tls, e.message.orEmpty())
         is java.net.MalformedURLException -> ctx.getString(R.string.dav_e_url)
+        // сокет не создаётся вовсе — сеть закрыта для приложения (настройки Android, VPN, файрвол)
+        is java.net.SocketException -> if (e.message.orEmpty().startsWith("socket failed")) ctx.getString(R.string.dav_e_blocked)
+            else ctx.getString(R.string.dav_e_net, e.message.orEmpty())
         else -> e.message ?: e.javaClass.simpleName
     }
 

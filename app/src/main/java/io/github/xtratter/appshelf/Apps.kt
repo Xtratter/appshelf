@@ -76,14 +76,24 @@ object Apps {
         return if (Build.MODEL.startsWith(Build.MANUFACTURER, ignoreCase = true)) Build.MODEL else "$maker ${Build.MODEL}"
     }
 
-    /** Имя устройства из настроек («POCO F3») — оно понятнее кода модели («M2012K11AG»); пустое, если не задано. */
+    /** Имя устройства из настроек или торговое название («POCO F3») — оно понятнее кода модели («M2012K11AG»). */
     private fun deviceName(ctx: Context): String {
         val name = try {
             android.provider.Settings.Global.getString(ctx.contentResolver, android.provider.Settings.Global.DEVICE_NAME)
         } catch (e: Exception) {
             null
         }?.trim().orEmpty()
-        return if (name.equals(Build.MODEL, true) || name.equals(model(), true)) "" else name
+        if (name.isNotEmpty() && !name.equals(Build.MODEL, true) && !name.equals(model(), true)) return name
+        // иначе — торговое название, которое производитель прописал в прошивке («POCO F3»)
+        return listOf("ro.product.marketname", "ro.product.vendor.marketname", "ro.config.marketing_name")
+            .map { prop(it).trim() }.firstOrNull { it.isNotEmpty() && !it.equals(Build.MODEL, true) }.orEmpty()
+    }
+
+    /** Системное свойство Android; пустая строка, если его нет или прочитать не дали. */
+    private fun prop(key: String): String = try {
+        Class.forName("android.os.SystemProperties").getMethod("get", String::class.java).invoke(null, key) as String
+    } catch (e: Throwable) {
+        ""
     }
 
     /** Модель телефона и версия Android — подпись к сохранённому списку. */

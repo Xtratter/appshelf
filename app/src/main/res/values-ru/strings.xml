@@ -138,6 +138,8 @@
     <string name="dav_e_host">сервер не найден — проверьте адрес и интернет</string>
     <string name="dav_e_timeout">сервер не отвечает</string>
     <string name="dav_e_tls">не удалось установить защищённое соединение: %s</string>
+    <string name="dav_e_blocked">AppShelf закрыт доступ в сеть. Разрешите его: Настройки → Приложения → AppShelf → Мобильный интернет и Wi-Fi, а также в VPN или файрволе, если он есть</string>
+    <string name="dav_e_net">ошибка соединения: %s</string>
     <string name="dav_e_url">Адрес должен начинаться с https:// или http://</string>
 
     <string name="about_text"><![CDATA[Версия %1$s<br><br>Список установленных приложений — откуда каждое и когда установлено, — чтобы восстановить их на новом телефоне.<br><br><a href="https://github.com/Xtratter/appshelf">github.com/Xtratter/appshelf</a><br>GPL-3.0-or-later]]></string>
