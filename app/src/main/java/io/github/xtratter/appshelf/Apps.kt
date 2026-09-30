@@ -64,18 +64,36 @@ object Apps {
         pkg
     }
 
-    /** Модель телефона и версия Android — подпись к сохранённому списку. */
-    fun device(ctx: Context): String {
+    /** Сохраняемый список: без системных, если они скрыты, и без исключённых пользователем. */
+    fun snapshot(ctx: Context, all: List<AppInfo>, prefs: Prefs): Snapshot {
+        val excl = prefs.excluded
+        val apps = all.filter { (prefs.showSystem || !it.system) && it.pkg !in excl }
+        return Snapshot(System.currentTimeMillis(), device(ctx), ListFile.sorted(apps))
+    }
+
+    private fun model(): String {
         val maker = Build.MANUFACTURER.replaceFirstChar { it.uppercase() }
-        val model = if (Build.MODEL.startsWith(Build.MANUFACTURER, ignoreCase = true)) Build.MODEL else "$maker ${Build.MODEL}"
-        // имя устройства из настроек («POCO F3») понятнее кода модели («M2012K11AG»)
+        return if (Build.MODEL.startsWith(Build.MANUFACTURER, ignoreCase = true)) Build.MODEL else "$maker ${Build.MODEL}"
+    }
+
+    /** Имя устройства из настроек («POCO F3») — оно понятнее кода модели («M2012K11AG»); пустое, если не задано. */
+    private fun deviceName(ctx: Context): String {
         val name = try {
             android.provider.Settings.Global.getString(ctx.contentResolver, android.provider.Settings.Global.DEVICE_NAME)
         } catch (e: Exception) {
             null
         }?.trim().orEmpty()
-        val phone = if (name.isEmpty() || name.equals(Build.MODEL, true) || name.equals(model, true)) model
-        else "$name (${Build.MODEL})"
+        return if (name.equals(Build.MODEL, true) || name.equals(model(), true)) "" else name
+    }
+
+    /** Модель телефона и версия Android — подпись к сохранённому списку. */
+    fun device(ctx: Context): String {
+        val name = deviceName(ctx)
+        val phone = if (name.isEmpty()) model() else "$name (${Build.MODEL})"
         return "$phone · Android ${Build.VERSION.RELEASE}"
     }
+
+    /** Короткое имя телефона для имени файла: «POCO F3», без символов, которые не любят файловые системы. */
+    fun shortName(ctx: Context): String =
+        deviceName(ctx).ifEmpty { model() }.replace(Regex("[^\\p{L}\\p{N} ._-]"), "_").trim().ifEmpty { "phone" }
 }

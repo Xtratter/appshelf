@@ -99,5 +99,52 @@
     <string name="th_graphite">Graphite</string>
     <string name="th_toast">Theme: %1$s</string>
 
+
+    <string name="dav_title">WebDAV sync</string>
+    <string name="dav_explain">Sends the list to your server (Nextcloud, ownCloud, Yandex Disk, a NAS…) on a schedule. On a new phone, open it from the server here.</string>
+    <string name="dav_url">Folder address</string>
+    <string name="dav_url_hint">Nextcloud: https://server/remote.php/dav/files/LOGIN/AppShelf · Yandex Disk: https://webdav.yandex.ru/AppShelf (with an app password)</string>
+    <string name="dav_user">Login</string>
+    <string name="dav_pass">Password</string>
+    <string name="dav_file_label">File name (each phone has its own, so a new phone does not overwrite the old list)</string>
+    <string name="dav_file">File name</string>
+    <string name="dav_check">Test</string>
+    <string name="dav_check_ok">Connected ✓ The folder exists.</string>
+    <string name="dav_send_now">Send now</string>
+    <string name="dav_connecting">Connecting…</string>
+    <string name="dav_never">The list has not been sent yet.</string>
+    <string name="dav_last_ok">Sent %1$s ✓ %2$s</string>
+    <string name="dav_last_fail">Failed %1$s: %2$s</string>
+    <string name="dav_schedule">Schedule</string>
+    <string name="rep_off">Off</string>
+    <string name="rep_daily">Every day</string>
+    <string name="rep_weekdays">On days of the week</string>
+    <string name="rep_every">Every few days</string>
+    <plurals name="every_days">
+        <item quantity="one">every %d day</item>
+        <item quantity="other">every %d days</item>
+    </plurals>
+    <string name="dav_time">Time</string>
+    <string name="dav_wifi">Only over Wi-Fi</string>
+    <string name="dav_sched_off">Sent only when you tap “Send now”.</string>
+    <string name="dav_no_days">Choose at least one day.</string>
+    <string name="dav_next">Next: %s (may shift by a few minutes — Android saves battery)</string>
+    <string name="dav_restore_hint">New phone? Enter the same server and open the list you saved from the old one:</string>
+    <string name="dav_open">Open a list from the server</string>
+    <string name="dav_pick">Lists on the server</string>
+    <string name="dav_no_files">No lists in this folder</string>
+    <string name="dav_save">Save</string>
+    <string name="dav_no_server">Enter the folder address</string>
+    <string name="dav_line_next">WebDAV: next %s</string>
+    <string name="dav_line_fail">WebDAV: failed %1$s — %2$s</string>
+    <string name="dav_e401">wrong login or password</string>
+    <string name="dav_e403">access denied</string>
+    <string name="dav_e404">folder not found — check the address</string>
+    <string name="dav_e507">no space on the server</string>
+    <string name="dav_e_host">server not found — check the address and internet</string>
+    <string name="dav_e_timeout">the server does not respond</string>
+    <string name="dav_e_tls">secure connection failed: %s</string>
+    <string name="dav_e_url">The address must start with https:// or http://</string>
+
     <string name="about_text"><![CDATA[Version %1$s<br><br>A list of your installed apps — where each one came from and when it was installed — to reinstall them on a new phone.<br><br><a href="https://github.com/Xtratter/appshelf">github.com/Xtratter/appshelf</a><br>GPL-3.0-or-later]]></string>
 </resources>

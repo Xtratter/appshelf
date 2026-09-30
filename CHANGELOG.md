@@ -2,6 +2,16 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.3 — 2026-09-30
+
+- **WebDAV sync** (menu → "WebDAV sync"): the list is sent to your own server — Nextcloud, ownCloud, Yandex Disk, a NAS
+- **Schedule**: every day, on chosen days of the week, or every N days — at a time you pick; optionally only over Wi-Fi
+- If the phone was off or offline at that time, the list is sent as soon as possible; the schedule survives reboots
+- Each phone writes its own file ("AppShelf-POCO F3.json"), so a new phone doesn't overwrite the old list
+- **Open a list from the server** — right into restore mode, the newest first
+- "Test" and "Send now" buttons; the summary shows the next send time or the last error
+- The password is encrypted with an Android Keystore key
+
 ## 1.2.1 — 2026-09-28
 
 - The "Only missing" button in restore mode is no longer shifted down and cut off (the same fix applies to the Autosave button)

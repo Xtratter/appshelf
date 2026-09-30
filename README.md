@@ -16,6 +16,8 @@ which apps are missing and opens each one in the right store.
 - **Save the list** as JSON (to restore later), Markdown (to read, e.g. in Obsidian) or CSV (for spreadsheets), or share it as text
 - **Choose what goes into the list**: "Choose apps…" in the save dialog — checkboxes, search and select all / none;
   apps you leave out are not saved, shared or autosaved (you can also do it from an app's card)
+- **WebDAV sync on a schedule**: Nextcloud, ownCloud, Yandex Disk, a NAS — every day, on chosen days of the week
+  or every N days at a set time, optionally only over Wi-Fi; on a new phone open the list straight from the server
 - **Autosave**: pick a file once (a cloud drive, a memory card…) and the list is rewritten there every time you open the app
 - **Restore mode**: open a saved list — see how many apps are missing, show only those, and tap to install each from its store
 - **Material 3 "liquid glass" design**: translucent cards over a soft colored background, colors follow the wallpaper
@@ -28,8 +30,9 @@ Ready-made APKs are on the [Releases](https://github.com/Xtratter/appshelf/relea
 
 ## Permissions
 
-Only `QUERY_ALL_PACKAGES` — without it Android 11+ shows an app just a few of the installed apps.
-No internet permission: the list never leaves the phone unless you save or share it yourself.
+- `QUERY_ALL_PACKAGES` — without it Android 11+ shows an app just a few of the installed apps.
+- `INTERNET`, `ACCESS_NETWORK_STATE` — only for WebDAV sync, and only to the server you enter; nothing else goes online.
+- `RECEIVE_BOOT_COMPLETED` — to restore the sync schedule after a reboot.
 
 ## How it works
 
@@ -42,6 +45,9 @@ app/src/main/java/io/github/xtratter/appshelf/
 ├── Apps.kt           ← reading installed apps
 ├── Model.kt          ← AppInfo and Source (installer package → store)
 ├── ListFile.kt       ← sorting and JSON / CSV / Markdown files
+├── WebDav.kt         ← small WebDAV client (PUT, GET, PROPFIND, MKCOL)
+├── Schedule.kt       ← when the next send is due
+├── Sync.kt           ← alarm → send; waits for network if needed; SyncDialog.kt — the settings
 ├── Store.kt          ← opening an app in its store
 ├── MainActivity.kt   ← list, summary, filters, saving and restore mode
 ├── AppItemView.kt    ← a list row (drawn by hand for smooth scrolling)
@@ -53,7 +59,7 @@ app/src/main/java/io/github/xtratter/appshelf/
 
 ```sh
 ./gradlew assembleRelease      # → release build (R8), sign it with apksigner
-./gradlew testDebugUnitTest    # source detection, sorting and file format tests
+./gradlew testDebugUnitTest    # tests: sources, sorting, file formats, schedule
 ```
 
 You need JDK 17 and the Android SDK (platform 35, build-tools 35.0.0). No libraries.

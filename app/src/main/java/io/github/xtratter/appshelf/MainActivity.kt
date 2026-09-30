@@ -101,6 +101,8 @@ class MainActivity : Activity() {
     override fun onStart() {
         super.onStart()
         reload()
+        // будильник WebDAV мог пропасть (остановка приложения); пропущенная отправка — догоняем
+        Sync.ensure(this)
     }
 
     // ---------- окно и панель ----------
@@ -335,7 +337,13 @@ class MainActivity : Activity() {
                     background = GlassDrawable(this@MainActivity, 16f, Ui.hintFill)
                     setPadding(dp(14f), dp(10f), dp(14f), dp(10f))
                 }
-            }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14f) })
+            }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(if (syncLine() != null) 6f else 14f) })
+            syncLine()?.let { (line, bad) ->
+                summary.addView(text(13.5f, if (bad) Ui.WARN else Ui.TEXT3).apply {
+                    text = line
+                    setOnClickListener { SyncDialog.show(this@MainActivity) }
+                }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14f) })
+            }
             // без выравнивания по тексту: у кнопки с уменьшенным шрифтом базовая линия ниже, и её бы сдвинуло и обрезало
             val buttons = LinearLayout(this).apply { isBaselineAligned = false }
             buttons.addView(button(getString(R.string.save_list), true) { askSave() }, LinearLayout.LayoutParams(0, dp(44f), 1f))
@@ -369,6 +377,27 @@ class MainActivity : Activity() {
             }, LinearLayout.LayoutParams(0, dp(44f), 1f).apply { leftMargin = dp(10f) })
             summary.addView(buttons)
         }
+    }
+
+    /** Строка про WebDAV в сводке: ошибка последней отправки или когда следующая; null — расписания нет. */
+    private fun syncLine(): Pair<String, Boolean>? {
+        if (prefs.syncLast > 0 && !prefs.syncOk && prefs.davUrl.isNotEmpty())
+            return getString(R.string.dav_line_fail, timeFmt.format(Date(prefs.syncLast)), prefs.syncMsg) to true
+        val next = prefs.syncNext.takeIf { Sync.enabled(prefs) && it > 0 } ?: return null
+        return getString(R.string.dav_line_next, nextFmt.format(Date(next))) to false
+    }
+
+    private val nextFmt by lazy { SimpleDateFormat("EEE, d MMM, HH:mm", Locale.getDefault()) }
+
+    fun refreshSummary() { if (!isDestroyed) renderSummary() }
+
+    /** Открыть список (из файла или с сервера) в режиме восстановления. */
+    fun showSnapshot(s: Snapshot) {
+        restore = s
+        missingOnly = s.apps.any { it.pkg !in installedPkgs }
+        filter = null
+        list.setSelection(0)
+        render()
     }
 
     private fun renderChips(apps: List<AppInfo>) {
@@ -405,11 +434,7 @@ class MainActivity : Activity() {
 
     // ---------- сохранение ----------
 
-    private fun snapshot(): Snapshot? {
-        val excl = prefs.excluded
-        val apps = installed?.let { visible(it) }?.filter { it.pkg !in excl } ?: return null
-        return Snapshot(System.currentTimeMillis(), Apps.device(this), ListFile.sorted(apps))
-    }
+    private fun snapshot(): Snapshot? = installed?.let { Apps.snapshot(this, it, prefs) }
 
     fun isExcluded(pkg: String) = pkg in prefs.excluded
 
@@ -581,11 +606,7 @@ class MainActivity : Activity() {
                         Toast.makeText(this, R.string.open_failed, Toast.LENGTH_LONG).show()
                         return@post
                     }
-                    restore = result
-                    missingOnly = result.apps.any { it.pkg !in installedPkgs }
-                    filter = null
-                    list.setSelection(0)
-                    render()
+                    showSnapshot(result)
                 }
             }
         }
@@ -603,6 +624,7 @@ class MainActivity : Activity() {
                 R.id.m_share -> share()
                 R.id.m_autosave -> autosaveDialog()
                 R.id.m_open -> openList()
+                R.id.m_webdav -> SyncDialog.show(this)
                 R.id.m_system -> { prefs.showSystem = !prefs.showSystem; render() }
                 R.id.m_theme -> themeDialog()
                 R.id.m_about -> about()

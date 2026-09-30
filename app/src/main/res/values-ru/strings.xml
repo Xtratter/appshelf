@@ -91,5 +91,54 @@
     <string name="th_graphite">Графит</string>
     <string name="th_toast">Тема: %1$s</string>
 
+
+    <string name="dav_title">Синхронизация WebDAV</string>
+    <string name="dav_explain">Список по расписанию отправляется на ваш сервер (Nextcloud, ownCloud, Яндекс Диск, NAS…). На новом телефоне его можно открыть с сервера здесь же.</string>
+    <string name="dav_url">Адрес папки</string>
+    <string name="dav_url_hint">Nextcloud: https://сервер/remote.php/dav/files/ЛОГИН/AppShelf · Яндекс Диск: https://webdav.yandex.ru/AppShelf (с паролем приложения)</string>
+    <string name="dav_user">Логин</string>
+    <string name="dav_pass">Пароль</string>
+    <string name="dav_file_label">Имя файла (у каждого телефона своё — новый телефон не затрёт список старого)</string>
+    <string name="dav_file">Имя файла</string>
+    <string name="dav_check">Проверить</string>
+    <string name="dav_check_ok">Подключение есть ✓ Папка найдена.</string>
+    <string name="dav_send_now">Отправить сейчас</string>
+    <string name="dav_connecting">Подключаюсь…</string>
+    <string name="dav_never">Список ещё не отправлялся.</string>
+    <string name="dav_last_ok">Отправлено %1$s ✓ %2$s</string>
+    <string name="dav_last_fail">Ошибка %1$s: %2$s</string>
+    <string name="dav_schedule">Расписание</string>
+    <string name="rep_off">Выключено</string>
+    <string name="rep_daily">Каждый день</string>
+    <string name="rep_weekdays">По дням недели</string>
+    <string name="rep_every">Раз в несколько дней</string>
+    <plurals name="every_days">
+        <item quantity="one">каждый %d день</item>
+        <item quantity="few">каждые %d дня</item>
+        <item quantity="many">каждые %d дней</item>
+        <item quantity="other">каждые %d дня</item>
+    </plurals>
+    <string name="dav_time">Время</string>
+    <string name="dav_wifi">Только по Wi-Fi</string>
+    <string name="dav_sched_off">Отправка только кнопкой «Отправить сейчас».</string>
+    <string name="dav_no_days">Выберите хотя бы один день.</string>
+    <string name="dav_next">Следующая: %s (может сдвинуться на несколько минут — Android бережёт батарею)</string>
+    <string name="dav_restore_hint">Новый телефон? Введите тот же сервер и откройте список, сохранённый со старого:</string>
+    <string name="dav_open">Открыть список с сервера</string>
+    <string name="dav_pick">Списки на сервере</string>
+    <string name="dav_no_files">В этой папке нет списков</string>
+    <string name="dav_save">Сохранить</string>
+    <string name="dav_no_server">Укажите адрес папки</string>
+    <string name="dav_line_next">WebDAV: следующая отправка %s</string>
+    <string name="dav_line_fail">WebDAV: ошибка %1$s — %2$s</string>
+    <string name="dav_e401">неверный логин или пароль</string>
+    <string name="dav_e403">нет доступа</string>
+    <string name="dav_e404">папка не найдена — проверьте адрес</string>
+    <string name="dav_e507">на сервере нет места</string>
+    <string name="dav_e_host">сервер не найден — проверьте адрес и интернет</string>
+    <string name="dav_e_timeout">сервер не отвечает</string>
+    <string name="dav_e_tls">не удалось установить защищённое соединение: %s</string>
+    <string name="dav_e_url">Адрес должен начинаться с https:// или http://</string>
+
     <string name="about_text"><![CDATA[Версия %1$s<br><br>Список установленных приложений — откуда каждое и когда установлено, — чтобы восстановить их на новом телефоне.<br><br><a href="https://github.com/Xtratter/appshelf">github.com/Xtratter/appshelf</a><br>GPL-3.0-or-later]]></string>
 </resources>

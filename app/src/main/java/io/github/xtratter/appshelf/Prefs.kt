@@ -25,10 +25,51 @@ class Prefs(ctx: Context) {
     var lastSaved by long("last_saved", 0L)
     var lastSavedName by str("last_saved_name", "")
 
+    // ---------- WebDAV ----------
+
+    /** Папка на сервере, например https://cloud.example.com/remote.php/dav/files/имя/AppShelf. */
+    var davUrl by str("dav_url", "")
+    var davUser by str("dav_user", "")
+    /** Пароль хранится зашифрованным ключом Android Keystore ([Secret]). */
+    var davPass: String
+        get() = Secret.decrypt(sp.getString("dav_pass", null).orEmpty())
+        set(v) = sp.edit().putString("dav_pass", if (v.isEmpty()) "" else Secret.encrypt(v)).apply()
+    /** Имя файла на сервере; пустое — «AppShelf-<телефон>.json». */
+    var davFile by str("dav_file", "")
+
+    var syncRepeat by str("sync_repeat", Repeat.OFF.name)
+    /** По умолчанию — будни (Calendar: 1 = воскресенье … 7 = суббота). */
+    var syncDays by int("sync_days", (2..6).sumOf { Schedule.bit(it) })
+    var syncEvery by int("sync_every", 3)
+    var syncHour by int("sync_hour", 21)
+    var syncMinute by int("sync_minute", 0)
+    var syncAnchor by long("sync_anchor", 0L)
+    var syncWifi by bool("sync_wifi", false)
+
+    fun schedule() = Schedule(runCatching { Repeat.valueOf(syncRepeat) }.getOrDefault(Repeat.OFF),
+        syncHour, syncMinute, syncDays, syncEvery, syncAnchor)
+
+    fun setSchedule(s: Schedule) {
+        sp.edit().putString("sync_repeat", s.repeat.name).putInt("sync_days", s.days).putInt("sync_every", s.every)
+            .putInt("sync_hour", s.hour).putInt("sync_minute", s.minute).putLong("sync_anchor", s.anchor).apply()
+    }
+
+    /** Когда запланирована следующая отправка (0 — не запланирована) и чем закончилась последняя. */
+    var syncNext by long("sync_next", 0L)
+    var syncLast by long("sync_last", 0L)
+    var syncOk by bool("sync_ok", false)
+    var syncMsg by str("sync_msg", "")
+
     private fun bool(key: String, def: Boolean) = object : ReadWriteProperty<Any?, Boolean> {
         override fun getValue(thisRef: Any?, property: KProperty<*>) = sp.getBoolean(key, def)
         override fun setValue(thisRef: Any?, property: KProperty<*>, value: Boolean) =
             sp.edit().putBoolean(key, value).apply()
+    }
+
+    private fun int(key: String, def: Int) = object : ReadWriteProperty<Any?, Int> {
+        override fun getValue(thisRef: Any?, property: KProperty<*>) = sp.getInt(key, def)
+        override fun setValue(thisRef: Any?, property: KProperty<*>, value: Int) =
+            sp.edit().putInt(key, value).apply()
     }
 
     private fun long(key: String, def: Long) = object : ReadWriteProperty<Any?, Long> {
