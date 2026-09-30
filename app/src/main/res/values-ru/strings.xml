@@ -111,7 +111,7 @@
     <string name="th_liquid">Жидкое стекло</string>
     <string name="glass_clarity">Прозрачность стекла</string>
     <string name="glass_clarity_btn">Прозрачность…</string>
-    <string name="glass_clarity_text">Насколько сквозь стекло видно то, что за ним: матовое и спокойное или прозрачное, как в iOS. Это окно меняется, пока двигаете ползунок; весь экран обновится, когда закроете его.</string>
+    <string name="glass_clarity_text">Насколько сквозь стекло видно то, что за ним: матовое и спокойное или прозрачное. Это окно меняется, пока двигаете ползунок; весь экран обновится, когда закроете его.</string>
     <string name="glass_matte">Матовое</string>
     <string name="glass_clear">Прозрачное</string>
     <string name="glass_clarity_value">Прозрачность: %d%%</string>
@@ -119,7 +119,7 @@
     <string name="font_cascadia">Cascadia Mono (как Consolas)</string>
     <string name="font_system">Системный</string>
     <string name="font_mono">Системный моноширинный</string>
-    <string name="liquid_sub">Стекло, которое преломляет то, что за ним, как в iOS 26, — работает с любой темой</string>
+    <string name="liquid_sub">Стекло, которое преломляет то, что за ним, и перетекает, как капля, — работает с любой темой</string>
     <string name="liquid_unavailable">Нужен Android 13 или новее — здесь обычное стекло</string>
     <string name="uninstall">Удалить приложение</string>
     <string name="uninstall_done">Удалено: %s</string>

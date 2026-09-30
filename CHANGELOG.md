@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.13 — 2026-09-30
+
+- **"Liquid glass" flows like a drop**: windows (the ⋮ menu, app cards, Theme…) grow out of the spot you tapped with a springy settle; the search field flows out of the magnifier button and back into it; glass buttons, chips, list rows and window items swell slightly around the finger and spring back when released. Only while "Liquid glass" is on
+- The Theme window no longer mentions iOS
+
 ## 1.12.3 — 2026-09-30
 
 - Glass transparency changes live while you move the slider: the glass fill follows at once, and the blur of what is behind the window catches up in the background (the screen is captured once when the window opens, not on every change)

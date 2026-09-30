@@ -126,6 +126,11 @@ class MainActivity : Activity() {
         render()
     }
 
+    override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
+        Motion.touched(ev)   // откуда вытекать следующему окну
+        return super.dispatchTouchEvent(ev)
+    }
+
     override fun onResume() {
         super.onResume()
         current = java.lang.ref.WeakReference(this)
@@ -229,18 +234,29 @@ class MainActivity : Activity() {
 
     private fun showSearch(show: Boolean) {
         val imm = getSystemService(InputMethodManager::class.java)
-        searchBox.visibility = if (show) View.VISIBLE else View.GONE
-        // сводка и фильтры на время поиска прячутся (сам заголовок списка при этом сжимается до нуля)
-        summary.visibility = if (show) View.GONE else View.VISIBLE
-        chipsScroll.visibility = summary.visibility
-        render()
-        list.setSelection(0)
+        // строка поиска вытекает из кнопки-лупы и втекает обратно («жидкое стекло»)
+        val lens = findViewById<View>(R.id.btnSearch)
+        val a = IntArray(2); val b = IntArray(2)
+        lens.getLocationInWindow(a); searchBox.getLocationInWindow(b)
+        val lensX = a[0] - b[0] + lens.width / 2f
+        /** Сводка и фильтры на время поиска прячутся (сам заголовок списка при этом сжимается до нуля). */
+        fun layoutFor(searchOn: Boolean) {
+            summary.visibility = if (searchOn) View.GONE else View.VISIBLE
+            chipsScroll.visibility = summary.visibility
+            render()
+            list.setSelection(0)
+        }
         if (show) {
+            Motion.openSearch(searchBox, lensX)
+            layoutFor(true)
             searchField.requestFocus()
             imm.showSoftInput(searchField, 0)
         } else {
-            searchField.setText("")
             imm.hideSoftInputFromWindow(searchField.windowToken, 0)
+            Motion.closeSearch(searchBox, lensX) {
+                searchField.setText("")
+                layoutFor(false)
+            }
         }
     }
 
@@ -399,6 +415,7 @@ class MainActivity : Activity() {
         else Ui.pill(this@MainActivity, Ui.withAlpha(Ui.primary, 0.12f), Ui.withAlpha(Ui.primary, 0.35f))
         foreground = Ui.ripple(this@MainActivity, 100f)
         setOnClickListener { onClick() }
+        Motion.press(this)
     }
 
     private fun renderSummary() {
@@ -531,6 +548,7 @@ class MainActivity : Activity() {
                 compoundDrawablePadding = dp(8f)
             }
             setOnClickListener { onClick() }
+            Motion.press(this)
         }, LinearLayout.LayoutParams(-2, dp(36f)).apply { rightMargin = dp(8f) })
         chip(getString(R.string.all) + " · " + apps.size, filter == null && !noLink, null) { filter = null; noLink = false; render() }
         for ((src, count) in counts) {

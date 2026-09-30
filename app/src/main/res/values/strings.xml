@@ -119,7 +119,7 @@
     <string name="th_liquid">Liquid glass</string>
     <string name="glass_clarity">Glass transparency</string>
     <string name="glass_clarity_btn">Transparency…</string>
-    <string name="glass_clarity_text">How much of what is behind shows through the glass: frosted and calm, or clear like in iOS. This window changes as you move the slider; the whole screen updates when you close it.</string>
+    <string name="glass_clarity_text">How much of what is behind shows through the glass: frosted and calm, or clear. This window changes as you move the slider; the whole screen updates when you close it.</string>
     <string name="glass_matte">Frosted</string>
     <string name="glass_clear">Clear</string>
     <string name="glass_clarity_value">Transparency: %d%%</string>
@@ -127,7 +127,7 @@
     <string name="font_cascadia">Cascadia Mono (like Consolas)</string>
     <string name="font_system">System</string>
     <string name="font_mono">System monospace</string>
-    <string name="liquid_sub">Glass that refracts what is behind it, like in iOS 26 — works with any theme</string>
+    <string name="liquid_sub">Glass that refracts what is behind it and flows like a drop — works with any theme</string>
     <string name="liquid_unavailable">Needs Android 13 or newer — the regular glass is used here</string>
     <string name="uninstall">Uninstall</string>
     <string name="uninstall_done">Uninstalled: %s</string>
