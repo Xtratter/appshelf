@@ -45,6 +45,21 @@ object Ui {
     var backdropW = 0f
     var backdropH = 0f
     var liquidRoot: View? = null
+    /** Прозрачность «жидкого стекла»: 0 — матовое, 1 — прозрачное. */
+    var clarity = 0.5f; private set
+    private fun lerp(a: Float, b: Float) = a + (b - a) * clarity
+    /** Насколько плотна заливка верхней панели, и насколько размыто то, что под ней и за окнами (dp). */
+    val barTintAlpha get() = lerp(0.5f, 0.1f)
+    val barBlurDp get() = lerp(4f, 0.3f)
+    val dialogBlurDp get() = lerp(12f, 1.5f)
+
+    /** Поменять прозрачность стекла на ходу (из настройки): заливка окон пересчитывается сразу. */
+    fun setClarity(v: Float) {
+        clarity = v.coerceIn(0f, 1f)
+        if (theme?.let { resolveLiquid(it) } == true) dialogBlur = withAlpha(0xFF14161C.toInt(), lerp(0.62f, 0.12f))
+    }
+
+    private fun resolveLiquid(t: Theme) = t == Theme.LIQUID
     /** Снимок главного экрана для стеклянных окон (в 1/4 размера) и где он на экране. */
     var snapshot: android.graphics.Bitmap? = null
     var snapshotX = 0f
@@ -77,7 +92,7 @@ object Ui {
         Liquid.capturing = true
         try { root.draw(c) } catch (e: Exception) { return } finally { Liquid.capturing = false }
         // размываем сразу и плавно — как системное размытие под окном, без зерна
-        Blur.apply(bmp, (dp(root.context, 6f) / q).toInt().coerceAtLeast(1))
+        Blur.apply(bmp, (dp(root.context, dialogBlurDp) / q).toInt().coerceAtLeast(1))
         val at = IntArray(2)
         root.getLocationOnScreen(at)
         snapshot = bmp
@@ -140,6 +155,7 @@ object Ui {
         val you = Build.VERSION.SDK_INT >= 31
         fun c(id: Int) = ctx.getColor(id)
         light = r == Theme.LIGHT
+        clarity = Prefs(ctx).glassClarity / 100f
         liquid = r == Theme.LIQUID && Liquid.works
         if (light) {
             primary = if (you) c(android.R.color.system_accent1_600) else 0xFF3B5BA9.toInt()
@@ -185,7 +201,7 @@ object Ui {
                 base = if (you) mix(c(android.R.color.system_neutral1_900), 0xFF000000.toInt(), 0.3f) else 0xFF111318.toInt()
                 aurora = true   // ровный фон (без пятен) — его картинку «преломляют» карточки
                 card = 0x12FFFFFF
-                dialogBlur = 0x5C14161C; dialogSolid = 0xF014161C.toInt()
+                dialogBlur = withAlpha(0xFF14161C.toInt(), lerp(0.62f, 0.12f)); dialogSolid = 0xF014161C.toInt()
                 surface = 0xFF14161C.toInt()
             }
             Theme.GRAPHITE -> {

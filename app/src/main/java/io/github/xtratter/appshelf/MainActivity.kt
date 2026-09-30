@@ -89,7 +89,7 @@ class MainActivity : Activity() {
         if (Ui.liquid && Build.VERSION.SDK_INT >= 33) {
             // «жидкое стекло»: список виден сквозь панель, изгибаясь у кромки
             val bar = findViewById<View>(R.id.bar)
-            val tint = Ui.withAlpha(Ui.base, 0.3f)
+            val tint = Ui.withAlpha(Ui.base, Ui.barTintAlpha)
             bar.background = LiquidBackdrop(bar, listOf(list), 32f, tint)
             searchBox.background = LiquidBackdrop(searchBox, listOf(list), 26f, tint)
             // мягкая тень: стекло «висит» над списком
@@ -778,13 +778,67 @@ class MainActivity : Activity() {
 
     private fun themeDialog() {
         val themes = Theme.entries
-        AlertDialog.Builder(this)
+        val b = AlertDialog.Builder(this)
             .setTitle(R.string.theme)
             .setSingleChoiceItems(themes.map { getString(it.title) }.toTypedArray(), themes.indexOf(prefs.theme())) { d, i ->
                 d.dismiss()
                 if (themes[i] != prefs.theme()) changeTheme(themes[i])
             }
-            .show().also { Ui.glassDialog(it) }
+        // у «жидкого стекла» — своя настройка прозрачности
+        if (Ui.liquid) b.setNeutralButton(R.string.glass_clarity_btn) { _, _ -> clarityDialog() }
+        b.show().also { Ui.glassDialog(it) }
+    }
+
+    /** Прозрачность стекла: ползунок «матовое — прозрачное»; само окно меняется сразу, экран — при закрытии. */
+    private fun clarityDialog() {
+        val start = prefs.glassClarity
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24f), dp(8f), dp(24f), 0)
+        }
+        val value = TextView(this).apply { textSize = 14f; setTextColor(Ui.TEXT2) }
+        box.addView(TextView(this).apply {
+            setText(R.string.glass_clarity_text); textSize = 14f; setTextColor(Ui.TEXT2); setLineSpacing(0f, 1.1f)
+        })
+        val seek = android.widget.SeekBar(this).apply {
+            max = 100
+            progress = start
+            progressTintList = android.content.res.ColorStateList.valueOf(Ui.primary)
+            thumbTintList = progressTintList
+        }
+        box.addView(seek, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18f) })
+        box.addView(LinearLayout(this).apply {
+            addView(TextView(this@MainActivity).apply { setText(R.string.glass_matte); textSize = 13f; setTextColor(Ui.TEXT3) },
+                LinearLayout.LayoutParams(0, -2, 1f))
+            addView(TextView(this@MainActivity).apply { setText(R.string.glass_clear); textSize = 13f; setTextColor(Ui.TEXT3) })
+        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(2f) })
+        value.setPadding(0, dp(10f), 0, 0)
+        box.addView(value)
+        fun showValue(p: Int) { value.text = getString(R.string.glass_clarity_value, p) }
+        showValue(start)
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(R.string.glass_clarity)
+            .setView(box)
+            .setPositiveButton(R.string.done, null)
+            .setNeutralButton(R.string.catalog_default) { _, _ -> }
+            .create()
+        /** Применить: заново размыть снимок экрана и перерисовать стекло этого окна. */
+        fun apply(p: Int) {
+            prefs.glassClarity = p
+            Ui.setClarity(p / 100f)
+            Ui.takeSnapshot()
+            dialog.window?.setBackgroundDrawable(GlassDrawable(this, 28f, Ui.dialogBlurColor()))
+        }
+        seek.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(s: android.widget.SeekBar?, p: Int, fromUser: Boolean) = showValue(p)
+            override fun onStartTrackingTouch(s: android.widget.SeekBar?) {}
+            override fun onStopTrackingTouch(s: android.widget.SeekBar?) = apply(seek.progress)
+        })
+        // при закрытии — пересоздать экран, чтобы панель и карточки взяли новую прозрачность
+        dialog.setOnDismissListener { if (prefs.glassClarity != start) recreate() }
+        dialog.show()
+        Ui.glassDialog(dialog)
+        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener { seek.progress = 50; apply(50) }
     }
 
     /** Сменить тему с подсказкой, какая теперь включена (подсказка — и когда тема та же). */

@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.9 — 2026-09-30
+
+- **Glass transparency** for the "Liquid glass" theme: Theme → "Transparency…" — a slider from frosted to clear. It sets how blurred the list is under the top bar and behind windows and how dense the glass fill is; the window itself changes as you move the slider, the whole screen when you close it. "Default" returns the middle
+
 ## 1.8.9 — 2026-09-30
 
 - "Liquid glass": cleaner, grain-free blur under windows and the top bar — the snapshot behind windows is twice as sharp, sampled smoothly, and blurred with a proper smooth (near-Gaussian) blur instead of scattered samples that caused grain and ripples

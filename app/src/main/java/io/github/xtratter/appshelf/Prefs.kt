@@ -14,6 +14,9 @@ class Prefs(ctx: Context) {
     /** Показывать системные приложения (предустановленные, без обновлений из магазина — тоже). */
     var showSystem by bool("show_system", false)
 
+    /** «Жидкое стекло»: 0 — матовое, 100 — прозрачное (50 — как задумано). */
+    var glassClarity by int("glass_clarity", 50)
+
     /** Пакеты, которые не включаем в сохраняемый список (файл, «Поделиться», автосохранение). */
     var excluded: Set<String>
         get() = sp.getStringSet("excluded", null)?.toSet() ?: emptySet()   // копия: set из prefs менять нельзя

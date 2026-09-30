@@ -308,7 +308,7 @@ class LiquidBackdrop(private val host: View, private val sources: List<View>, ra
             Liquid.capturing = false
         }
         // лёгкое плавное размытие (картинка в полразмера: 1,5 dp здесь ≈ 3 dp на экране)
-        Blur.apply(out, (1.5f * dp * out.width / bounds.width()).toInt().coerceAtLeast(1))
+        Blur.apply(out, (Ui.barBlurDp * dp * out.width / bounds.width()).toInt())
     }
 
     override fun draw(c: Canvas) {
