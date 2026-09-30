@@ -119,16 +119,12 @@ class MainActivity : Activity() {
         buildHeader()
         setupInsets()
         list.adapter = adapter
-        list.setOnItemClickListener { parent, _, pos, _ ->
+        list.setOnItemClickListener { parent, view, pos, _ ->
             val r = parent.getItemAtPosition(pos) as? Row ?: return@setOnItemClickListener
+            Motion.from(view)   // карточка вытечет из строки
             DetailsDialog.show(this, r, sourceText(r.app))
         }
         render()
-    }
-
-    override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
-        Motion.touched(ev)   // откуда вытекать следующему окну
-        return super.dispatchTouchEvent(ev)
     }
 
     override fun onResume() {
@@ -224,7 +220,7 @@ class MainActivity : Activity() {
         }
         findViewById<View>(R.id.btnSearch).setOnClickListener { showSearch(searchBox.visibility != View.VISIBLE) }
         findViewById<View>(R.id.btnSearchClose).setOnClickListener { showSearch(false) }
-        findViewById<View>(R.id.btnMore).setOnClickListener { showMenu(it) }
+        findViewById<View>(R.id.btnMore).setOnClickListener { Motion.from(it); showMenu(it) }
         searchField.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
@@ -234,11 +230,8 @@ class MainActivity : Activity() {
 
     private fun showSearch(show: Boolean) {
         val imm = getSystemService(InputMethodManager::class.java)
-        // строка поиска вытекает из кнопки-лупы и втекает обратно («жидкое стекло»)
+        // строка поиска вытекает из кнопки-лупы и стекает обратно («жидкое стекло»)
         val lens = findViewById<View>(R.id.btnSearch)
-        val a = IntArray(2); val b = IntArray(2)
-        lens.getLocationInWindow(a); searchBox.getLocationInWindow(b)
-        val lensX = a[0] - b[0] + lens.width / 2f
         /** Сводка и фильтры на время поиска прячутся (сам заголовок списка при этом сжимается до нуля). */
         fun layoutFor(searchOn: Boolean) {
             summary.visibility = if (searchOn) View.GONE else View.VISIBLE
@@ -247,13 +240,12 @@ class MainActivity : Activity() {
             list.setSelection(0)
         }
         if (show) {
-            Motion.openSearch(searchBox, lensX)
-            layoutFor(true)
+            Motion.openSearch(searchBox, lens) { layoutFor(true) }
             searchField.requestFocus()
             imm.showSoftInput(searchField, 0)
         } else {
             imm.hideSoftInputFromWindow(searchField.windowToken, 0)
-            Motion.closeSearch(searchBox, lensX) {
+            Motion.closeSearch(searchBox, lens) {
                 searchField.setText("")
                 layoutFor(false)
             }
@@ -414,8 +406,7 @@ class MainActivity : Activity() {
         background = if (filled) Ui.pill(this@MainActivity, Ui.primary)
         else Ui.pill(this@MainActivity, Ui.withAlpha(Ui.primary, 0.12f), Ui.withAlpha(Ui.primary, 0.35f))
         foreground = Ui.ripple(this@MainActivity, 100f)
-        setOnClickListener { onClick() }
-        Motion.press(this)
+        setOnClickListener { Motion.from(it); onClick() }   // окно, которое откроет кнопка, вытечет из неё
     }
 
     private fun renderSummary() {
@@ -548,7 +539,6 @@ class MainActivity : Activity() {
                 compoundDrawablePadding = dp(8f)
             }
             setOnClickListener { onClick() }
-            Motion.press(this)
         }, LinearLayout.LayoutParams(-2, dp(36f)).apply { rightMargin = dp(8f) })
         chip(getString(R.string.all) + " · " + apps.size, filter == null && !noLink, null) { filter = null; noLink = false; render() }
         for ((src, count) in counts) {

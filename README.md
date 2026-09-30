@@ -27,7 +27,7 @@ which apps are missing and opens each one in the right store.
 - **Autosave**: pick a file once (a cloud drive, a memory card…) and the list is rewritten there every time you open the app
 - **Restore mode**: open a saved list — see how many apps are missing, show only those, and tap to install each from its store
 - **"Liquid glass" like in iOS 26** (on by default, Android 13+; older Android gets the regular glass): the top bar
-  and windows are real glass — what is behind them shows through, bends at the edges with color fringes and a bright rim; the glass flows like a drop — windows grow out of the spot you tapped, the search field flows out of the magnifier, buttons swell under the finger and spring back.
+  and windows are real glass — what is behind them shows through, bends at the edges with color fringes and a bright rim; the glass flows: a tapped button turns into its window like a drop of liquid and the window flows back into it when closed; the search field flows out of the magnifier.
   It is a checkbox in Theme and works with every theme; the transparency is adjustable (Theme → Transparency…)
 - **Themes**: standard, follow system, AMOLED black, light, graphite; colors follow the wallpaper (Android 12+) —
   tap the "AppShelf" title to switch to the next one, long-press it to go back to the standard one

@@ -29,10 +29,6 @@ class AppItemView(ctx: Context) : View(ctx) {
     private val padH = dp(12f)
     private val card = RectF()
     private val glass = GlassDrawable(ctx, 22f).also { it.host = this }
-
-    init {
-        Motion.press(this)   // строка надувается под пальцем («жидкое стекло»)
-    }
     private val titleP = Ui.textPaint(ctx, 16f, Ui.medium, Ui.TEXT)
     private val pkgP = Ui.textPaint(ctx, 12.5f, Ui.regular, Ui.TEXT2)
     private val dateP = Ui.textPaint(ctx, 12f, Ui.regular, Ui.TEXT3).apply { textAlign = Paint.Align.RIGHT }

@@ -365,9 +365,8 @@ object Ui {
         clearPanels(w.decorView)
         listOf(AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL)
             .forEach { d.getButton(it)?.setTextColor(primary) }
-        // «жидкое стекло»: окно вытекает из места нажатия, его кнопки надуваются под пальцем
-        Motion.pressAll(w.decorView)
-        Motion.popIn(d)
+        // «жидкое стекло»: окно, открытое кнопкой главного экрана, вытекает из неё и стекает обратно
+        Motion.takeSource()?.let { Motion.morphIn(d, it) }
     }
 }
 

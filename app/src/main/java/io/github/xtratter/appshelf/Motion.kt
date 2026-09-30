@@ -1,103 +1,202 @@
 package io.github.xtratter.appshelf
 
 import android.animation.TimeInterpolator
+import android.animation.ValueAnimator
+import android.annotation.SuppressLint
+import android.annotation.TargetApi
 import android.app.Dialog
-import android.view.MotionEvent
+import android.content.Context
+import android.graphics.Canvas
+import android.graphics.RectF
+import android.os.Build
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.DecelerateInterpolator
+import android.view.WindowManager
+import android.view.animation.LinearInterpolator
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.exp
 
 /**
- * Анимации «жидкого стекла»: стекло ведёт себя как капля — при касании надувается вокруг пальца и отпружинивает,
- * окна вытекают из места нажатия, строка поиска — из кнопки-лупы. Работает, только пока включено «жидкое стекло».
+ * «Жидкое стекло» перетекает: нажатая кнопка вытекает стеклянной каплей и превращается в окно,
+ * а закрытое окно стекает обратно в кнопку. Капля рисуется поверх главного экрана тем же стеклом,
+ * что и окна (со снимком экрана под ним), поэтому переход между каплей и окном незаметен.
+ * Работает, только пока включено «жидкое стекло» (Android 13+).
  */
 object Motion {
     /** Пружина: быстро к цели, лёгкий перелёт и затухающее покачивание. */
-    class Spring(private val decay: Float = 5.5f, private val cycles: Float = 1.25f) : TimeInterpolator {
+    class Spring(private val decay: Float = 6.5f, private val cycles: Float = 0.85f) : TimeInterpolator {
         override fun getInterpolation(t: Float): Float =
             if (t >= 1f) 1f else (1f - exp(-decay * t) * cos(2 * PI.toFloat() * cycles * t))
     }
 
-    /** Последнее касание экрана (координаты на экране) — отсюда вытекают окна. */
-    var lastX = -1f
-    var lastY = -1f
+    /** Откуда вытечет следующее окно (кнопка или строка главного экрана); забирается [Ui.glassDialog]. */
+    private var source: View? = null
+    private var sourceAt = 0L
 
-    fun touched(e: MotionEvent) {
-        if (e.actionMasked == MotionEvent.ACTION_DOWN) { lastX = e.rawX; lastY = e.rawY }
+    fun from(v: View) { source = v; sourceAt = android.os.SystemClock.uptimeMillis() }
+
+    /** Источник, только если нажали только что (иначе окно откроется само по себе, а не из старой кнопки). */
+    fun takeSource(): View? = source.takeIf { android.os.SystemClock.uptimeMillis() - sourceAt < 600 }.also { source = null }
+
+    private val enabled get() = Ui.liquid && Build.VERSION.SDK_INT >= 33
+
+    private fun overlayRoot(): ViewGroup? = Ui.liquidRoot as? ViewGroup
+
+    /** Прямоугольник вида в координатах главного окна. */
+    private fun rectOf(v: View): RectF {
+        val at = IntArray(2)
+        v.getLocationInWindow(at)
+        return RectF(at[0].toFloat(), at[1].toFloat(), (at[0] + v.width).toFloat(), (at[1] + v.height).toFloat())
     }
 
     /**
-     * Стекло «надувается» под пальцем: вид чуть растёт вокруг точки касания, а отпущенный — отпружинивает.
-     * Касание не перехватывается — нажатия и прокрутка работают как обычно.
+     * Капля из [from] в [to] (радиусы скруглений — [fromR], [toR]); [atReveal] — когда капля почти на месте
+     * (пора показывать то, во что она превращается), [done] — в конце, капля уже убрана.
      */
-    fun press(v: View) {
-        if (!Ui.liquid) return
-        v.setOnTouchListener { view, e ->
-            touched(e)   // касания внутри окон тоже запоминаем: следующее окно вытечет отсюда
-            when (e.actionMasked) {
-                MotionEvent.ACTION_DOWN -> {
-                    view.pivotX = e.x
-                    view.pivotY = e.y
-                    // маленькие кнопки надуваются заметнее, широкие карточки — чуть-чуть
-                    val grow = 1f + (Ui.dp(view.context, 10f) / view.width.coerceAtLeast(1)).coerceIn(0.02f, 0.08f)
-                    view.animate().scaleX(grow).scaleY(grow).setDuration(140).setInterpolator(DecelerateInterpolator()).start()
-                }
-                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL ->
-                    view.animate().scaleX(1f).scaleY(1f).setDuration(520).setInterpolator(Spring()).start()
+    @TargetApi(33)
+    private fun flow(from: RectF, fromR: Float, to: RectF, toR: Float, ms: Long, atReveal: () -> Unit, done: () -> Unit) {
+        val root = overlayRoot() ?: run { atReveal(); done(); return }
+        val blob = Blob(root.context, from, fromR, to, toR)
+        root.addView(blob, ViewGroup.LayoutParams(-1, -1))
+        var revealed = false
+        ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = ms
+            interpolator = LinearInterpolator()   // сглаживание — у каждого края своё (см. Blob)
+            addUpdateListener {
+                blob.t = it.animatedValue as Float
+                blob.invalidate()
+                if (!revealed && blob.t >= 0.8f) { revealed = true; atReveal() }
             }
-            false
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(a: android.animation.Animator) {
+                    if (!revealed) atReveal()
+                    // капля уходит чуть позже — пока проявляется то, во что она превратилась
+                    blob.postDelayed({ root.removeView(blob); done() }, 120)
+                }
+            })
+            start()
         }
     }
 
-    /** То же для всех нажимаемых стеклянных элементов внутри [root] (кнопки и карточки окна). */
-    fun pressAll(root: View) {
-        if (!Ui.liquid) return
-        if (root.isClickable && (root.background is GlassDrawable || root.foreground != null)) press(root)
-        if (root is ViewGroup) for (i in 0 until root.childCount) pressAll(root.getChildAt(i))
+    /**
+     * Капля стекла: четыре края идут к цели каждый по своей пружине — ведущие (по направлению движения) раньше,
+     * отстающие позже, — поэтому форма по пути вытягивается, как жидкость.
+     */
+    @TargetApi(33)
+    @SuppressLint("ViewConstructor")
+    private class Blob(ctx: Context, val from: RectF, val fromR: Float, val to: RectF, val toR: Float) : View(ctx) {
+        var t = 0f
+        private val glass = LiquidCard(ctx.resources.displayMetrics.density)
+        private val cur = RectF()
+        private val spring = Spring()
+        private val dx = to.centerX() - from.centerX()
+        private val dy = to.centerY() - from.centerY()
+
+        private fun edge(a: Float, b: Float, lead: Boolean): Float {
+            val delay = if (lead) 0f else 0.16f
+            val p = ((t - delay) / (1f - delay)).coerceIn(0f, 1f)
+            return a + (b - a) * spring.getInterpolation(p)
+        }
+
+        override fun onDraw(c: Canvas) {
+            cur.set(edge(from.left, to.left, dx < 0), edge(from.top, to.top, dy < 0),
+                edge(from.right, to.right, dx > 0), edge(from.bottom, to.bottom, dy > 0))
+            if (cur.width() < 2 || cur.height() < 2) return
+            val r = (fromR + (toR - fromR) * t.coerceIn(0f, 1f)).coerceAtMost(minOf(cur.width(), cur.height()) / 2f)
+            glass.drawOverSnapshot(c, this, cur, r, 0)
+        }
     }
 
-    /** Окно вытекает из места последнего касания: растёт из этой точки с пружинкой. */
-    fun popIn(d: Dialog) {
-        if (!Ui.liquid) return
-        val decor = d.window?.decorView ?: return
+    /**
+     * Окно вытекает из кнопки [src]: пока капля растёт, окно невидимо, без затемнения и размытия позади
+     * (иначе система размыла бы и каплю); потом окно проявляется, а при закрытии стекает обратно в кнопку.
+     */
+    fun morphIn(d: Dialog, src: View) {
+        if (!enabled || src.rootView !== Ui.liquidRoot) return
+        val w = d.window ?: return
+        val decor = w.decorView
+        val dp = src.resources.displayMetrics.density
         decor.alpha = 0f
-        decor.post {
-            val at = IntArray(2)
-            decor.getLocationOnScreen(at)
-            decor.pivotX = if (lastX >= 0) (lastX - at[0]).coerceIn(0f, decor.width.toFloat()) else decor.width / 2f
-            decor.pivotY = if (lastY >= 0) (lastY - at[1]).coerceIn(0f, decor.height.toFloat()) else decor.height / 2f
-            decor.scaleX = 0.55f
-            decor.scaleY = 0.45f
-            decor.animate().alpha(1f).setDuration(160).start()
-            decor.animate().scaleX(1f).scaleY(1f).setDuration(560).setInterpolator(Spring()).start()
+        w.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+        val from = rectOf(src)
+        val fromR = minOf(src.height / 2f, 28 * dp)
+        // место окна и его затемнение известны перед первой отрисовкой (окно могли ещё передвинуть — как меню ⋮)
+        decor.viewTreeObserver.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                decor.viewTreeObserver.removeOnPreDrawListener(this)
+                val dim = w.attributes.dimAmount
+                w.setDimAmount(0f)
+                grow(w, decor, src, from, fromR, dim, dp)
+                return true
+            }
+        })
+    }
+
+    private fun grow(w: android.view.Window, decor: View, src: View, from: RectF, fromR: Float, dim: Float, dp: Float) {
+        val at = IntArray(2); val base = IntArray(2)
+        decor.getLocationOnScreen(at)
+        Ui.liquidRoot?.getLocationOnScreen(base)
+        val to = RectF((at[0] - base[0]).toFloat(), (at[1] - base[1]).toFloat(),
+            (at[0] - base[0] + decor.width).toFloat(), (at[1] - base[1] + decor.height).toFloat())
+        val toR = 28 * dp
+        src.animate().alpha(0f).setDuration(90).start()
+        flow(from, fromR, to, toR, 380, atReveal = {
+            decor.animate().alpha(1f).setDuration(110).start()
+        }) {
+            // фон позади окна затемняется и размывается плавно, когда окно уже на месте
+            if (!decor.isAttachedToWindow) return@flow
+            w.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+            ValueAnimator.ofFloat(0f, 1f).apply {
+                duration = 180
+                addUpdateListener { a ->
+                    if (!decor.isAttachedToWindow) return@addUpdateListener
+                    val k = a.animatedValue as Float
+                    w.setDimAmount(dim * k)
+                    w.attributes = w.attributes.apply { blurBehindRadius = (10 * dp * k).toInt() }
+                }
+                start()
+            }
+        }
+        // закрыли — окно стекает обратно в кнопку
+        decor.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) {}
+            override fun onViewDetachedFromWindow(v: View) {
+                v.removeOnAttachStateChangeListener(this)
+                val back = if (src.isAttachedToWindow) rectOf(src) else from
+                flow(to, toR, back, fromR, 300, atReveal = {
+                    src.animate().alpha(1f).setDuration(100).start()
+                }) {}
+            }
+        })
+    }
+
+    /** Строка поиска вытекает из кнопки-лупы: [box] становится видимой, когда капля на месте. */
+    fun openSearch(box: View, lens: View, done: () -> Unit) {
+        if (!enabled) { box.visibility = View.VISIBLE; done(); return }
+        Ui.takeSnapshot()
+        box.alpha = 0f
+        box.visibility = View.VISIBLE
+        box.post {
+            val dp = box.resources.displayMetrics.density
+            val from = rectOf(lens)
+            val to = rectOf(box)
+            flow(from, from.height() / 2f, to, 26 * dp, 360,
+                atReveal = { box.animate().alpha(1f).setDuration(100).start() }) {}
+            done()
         }
     }
 
-    /** Строка поиска вытекает из кнопки-лупы ([fromX] — её центр по горизонтали в координатах панели). */
-    fun openSearch(box: View, fromX: Float) {
-        box.visibility = View.VISIBLE
-        if (!Ui.liquid) return
-        box.pivotX = fromX
-        box.pivotY = 0f
-        box.scaleX = 0.12f
-        box.scaleY = 0.6f
-        box.alpha = 0f
-        box.animate().alpha(1f).setDuration(140).start()
-        box.animate().scaleX(1f).scaleY(1f).setDuration(600).setInterpolator(Spring()).start()
-    }
-
-    /** И втекает обратно в лупу; [done] — когда спрятана. */
-    fun closeSearch(box: View, toX: Float, done: () -> Unit) {
-        if (!Ui.liquid) { box.visibility = View.GONE; done(); return }
-        box.pivotX = toX
-        box.animate().scaleX(0.12f).scaleY(0.6f).alpha(0f).setDuration(220).setInterpolator(DecelerateInterpolator())
-            .withEndAction {
-                box.visibility = View.GONE
-                box.scaleX = 1f; box.scaleY = 1f; box.alpha = 1f
-                done()
-            }.start()
+    /** И стекает обратно в лупу; [done] — когда строка спрятана. */
+    fun closeSearch(box: View, lens: View, done: () -> Unit) {
+        if (!enabled) { box.visibility = View.GONE; done(); return }
+        val dp = box.resources.displayMetrics.density
+        Ui.takeSnapshot()
+        val from = rectOf(box)
+        val to = rectOf(lens)
+        box.visibility = View.GONE
+        box.alpha = 1f
+        done()
+        flow(from, 26 * dp, to, to.height() / 2f, 280, atReveal = {}) {}
     }
 }

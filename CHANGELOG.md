@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.14 — 2026-09-30
+
+- **The glass really flows now**: the tapped button (the ⋮ menu, "Save & restore", an app in the list) turns into its window — a glass drop flows out of it and stretches into the window, the leading edge first and the trailing one catching up; when the window closes, it flows back into the button. The search field flows out of the magnifier and back. The background behind a window is dimmed and blurred only once the window is in place
+- The swelling of buttons under the finger and the pop-in of windows from 1.13 are gone
+
 ## 1.13 — 2026-09-30
 
 - **"Liquid glass" flows like a drop**: windows (the ⋮ menu, app cards, Theme…) grow out of the spot you tapped with a springy settle; the search field flows out of the magnifier button and back into it; glass buttons, chips, list rows and window items swell slightly around the finger and spring back when released. Only while "Liquid glass" is on
