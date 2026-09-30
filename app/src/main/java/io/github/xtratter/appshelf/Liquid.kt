@@ -179,7 +179,7 @@ class LiquidCard(private val dp: Float) {
     fun drawOverSnapshot(c: Canvas, host: View, r: RectF, radius: Float, fill: Int): Boolean {
         if (!c.isHardwareAccelerated || Liquid.capturing) return false
         val bmp = Ui.snapshot ?: return false
-        if (snapFor !== bmp) { snapShader = BitmapShader(bmp, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP); snapFor = bmp }
+        if (snapFor !== bmp) { snapShader = BitmapShader(bmp, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply { filterMode = BitmapShader.FILTER_MODE_LINEAR }; snapFor = bmp }
         val bs = snapShader ?: return false
         host.getLocationOnScreen(loc)
         m.setScale(Ui.snapshotW / bmp.width.toFloat(), Ui.snapshotH / bmp.height.toFloat())
@@ -188,8 +188,7 @@ class LiquidCard(private val dp: Float) {
         shader.setInputShader("content", bs)
         // элемент внутри окна: его заливка поверх заливки окна, как если бы он лежал на стекле окна
         val tint = if (host.rootView === host) Ui.dialogBlurColor() else Ui.over(fill, Ui.dialogBlurColor())
-        Liquid.uniforms(shader, r.left, r.top, r.width(), r.height(), radius, dp, if (host.rootView === host) fill else tint,
-            blur = 6 * dp)
+        Liquid.uniforms(shader, r.left, r.top, r.width(), r.height(), radius, dp, if (host.rootView === host) fill else tint)
         paint.shader = shader
         c.drawRect(r.left - 2, r.top - 2, r.right + 2, r.bottom + 2, paint)
         return true
@@ -200,7 +199,7 @@ class LiquidCard(private val dp: Float) {
         if (!c.isHardwareAccelerated || Liquid.capturing) return false
         val bmp = Ui.backdrop ?: return false
         if (host.rootView !== Ui.liquidRoot || Ui.backdropW <= 0) return false
-        if (bmpFor !== bmp) { bmpShader = BitmapShader(bmp, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP); bmpFor = bmp }
+        if (bmpFor !== bmp) { bmpShader = BitmapShader(bmp, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply { filterMode = BitmapShader.FILTER_MODE_LINEAR }; bmpFor = bmp }
         val bs = bmpShader ?: return false
         host.getLocationInWindow(loc)
         m.setScale(Ui.backdropW / bmp.width.toFloat(), Ui.backdropH / bmp.height.toFloat())
@@ -247,13 +246,13 @@ class LiquidBackdrop(private val host: View, private val sources: List<View>, ra
         val out = android.graphics.Bitmap.createBitmap((b.width() * scale).toInt().coerceAtLeast(1),
             (b.height() * scale).toInt().coerceAtLeast(1), android.graphics.Bitmap.Config.ARGB_8888)
         bmp = out
-        val bs = BitmapShader(out, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        val bs = BitmapShader(out, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply { filterMode = BitmapShader.FILTER_MODE_LINEAR }
         m.setScale(b.width() / out.width.toFloat(), b.height() / out.height.toFloat())
         m.postTranslate(b.left.toFloat(), b.top.toFloat())
         bs.setLocalMatrix(m)
         shader.setInputShader("content", bs)
         Liquid.uniforms(shader, b.left.toFloat(), b.top.toFloat(), b.width().toFloat(), b.height().toFloat(),
-            radius, dp, tint, blur = 3f * dp)
+            radius, dp, tint)
         paint.shader = shader
         shown = ""
     }
@@ -308,6 +307,8 @@ class LiquidBackdrop(private val host: View, private val sources: List<View>, ra
         } finally {
             Liquid.capturing = false
         }
+        // лёгкое плавное размытие (картинка в полразмера: 1,5 dp здесь ≈ 3 dp на экране)
+        Blur.apply(out, (1.5f * dp * out.width / bounds.width()).toInt().coerceAtLeast(1))
     }
 
     override fun draw(c: Canvas) {

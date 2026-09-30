@@ -69,13 +69,15 @@ object Ui {
     fun takeSnapshot() {
         val root = liquidRoot ?: return
         if (!liquid || root.width <= 0 || root.height <= 0) return
-        val q = 4
+        val q = 2
         val bmp = snapshot?.takeIf { it.width == root.width / q && it.height == root.height / q }
             ?: android.graphics.Bitmap.createBitmap(root.width / q, root.height / q, android.graphics.Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
         c.scale(1f / q, 1f / q)
         Liquid.capturing = true
         try { root.draw(c) } catch (e: Exception) { return } finally { Liquid.capturing = false }
+        // размываем сразу и плавно — как системное размытие под окном, без зерна
+        Blur.apply(bmp, (dp(root.context, 6f) / q).toInt().coerceAtLeast(1))
         val at = IntArray(2)
         root.getLocationOnScreen(at)
         snapshot = bmp

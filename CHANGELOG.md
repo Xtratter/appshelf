@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.8.9 — 2026-09-30
+
+- "Liquid glass": cleaner, grain-free blur under windows and the top bar — the snapshot behind windows is twice as sharp, sampled smoothly, and blurred with a proper smooth (near-Gaussian) blur instead of scattered samples that caused grain and ripples
+
 ## 1.8.8 — 2026-09-30
 
 - "Liquid glass": the rim is back to the 1.8.5 look — no rainbow outline and no heavy shading; windows keep refracting the screen behind them (1.8.7)
