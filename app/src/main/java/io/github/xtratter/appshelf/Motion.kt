@@ -43,6 +43,34 @@ object Motion {
 
     private fun overlayRoot(): ViewGroup? = Ui.liquidRoot as? ViewGroup
 
+    /**
+     * Снимок содержимого [v] без его фона (стеклом будет сама капля), в полразмера — хватает для анимации.
+     * null — вид ещё не разложен.
+     */
+    private fun capture(v: View): android.graphics.Bitmap? {
+        if (v.width <= 0 || v.height <= 0) return null
+        val bmp = android.graphics.Bitmap.createBitmap((v.width / 2).coerceAtLeast(1), (v.height / 2).coerceAtLeast(1),
+            android.graphics.Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        c.scale(bmp.width / v.width.toFloat(), bmp.height / v.height.toFloat())
+        Liquid.capturing = true
+        try {
+            if (v is ViewGroup) for (i in 0 until v.childCount) {
+                val ch = v.getChildAt(i)
+                if (ch.visibility != View.VISIBLE) continue
+                c.save()
+                c.translate(ch.left.toFloat(), ch.top.toFloat())
+                ch.draw(c)
+                c.restore()
+            } else v.draw(c)
+        } catch (e: Exception) {
+            return null
+        } finally {
+            Liquid.capturing = false
+        }
+        return bmp
+    }
+
     /** Прямоугольник вида в координатах главного окна. */
     private fun rectOf(v: View): RectF {
         val at = IntArray(2)
@@ -55,9 +83,10 @@ object Motion {
      * (пора показывать то, во что она превращается), [done] — в конце, капля уже убрана.
      */
     @TargetApi(33)
-    private fun flow(from: RectF, fromR: Float, to: RectF, toR: Float, ms: Long, atReveal: () -> Unit, done: () -> Unit) {
+    private fun flow(from: RectF, fromR: Float, to: RectF, toR: Float, ms: Long, content: android.graphics.Bitmap? = null,
+                     appear: Boolean = true, atReveal: () -> Unit, done: () -> Unit) {
         val root = overlayRoot() ?: run { atReveal(); done(); return }
-        val blob = Blob(root.context, from, fromR, to, toR)
+        val blob = Blob(root.context, from, fromR, to, toR, content, appear)
         root.addView(blob, ViewGroup.LayoutParams(-1, -1))
         var revealed = false
         ValueAnimator.ofFloat(0f, 1f).apply {
@@ -85,7 +114,10 @@ object Motion {
      */
     @TargetApi(33)
     @SuppressLint("ViewConstructor")
-    private class Blob(ctx: Context, val from: RectF, val fromR: Float, val to: RectF, val toR: Float) : View(ctx) {
+    private class Blob(ctx: Context, val from: RectF, val fromR: Float, val to: RectF, val toR: Float,
+                       val content: android.graphics.Bitmap?, val appear: Boolean) : View(ctx) {
+        private val contentPaint = android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG or android.graphics.Paint.ANTI_ALIAS_FLAG)
+        private val clip = android.graphics.Path()
         var t = 0f
         private val glass = LiquidCard(ctx.resources.displayMetrics.density)
         private val cur = RectF()
@@ -105,6 +137,18 @@ object Motion {
             if (cur.width() < 2 || cur.height() < 2) return
             val r = (fromR + (toR - fromR) * t.coerceIn(0f, 1f)).coerceAtMost(minOf(cur.width(), cur.height()) / 2f)
             glass.drawOverSnapshot(c, this, cur, r, 0)
+            // содержимое окна течёт вместе с каплей: растягивается по её форме, проявляется (или растворяется)
+            val bmp = content ?: return
+            val k = if (appear) ((t - 0.3f) / 0.6f) else (1f - t / 0.55f)
+            val a = k.coerceIn(0f, 1f)
+            if (a <= 0f) return
+            contentPaint.alpha = (a * 255).toInt()
+            clip.reset()
+            clip.addRoundRect(cur, r, r, android.graphics.Path.Direction.CW)
+            c.save()
+            c.clipPath(clip)
+            c.drawBitmap(bmp, null, cur, contentPaint)
+            c.restore()
         }
     }
 
@@ -141,7 +185,7 @@ object Motion {
             (at[0] - base[0] + decor.width).toFloat(), (at[1] - base[1] + decor.height).toFloat())
         val toR = 28 * dp
         src.animate().alpha(0f).setDuration(90).start()
-        flow(from, fromR, to, toR, 380, atReveal = {
+        flow(from, fromR, to, toR, 380, content = capture(decor), appear = true, atReveal = {
             decor.animate().alpha(1f).setDuration(110).start()
         }) {
             // фон позади окна затемняется и размывается плавно, когда окно уже на месте
@@ -158,13 +202,14 @@ object Motion {
                 start()
             }
         }
-        // закрыли — окно стекает обратно в кнопку
+        // закрыли — окно стекает обратно в кнопку (со своим содержимым, каким оно было в момент закрытия)
         decor.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) {}
             override fun onViewDetachedFromWindow(v: View) {
+                val shot = capture(decor)
                 v.removeOnAttachStateChangeListener(this)
                 val back = if (src.isAttachedToWindow) rectOf(src) else from
-                flow(to, toR, back, fromR, 300, atReveal = {
+                flow(to, toR, back, fromR, 300, content = shot, appear = false, atReveal = {
                     src.animate().alpha(1f).setDuration(100).start()
                 }) {}
             }
@@ -181,7 +226,7 @@ object Motion {
             val dp = box.resources.displayMetrics.density
             val from = rectOf(lens)
             val to = rectOf(box)
-            flow(from, from.height() / 2f, to, 26 * dp, 360,
+            flow(from, from.height() / 2f, to, 26 * dp, 360, content = capture(box), appear = true,
                 atReveal = { box.animate().alpha(1f).setDuration(100).start() }) {}
             done()
         }
@@ -194,9 +239,10 @@ object Motion {
         Ui.takeSnapshot()
         val from = rectOf(box)
         val to = rectOf(lens)
+        val shot = capture(box)
         box.visibility = View.GONE
         box.alpha = 1f
         done()
-        flow(from, 26 * dp, to, to.height() / 2f, 280, atReveal = {}) {}
+        flow(from, 26 * dp, to, to.height() / 2f, 280, content = shot, appear = false, atReveal = {}) {}
     }
 }

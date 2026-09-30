@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.14.1 — 2026-09-30
+
+- The flowing glass is no longer empty: the window's content (text, buttons, cards) travels inside the drop, stretched to its shape — it fades in while the drop grows and fades out while it flows back into the button; the same for the search field
+
 ## 1.14 — 2026-09-30
 
 - **The glass really flows now**: the tapped button (the ⋮ menu, "Save & restore", an app in the list) turns into its window — a glass drop flows out of it and stretches into the window, the leading edge first and the trailing one catching up; when the window closes, it flows back into the button. The search field flows out of the magnifier and back. The background behind a window is dimmed and blurred only once the window is in place
