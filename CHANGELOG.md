@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.10 — 2026-09-30
+
+- **"Liquid glass" is the default theme** and no longer experimental; it comes first in the theme list, and long-pressing the title returns to it (on Android older than 13, where its shaders are unavailable, the default stays standard)
+- **Font choice** (menu → Font): Cascadia Mono — a monospaced font by Microsoft in the spirit of Consolas, with full Cyrillic — by default, the system font or system monospace. Consolas itself is a paid font and cannot be bundled with a free app
+
 ## 1.9.1 — 2026-09-30
 
 - "Liquid glass": the top bar no longer flashes black while scrolling — what is under it is drawn into one of three pictures in turn, and only a finished one goes on screen (before, the screen sometimes caught the single picture halfway through being redrawn)

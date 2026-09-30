@@ -108,13 +108,17 @@
     <string name="th_amoled">AMOLED (чёрная)</string>
     <string name="th_light">Светлая</string>
     <string name="th_graphite">Графит</string>
-    <string name="th_liquid">Жидкое стекло (эксперимент)</string>
+    <string name="th_liquid">Жидкое стекло</string>
     <string name="glass_clarity">Прозрачность стекла</string>
     <string name="glass_clarity_btn">Прозрачность…</string>
     <string name="glass_clarity_text">Насколько сквозь стекло видно то, что за ним: матовое и спокойное или прозрачное, как в iOS. Это окно меняется, пока двигаете ползунок; весь экран обновится, когда закроете его.</string>
     <string name="glass_matte">Матовое</string>
     <string name="glass_clear">Прозрачное</string>
     <string name="glass_clarity_value">Прозрачность: %d%%</string>
+    <string name="font">Шрифт</string>
+    <string name="font_cascadia">Cascadia Mono (как Consolas)</string>
+    <string name="font_system">Системный</string>
+    <string name="font_mono">Системный моноширинный</string>
     <string name="th_toast">Тема: %1$s</string>
 
 

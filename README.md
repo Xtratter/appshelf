@@ -26,9 +26,11 @@ which apps are missing and opens each one in the right store.
 - **Save & restore** in one window: file, share, autosave, WebDAV, which apps go into the list
 - **Autosave**: pick a file once (a cloud drive, a memory card…) and the list is rewritten there every time you open the app
 - **Restore mode**: open a saved list — see how many apps are missing, show only those, and tap to install each from its store
-- **Material 3 "liquid glass" design**: translucent cards over a soft colored background, colors follow the wallpaper
-  (Android 12+). Themes: standard, follow system, AMOLED black, light, graphite, and the experimental "liquid glass" like in iOS 26 (Android 13+, with adjustable transparency) — tap the "AppShelf" title to
-  switch to the next one, long-press it to go back to the standard theme
+- **"Liquid glass" design like in iOS 26** (the default theme, Android 13+): the top bar and windows are real glass —
+  what is behind them shows through, bends at the edges with color fringes and a bright rim; the transparency is adjustable
+  (Theme → Transparency…), colors follow the wallpaper. Other themes: standard, follow system, AMOLED black, light, graphite —
+  tap the "AppShelf" title to switch to the next one, long-press it to go back to the default
+- **Font**: Cascadia Mono (like Consolas, by default), the system font or system monospace (menu → Font)
 
 ## Download
 
@@ -74,4 +76,5 @@ You need JDK 17 and the Android SDK (platform 35, build-tools 35.0.0). No librar
 
 ## License
 
-[GPL-3.0-or-later](LICENSE)
+[GPL-3.0-or-later](LICENSE). The bundled font Cascadia Mono © Microsoft Corporation is under the
+[SIL Open Font License 1.1](fonts/OFL-CascadiaMono.txt).

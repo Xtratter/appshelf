@@ -123,10 +123,34 @@ object Ui {
     /** Полупрозрачный «чернильный» цвет: белый в тёмных темах, чёрный в светлой (для линий, дорожек, кромок). */
     fun ink(alpha: Int) = (inkColor and 0xFFFFFF) or (alpha shl 24)
 
-    val medium: Typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
-    val bold: Typeface =
+    // шрифты интерфейса — по выбранному шрифту (applyFont)
+    var medium: Typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL); private set
+    var bold: Typeface =
         if (Build.VERSION.SDK_INT >= 28) Typeface.create(Typeface.DEFAULT, 700, false) else Typeface.DEFAULT_BOLD
-    val regular: Typeface = Typeface.DEFAULT
+        private set
+    var regular: Typeface = Typeface.DEFAULT; private set
+
+    /** Выбрать шрифт: обычное, среднее и жирное начертания для надписей, которые рисуются вручную. */
+    fun applyFont(ctx: Context, f: AppFont) {
+        fun weights(base: Typeface) {
+            if (Build.VERSION.SDK_INT >= 28) {
+                regular = Typeface.create(base, 400, false)
+                medium = Typeface.create(base, 500, false)
+                bold = Typeface.create(base, 700, false)
+            } else {
+                regular = base; medium = base; bold = Typeface.create(base, Typeface.BOLD)
+            }
+        }
+        when (f) {
+            AppFont.CASCADIA -> weights(ctx.resources.getFont(R.font.cascadia))
+            AppFont.MONO -> weights(Typeface.MONOSPACE)
+            AppFont.SYSTEM -> {
+                regular = Typeface.DEFAULT
+                medium = Typeface.create("sans-serif-medium", Typeface.NORMAL)
+                bold = if (Build.VERSION.SDK_INT >= 28) Typeface.create(Typeface.DEFAULT, 700, false) else Typeface.DEFAULT_BOLD
+            }
+        }
+    }
 
     /** Какая тема применена сейчас (null — ещё никакая). */
     var theme: Theme? = null; private set

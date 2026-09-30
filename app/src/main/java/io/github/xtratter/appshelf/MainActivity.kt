@@ -74,6 +74,9 @@ class MainActivity : Activity() {
         // тема может смениться и без нас: «как в системе» при переключении тёмного режима
         if (!Ui.isCurrent(this, prefs.theme())) Ui.apply(this, prefs.theme())
         setTheme(if (Ui.light) R.style.AppTheme_Light else R.style.AppTheme)
+        // шрифт — наложением на тему: его получат все надписи, в том числе в окнах и системных списках
+        theme.applyStyle(prefs.font().style, true)
+        Ui.applyFont(this, prefs.font())
         super.onCreate(savedInstanceState)
         Ui.forgetDialogs()
         setupWindow()
@@ -204,7 +207,7 @@ class MainActivity : Activity() {
         // нажатие на название — следующая тема по кругу, удержание — тема по умолчанию
         findViewById<TextView>(R.id.title).apply {
             setOnClickListener { val all = Theme.entries; switchTheme(all[(prefs.theme().ordinal + 1) % all.size]) }
-            setOnLongClickListener { switchTheme(Theme.STANDARD); true }
+            setOnLongClickListener { switchTheme(Theme.DEFAULT); true }
         }
         findViewById<View>(R.id.btnSearch).setOnClickListener { showSearch(searchBox.visibility != View.VISIBLE) }
         findViewById<View>(R.id.btnSearchClose).setOnClickListener { showSearch(false) }
@@ -760,6 +763,7 @@ class MainActivity : Activity() {
         item(R.string.catalog_title) { CatalogDialog.show(this) }
         item(R.string.show_system, prefs.showSystem) { prefs.showSystem = !prefs.showSystem; render() }
         item(R.string.theme) { themeDialog() }
+        item(R.string.font) { fontDialog() }
         item(R.string.about) { about() }
         dialog.show()
         Ui.glassDialog(dialog)
@@ -787,6 +791,17 @@ class MainActivity : Activity() {
         // у «жидкого стекла» — своя настройка прозрачности
         if (Ui.liquid) b.setNeutralButton(R.string.glass_clarity_btn) { _, _ -> clarityDialog() }
         b.show().also { Ui.glassDialog(it) }
+    }
+
+    private fun fontDialog() {
+        val fonts = AppFont.entries
+        AlertDialog.Builder(this)
+            .setTitle(R.string.font)
+            .setSingleChoiceItems(fonts.map { getString(it.title) }.toTypedArray(), fonts.indexOf(prefs.font())) { d, i ->
+                d.dismiss()
+                if (fonts[i] != prefs.font()) { prefs.font = fonts[i].name; recreate() }
+            }
+            .show().also { Ui.glassDialog(it) }
     }
 
     /** Прозрачность стекла: ползунок «матовое — прозрачное»; само окно меняется сразу, экран — при закрытии. */

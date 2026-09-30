@@ -8,8 +8,11 @@ import kotlin.reflect.KProperty
 class Prefs(ctx: Context) {
     private val sp = ctx.applicationContext.getSharedPreferences("prefs", Context.MODE_PRIVATE)
 
-    var theme by str("theme", Theme.STANDARD.name)
-    fun theme(): Theme = runCatching { Theme.valueOf(theme) }.getOrDefault(Theme.STANDARD)
+    var theme by str("theme", Theme.DEFAULT.name)
+    fun theme(): Theme = runCatching { Theme.valueOf(theme) }.getOrDefault(Theme.DEFAULT)
+
+    var font by str("font", AppFont.CASCADIA.name)
+    fun font(): AppFont = runCatching { AppFont.valueOf(font) }.getOrDefault(AppFont.CASCADIA)
 
     /** Показывать системные приложения (предустановленные, без обновлений из магазина — тоже). */
     var showSystem by bool("show_system", false)
