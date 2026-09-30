@@ -216,6 +216,21 @@ object Ui {
     /** Вызывается, когда закрылся последний диалог. */
     var onDialogsClosed: (() -> Unit)? = null
 
+    /** Убрать фон у служебных панелей диалога и у рамок между окном и содержимым (наше содержимое не трогаем). */
+    private fun clearPanels(decor: View) {
+        val res = decor.resources
+        for (name in listOf("parentPanel", "topPanel", "title_template", "contentPanel", "scrollView",
+            "customPanel", "custom", "buttonPanel")) {
+            val id = res.getIdentifier(name, "id", "android")
+            if (id != 0) decor.findViewById<View>(id)?.background = null
+        }
+        var v: View? = decor.findViewById<View>(android.R.id.content)
+        while (v != null && v !== decor) {
+            v.background = null
+            v = v.parent as? View
+        }
+    }
+
     /** Оформить диалог стеклом; на Android 12+ ещё и размыть то, что под ним. */
     fun glassDialog(d: AlertDialog) {
         val w = d.window ?: return
@@ -240,6 +255,10 @@ object Ui {
             w.attributes = w.attributes.apply { blurBehindRadius = dp(ctx, 10f).toInt() }
         }
         w.setDimAmount(0.35f)
+        // стекло полупрозрачное: системная тень окна просвечивала у краёв, а внутренние панели диалога
+        // могли иметь свою подложку — вместе это выглядело как светлая «рамка» внутри окна
+        w.setElevation(0f)
+        clearPanels(w.decorView)
         listOf(AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL)
             .forEach { d.getButton(it)?.setTextColor(primary) }
     }

@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.8.4 — 2026-09-30
+
+- No faint light "frame" inside windows anymore: glass windows cast no system shadow (it showed through the translucent glass near the edges) and the dialog's inner panels have no backing of their own
+
 ## 1.8.3 — 2026-09-30
 
 - "Liquid glass": the top bar is drawn from a copy of what is under it with the same lens as the cards — it no longer drifts or gets cut off
