@@ -17,7 +17,9 @@ which apps are missing and opens each one in the right store.
 - **Choose what goes into the list**: "Choose apps…" in the save dialog — checkboxes, search and select all / none;
   apps you leave out are not saved, shared or autosaved (you can also do it from an app's card)
 - **WebDAV sync on a schedule**: Nextcloud, ownCloud, Yandex Disk, a NAS — every day, on chosen days of the week
-  or every N days at a set time, optionally only over Wi-Fi; on a new phone open the list straight from the server
+  or every N days at a set time, optionally only over Wi-Fi; keeps the last versions (10 by default);
+  on a new phone open the list straight from the server
+- **Save & export** in one window: file, share, autosave, WebDAV, which apps go into the list
 - **Autosave**: pick a file once (a cloud drive, a memory card…) and the list is rewritten there every time you open the app
 - **Restore mode**: open a saved list — see how many apps are missing, show only those, and tap to install each from its store
 - **Material 3 "liquid glass" design**: translucent cards over a soft colored background, colors follow the wallpaper

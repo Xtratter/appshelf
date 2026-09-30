@@ -36,6 +36,8 @@ class Prefs(ctx: Context) {
         set(v) = sp.edit().putString("dav_pass", if (v.isEmpty()) "" else Secret.encrypt(v)).apply()
     /** Имя файла на сервере; пустое — «AppShelf-<телефон>.json». */
     var davFile by str("dav_file", "")
+    /** Сколько последних версий хранить на сервере; 1 — один файл, который каждый раз перезаписывается. */
+    var davKeep by int("dav_keep", 10)
 
     var syncRepeat by str("sync_repeat", Repeat.OFF.name)
     /** По умолчанию — будни (Calendar: 1 = воскресенье … 7 = суббота). */

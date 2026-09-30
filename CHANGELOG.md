@@ -2,6 +2,13 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.4 — 2026-09-30
+
+- **Save & export** — one window for every way to save the list: to a file (JSON / Markdown / CSV), share, autosave, WebDAV sync and which apps go into the list; each item shows its current state. It opens from the ⬇ button, the summary card and the menu
+- **Versions on the server**: every send is a separate file with the date and time ("AppShelf-POCO F3_2026-09-30_135307.json"); choose how many to keep (10 by default, 1 — a single file as before), older ones are deleted
+- **Leaving restore mode**: when the last missing app is installed, AppShelf offers to go back to your apps; with nothing missing the card shows one "Back to my apps" button; the Back gesture also leaves restore mode
+- "Open a saved list" asks where from: a file or the WebDAV server
+
 ## 1.3.1 — 2026-09-30
 
 - When Android, a VPN or a firewall blocks AppShelf from the network, WebDAV sync now says so and where to allow it, instead of "socket failed: ECONNREFUSED"

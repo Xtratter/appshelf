@@ -175,7 +175,7 @@ class MainActivity : Activity() {
         }
         findViewById<View>(R.id.btnSearch).setOnClickListener { showSearch(searchBox.visibility != View.VISIBLE) }
         findViewById<View>(R.id.btnSearchClose).setOnClickListener { showSearch(false) }
-        findViewById<View>(R.id.btnSave).setOnClickListener { askSave() }
+        findViewById<View>(R.id.btnSave).setOnClickListener { SaveDialog.show(this) }
         findViewById<View>(R.id.btnMore).setOnClickListener { showMenu(it) }
         searchField.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
@@ -221,13 +221,44 @@ class MainActivity : Activity() {
             val apps = Apps.load(this)
             main.post {
                 if (isDestroyed) return@post
+                val missingBefore = missingCount()
                 installed = apps
                 installedPkgs = apps.mapTo(HashSet()) { it.pkg }
                 labels.clear()
                 Icons.forgetMissing()
                 render()
                 autosave()
+                // последнее недостающее приложение установлено — предлагаем вернуться к своему списку
+                if (missingBefore != null && missingBefore > 0 && missingCount() == 0) restoredDialog()
             }
+        }
+    }
+
+    /** Сколько приложений из открытого списка не установлено; null — список не открыт. */
+    private fun missingCount(): Int? = restore?.let { s -> visible(s.apps).count { it.pkg !in installedPkgs } }
+
+    private fun closeRestore() {
+        restore = null; missingOnly = false; filter = null
+        list.setSelection(0)
+        render()
+    }
+
+    private fun restoredDialog() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.restored_title)
+            .setMessage(getString(R.string.restored_text, current()?.size ?: 0))
+            .setPositiveButton(R.string.back_to_mine) { _, _ -> closeRestore() }
+            .setNegativeButton(R.string.stay, null)
+            .show().also { Ui.glassDialog(it) }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        // «назад»: сначала закрыть поиск, потом выйти из восстановления, потом — из приложения
+        when {
+            searchBox.visibility == View.VISIBLE -> showSearch(false)
+            restore != null -> closeRestore()
+            else -> @Suppress("DEPRECATION") super.onBackPressed()
         }
     }
 
@@ -345,12 +376,8 @@ class MainActivity : Activity() {
                 }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14f) })
             }
             // без выравнивания по тексту: у кнопки с уменьшенным шрифтом базовая линия ниже, и её бы сдвинуло и обрезало
-            val buttons = LinearLayout(this).apply { isBaselineAligned = false }
-            buttons.addView(button(getString(R.string.save_list), true) { askSave() }, LinearLayout.LayoutParams(0, dp(44f), 1f))
-            buttons.addView(button(getString(if (prefs.autosaveUri.isEmpty()) R.string.autosave_off else R.string.autosave_on), false) {
-                autosaveDialog()
-            }, LinearLayout.LayoutParams(0, dp(44f), 1f).apply { leftMargin = dp(10f) })
-            summary.addView(buttons)
+            summary.addView(button(getString(R.string.save_export), true) { SaveDialog.show(this) },
+                LinearLayout.LayoutParams(-1, dp(44f)))
         } else {
             val missing = apps.count { it.pkg !in installedPkgs }
             summary.addView(text(13f, Ui.primary, Ui.medium).apply { setText(R.string.restore_title) })
@@ -368,19 +395,23 @@ class MainActivity : Activity() {
                 setPadding(0, dp(2f), 0, dp(14f))
             })
             // без выравнивания по тексту: у кнопки с уменьшенным шрифтом базовая линия ниже, и её бы сдвинуло и обрезало
+            if (missing == 0) {
+                // всё восстановлено — одна понятная кнопка обратно
+                summary.addView(button(getString(R.string.back_to_mine), true) { closeRestore() }, LinearLayout.LayoutParams(-1, dp(44f)))
+                return
+            }
             val buttons = LinearLayout(this).apply { isBaselineAligned = false }
             buttons.addView(button(getString(if (missingOnly) R.string.show_all else R.string.show_missing), true) {
                 missingOnly = !missingOnly; render()
             }, LinearLayout.LayoutParams(0, dp(44f), 1f))
-            buttons.addView(button(getString(R.string.close_list), false) {
-                restore = null; missingOnly = false; filter = null; render()
-            }, LinearLayout.LayoutParams(0, dp(44f), 1f).apply { leftMargin = dp(10f) })
+            buttons.addView(button(getString(R.string.close_list), false) { closeRestore() },
+                LinearLayout.LayoutParams(0, dp(44f), 1f).apply { leftMargin = dp(10f) })
             summary.addView(buttons)
         }
     }
 
     /** Строка про WebDAV в сводке: ошибка последней отправки или когда следующая; null — расписания нет. */
-    private fun syncLine(): Pair<String, Boolean>? {
+    fun syncLine(): Pair<String, Boolean>? {
         if (prefs.syncLast > 0 && !prefs.syncOk && prefs.davUrl.isNotEmpty())
             return getString(R.string.dav_line_fail, timeFmt.format(Date(prefs.syncLast)), prefs.syncMsg) to true
         val next = prefs.syncNext.takeIf { Sync.enabled(prefs) && it > 0 } ?: return null
@@ -451,24 +482,31 @@ class MainActivity : Activity() {
     }
 
     /** Выбор приложений для списка; [then] — что сделать после «Готово» (например, вернуться к сохранению). */
-    private fun selectApps(then: (() -> Unit)? = null) {
+    /** Сколько приложений войдёт в список и сколько всего; null — ещё загружаются. */
+    fun includedCount(): Pair<Int, Int>? {
+        val all = installed?.let { visible(it) } ?: return null
+        val excl = prefs.excluded
+        return all.count { it.pkg !in excl } to all.size
+    }
+
+    /** Файл автосохранения; null — выключено. */
+    fun autosaveName(): String? = prefs.autosaveUri.takeIf { it.isNotEmpty() }?.let { fileName(Uri.parse(it)) }
+
+    fun selectApps(then: (() -> Unit)? = null) {
         val apps = installed?.let { ListFile.sorted(visible(it)) } ?: return
         SelectDialog.show(this, apps, prefs.excluded) { excl -> setExcluded(excl); then?.invoke() }
     }
 
     private fun sourceName(s: Source) = getString(s.title)
 
-    private fun askSave() {
+    /** Сохранить в файл: выбор формата, затем системный выбор места. */
+    fun saveToFile() {
         val formats = Format.entries
-        val all = installed?.let { visible(it) } ?: return
-        val excl = prefs.excluded
-        val included = all.count { it.pkg !in excl }
-        val names = arrayOf(getString(R.string.fmt_json), getString(R.string.fmt_md), getString(R.string.fmt_csv),
-            getString(R.string.select_item, included, all.size))
+        if (installed == null) return
+        val names = arrayOf(getString(R.string.fmt_json), getString(R.string.fmt_md), getString(R.string.fmt_csv))
         AlertDialog.Builder(this)
-            .setTitle(R.string.save_list)
+            .setTitle(R.string.save_file)
             .setItems(names) { _, i ->
-                if (i == formats.size) return@setItems selectApps { askSave() }
                 pendingFormat = formats[i]
                 val day = ListFile.date(System.currentTimeMillis())
                 startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
@@ -481,7 +519,7 @@ class MainActivity : Activity() {
             .show().also { Ui.glassDialog(it) }
     }
 
-    private fun share() {
+    fun share() {
         val s = snapshot() ?: return
         val text = ListFile.write(s, Format.MARKDOWN, ::sourceName)
         startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
@@ -532,7 +570,7 @@ class MainActivity : Activity() {
         }
     }
 
-    private fun autosaveDialog() {
+    fun autosaveDialog() {
         val on = prefs.autosaveUri.isNotEmpty()
         val b = AlertDialog.Builder(this).setTitle(R.string.autosave)
         if (on) {
@@ -558,6 +596,18 @@ class MainActivity : Activity() {
             type = Format.JSON.mime
             putExtra(Intent.EXTRA_TITLE, "AppShelf.json")
         }, REQ_AUTOSAVE)
+    }
+
+    /** Открыть сохранённый список: из файла или, если WebDAV настроен, с сервера. */
+    private fun openFrom() {
+        if (prefs.davUrl.isEmpty()) return openList()
+        AlertDialog.Builder(this)
+            .setTitle(R.string.open_list)
+            .setItems(arrayOf(getString(R.string.open_from_file), getString(R.string.open_from_server))) { _, i ->
+                if (i == 0) openList() else SyncDialog.openFromServer(this)
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show().also { Ui.glassDialog(it) }
     }
 
     private fun openList() {
@@ -620,11 +670,8 @@ class MainActivity : Activity() {
         pm.menu.findItem(R.id.m_system).isChecked = prefs.showSystem
         pm.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                R.id.m_save -> askSave()
-                R.id.m_share -> share()
-                R.id.m_autosave -> autosaveDialog()
-                R.id.m_open -> openList()
-                R.id.m_webdav -> SyncDialog.show(this)
+                R.id.m_save -> SaveDialog.show(this)
+                R.id.m_open -> openFrom()
                 R.id.m_system -> { prefs.showSystem = !prefs.showSystem; render() }
                 R.id.m_theme -> themeDialog()
                 R.id.m_about -> about()

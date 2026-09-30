@@ -39,6 +39,25 @@
     <string name="saved_to">Сохранено: %s</string>
     <string name="save_failed">Не удалось сохранить: %s</string>
 
+    <string name="save_export">Сохранение и экспорт</string>
+    <string name="save_file">Сохранить в файл</string>
+    <string name="save_file_sub">JSON для восстановления, Markdown для чтения, CSV для таблиц</string>
+    <string name="share_sub">Текстом — в мессенджер или заметки</string>
+    <string name="autosave_sub_on">Перезаписывается при каждом открытии: %s</string>
+    <string name="autosave_sub_off">Выключено · файл, который обновляется сам при каждом открытии</string>
+    <string name="dav_sub_off">Выключено · отправка списка на свой сервер по расписанию</string>
+    <string name="dav_sub_manual">Сервер настроен · без расписания</string>
+    <string name="select_sub">В список входят %1$d из %2$d</string>
+    <string name="restored_title">Всё восстановлено 🎉</string>
+    <string name="restored_text">Все приложения из списка (%d) установлены. Вернуться к приложениям этого телефона?</string>
+    <string name="back_to_mine">Вернуться к моему списку</string>
+    <string name="stay">Остаться</string>
+    <string name="open_from_file">Из файла</string>
+    <string name="open_from_server">С сервера WebDAV</string>
+    <string name="dav_keep">Хранить версий: %d</string>
+    <string name="dav_keep_one">Один файл, который перезаписывается при каждой отправке.</string>
+    <string name="dav_keep_many">Каждая отправка — отдельный файл с датой и временем; более старые сверх этого числа удаляются.</string>
+
     <string name="autosave">Автосохранение</string>
     <string name="autosave_off">Автосохранение</string>
     <string name="autosave_on">✓ Автосохранение</string>

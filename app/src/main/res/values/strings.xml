@@ -38,6 +38,25 @@
     <string name="saved_to">Saved: %s</string>
     <string name="save_failed">Could not save: %s</string>
 
+    <string name="save_export">Save &amp; export</string>
+    <string name="save_file">Save to a file</string>
+    <string name="save_file_sub">JSON to restore, Markdown to read, CSV for spreadsheets</string>
+    <string name="share_sub">As text — to a messenger or notes</string>
+    <string name="autosave_sub_on">Rewritten on every launch: %s</string>
+    <string name="autosave_sub_off">Off · a file that updates itself every time you open the app</string>
+    <string name="dav_sub_off">Off · send the list to your server on a schedule</string>
+    <string name="dav_sub_manual">Server set up · no schedule</string>
+    <string name="select_sub">%1$d of %2$d go into the list</string>
+    <string name="restored_title">Everything is restored 🎉</string>
+    <string name="restored_text">All apps from the list (%d) are installed. Go back to the apps on this phone?</string>
+    <string name="back_to_mine">Back to my apps</string>
+    <string name="stay">Stay</string>
+    <string name="open_from_file">From a file</string>
+    <string name="open_from_server">From the WebDAV server</string>
+    <string name="dav_keep">Keep versions: %d</string>
+    <string name="dav_keep_one">One file, rewritten on every send.</string>
+    <string name="dav_keep_many">Each send is a separate file with the date and time; older ones beyond this number are deleted.</string>
+
     <string name="autosave">Autosave</string>
     <string name="autosave_off">Autosave</string>
     <string name="autosave_on">✓ Autosave</string>

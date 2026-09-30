@@ -55,6 +55,11 @@ class WebDav(folderUrl: String, private val user: String, private val pass: Stri
         } else ok(r)
     }
 
+    fun delete(name: String) {
+        val r = request("DELETE", fileUrl(name))
+        if (r.code != 404) ok(r)
+    }
+
     fun get(name: String): ByteArray = ok(request("GET", fileUrl(name))).body
 
     /** Файлы в папке (без вложенных папок). */

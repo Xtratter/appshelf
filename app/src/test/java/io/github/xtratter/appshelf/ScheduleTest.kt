@@ -65,4 +65,21 @@ class ScheduleTest {
         assertEquals("AppShelf-POCO%20F3.json", WebDav.encodeSegment("AppShelf-POCO F3.json"))
         assertEquals("a%2Fb%3Fc", WebDav.encodeSegment("a/b?c"))
     }
+
+    @Test
+    fun versions() {
+        val ms = t("2026-09-30 13:53")
+        assertEquals("AppShelf-POCO F3_2026-09-30_135300.json", ListFile.versionName("AppShelf-POCO F3.json", ms, tz))
+        assertEquals("list_2026-09-30_135300", ListFile.versionName("list", ms, tz))
+        val names = listOf(
+            "AppShelf-POCO F3.json",                       // старый файл без даты не трогаем
+            "AppShelf-POCO F3_2026-09-28_210000.json",
+            "AppShelf-POCO F3_2026-09-30_135300.json",
+            "AppShelf-POCO F3_2026-09-29_210000.json",
+            "AppShelf-Pixel 8_2026-09-01_210000.json",     // другой телефон
+            "notes.md",
+        )
+        assertEquals(listOf("AppShelf-POCO F3_2026-09-28_210000.json"), ListFile.oldVersions(names, "AppShelf-POCO F3.json", 2))
+        assertEquals(emptyList<String>(), ListFile.oldVersions(names, "AppShelf-POCO F3.json", 10))
+    }
 }

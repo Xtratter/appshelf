@@ -88,6 +88,28 @@ object SyncDialog {
         server.addView(pass, gap(8f))
         server.addView(label(a.getString(R.string.dav_file_label), 12f, Ui.TEXT3, 10f))
         server.addView(file)
+
+        // сколько версий хранить: − N +
+        var keep = p.davKeep
+        val keepRow = LinearLayout(a).apply { gravity = Gravity.CENTER_VERTICAL; setPadding(0, px(10f), 0, 0) }
+        val keepText = TextView(a).apply { textSize = 15f; setTextColor(Ui.TEXT) }
+        val keepHint = label("", 12f, Ui.TEXT3, 4f)
+        fun showKeep() {
+            keepText.text = a.getString(R.string.dav_keep, keep)
+            keepHint.setText(if (keep <= 1) R.string.dav_keep_one else R.string.dav_keep_many)
+        }
+        fun stepKeep(d: Int) {
+            val steps = intArrayOf(1, 2, 3, 5, 7, 10, 15, 20, 30, 50)
+            val i = steps.indexOfFirst { it >= keep }.let { if (it < 0) steps.size - 1 else it }
+            keep = steps[(i + d).coerceIn(0, steps.size - 1)]
+            showKeep()
+        }
+        keepRow.addView(keepText, LinearLayout.LayoutParams(0, -2, 1f))
+        keepRow.addView(pill("−") { stepKeep(-1) }, LinearLayout.LayoutParams(px(52f), px(40f)))
+        keepRow.addView(pill("+") { stepKeep(1) }, LinearLayout.LayoutParams(px(52f), px(40f)).apply { leftMargin = px(8f) })
+        server.addView(keepRow)
+        server.addView(keepHint)
+        showKeep()
         box.addView(server, gap(12f))
 
         val status = label("", 13.5f, Ui.TEXT2, 10f)
@@ -111,6 +133,7 @@ object SyncDialog {
             p.davUser = user.text.toString().trim()
             p.davPass = pass.text.toString()
             p.davFile = file.text.toString().trim()
+            p.davKeep = keep
             return true
         }
 
@@ -245,8 +268,7 @@ object SyncDialog {
             .setNegativeButton(android.R.string.cancel, null)
             .create()
         box.addView(pill(a.getString(R.string.dav_open)) {
-            network({ Sync.dav(p).list().filter { it.name.endsWith(".json", true) || it.name.endsWith(".csv", true) }
-                .sortedByDescending { it.modified } }) { r ->
+            network({ serverLists(p) }) { r ->
                 @Suppress("UNCHECKED_CAST") val files = r as List<WebDav.Entry>
                 if (files.isEmpty()) { status.setTextColor(Ui.WARN); status.setText(R.string.dav_no_files); return@network }
                 status.text = ""
@@ -273,6 +295,28 @@ object SyncDialog {
             dialog.dismiss()
             a.refreshSummary()
         }
+    }
+
+    /** Списки в папке на сервере, самые свежие сверху. */
+    private fun serverLists(p: Prefs) = Sync.dav(p).list()
+        .filter { it.name.endsWith(".json", true) || it.name.endsWith(".csv", true) }
+        .sortedWith(compareByDescending<WebDav.Entry> { it.modified }.thenByDescending { it.name })
+
+    /** Открыть список с сервера (из меню «Открыть сохранённый список»). */
+    fun openFromServer(a: MainActivity) {
+        val p = Prefs(a)
+        android.widget.Toast.makeText(a, R.string.dav_connecting, android.widget.Toast.LENGTH_SHORT).show()
+        Thread {
+            val r = try { serverLists(p) } catch (e: Exception) { e }
+            a.runOnUiThread {
+                when {
+                    r is Exception -> android.widget.Toast.makeText(a, Sync.error(a, r), android.widget.Toast.LENGTH_LONG).show()
+                    (r as List<*>).isEmpty() -> android.widget.Toast.makeText(a, R.string.dav_no_files, android.widget.Toast.LENGTH_LONG).show()
+                    else -> @Suppress("UNCHECKED_CAST") pickFile(a, p, r as List<WebDav.Entry>,
+                        SimpleDateFormat("EEE, d MMM, HH:mm", Locale.getDefault())) {}
+                }
+            }
+        }.start()
     }
 
     /** Выбор списка с сервера — самые свежие сверху; выбранный открывается в режиме восстановления. */

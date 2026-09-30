@@ -176,6 +176,25 @@ object ListFile {
 
     private fun md(v: String) = v.replace("|", "\\|").replace("\n", " ")
 
+    // ---------- версии на сервере ----------
+
+    /** «AppShelf-POCO F3.json» → «AppShelf-POCO F3_2026-09-30_135307.json»: имя версии с датой и временем. */
+    fun versionName(base: String, ms: Long, tz: TimeZone = TimeZone.getDefault()): String {
+        val stamp = SimpleDateFormat("yyyy-MM-dd_HHmmss", Locale.ROOT).apply { timeZone = tz }.format(Date(ms))
+        val dot = base.lastIndexOf('.')
+        return if (dot > 0) base.substring(0, dot) + "_" + stamp + base.substring(dot) else base + "_" + stamp
+    }
+
+    /** Версии этого файла среди [names], которые не входят в [keep] самых новых, — их можно удалить. */
+    fun oldVersions(names: List<String>, base: String, keep: Int): List<String> {
+        val dot = base.lastIndexOf('.')
+        val stem = if (dot > 0) base.substring(0, dot) else base
+        val ext = if (dot > 0) base.substring(dot) else ""
+        val re = Regex(Regex.escape(stem) + "_\\d{4}-\\d{2}-\\d{2}_\\d{6}" + Regex.escape(ext))
+        // дата в имени идёт от старших разрядов к младшим — по алфавиту это и есть по времени
+        return names.filter { re.matches(it) }.sortedDescending().drop(keep.coerceAtLeast(1))
+    }
+
     /** Прочитать сохранённый список (JSON или CSV — определяется по содержимому). */
     fun read(text: String): Snapshot {
         val t = text.trimStart('\uFEFF', ' ', '\n', '\r', '\t')

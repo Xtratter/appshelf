@@ -45,8 +45,17 @@ object Sync {
         val r = try {
             if (p.davUrl.isBlank()) throw IllegalStateException(ctx.getString(R.string.dav_no_server))
             val snap = Apps.snapshot(ctx, Apps.load(ctx), p)
-            val name = fileName(ctx, p)
-            dav(p).put(name, ListFile.write(snap, Format.JSON).toByteArray(Charsets.UTF_8), Format.JSON.mime)
+            val base = fileName(ctx, p)
+            val dav = dav(p)
+            val data = ListFile.write(snap, Format.JSON).toByteArray(Charsets.UTF_8)
+            val keep = p.davKeep
+            val name = if (keep <= 1) base else ListFile.versionName(base, snap.created)
+            dav.put(name, data, Format.JSON.mime)
+            // лишние старые версии удаляем; если не вышло — не страшно, список уже отправлен
+            if (keep > 1) try {
+                for (old in ListFile.oldVersions(dav.list().map { it.name }, base, keep)) dav.delete(old)
+            } catch (e: Exception) {
+            }
             p.lastSaved = snap.created
             p.lastSavedName = "WebDAV · $name"
             Result(true, name, false)
