@@ -149,6 +149,16 @@
         <item quantity="other">Uninstall %d apps?</item>
     </plurals>
     <string name="sel_uninstall_text">Android will ask to confirm each one. Cancelling one stops the rest. System apps are skipped.</string>
+    <string name="q_start">Install all one by one (%d)</string>
+    <string name="q_progress">Installing %1$d of %2$d</string>
+    <string name="q_installing">%s — install it and come back to AppShelf</string>
+    <string name="q_installed_next">%1$s installed ✓ Next: %2$s</string>
+    <string name="q_not_installed">%s is not installed yet</string>
+    <string name="q_open">Open</string>
+    <string name="q_retry">Try again</string>
+    <string name="q_skip">Skip</string>
+    <string name="q_stop">Stop</string>
+    <string name="q_done">Done: %1$d of %2$d installed</string>
     <string name="glass_clarity">Glass transparency</string>
     <string name="glass_clarity_btn">Transparency…</string>
     <string name="glass_clarity_text">How much of what is behind shows through the glass: frosted and calm, or clear. This window changes as you move the slider; the whole screen updates when you close it.</string>

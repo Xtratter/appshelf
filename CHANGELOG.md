@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.20 — 2026-09-30
+
+- **Install all missing apps one by one**: in restore mode, "Install all one by one (N)" opens the first missing app where it comes from (your link or the catalog's, otherwise its store); a glass bar at the bottom shows "Installing 3 of 31 — Telegram". Come back to AppShelf once it is installed and the next one opens by itself; if it is not installed, choose Try again, Skip or Stop. At the end: "Done: N of M installed"
+
 ## 1.19 — 2026-09-30
 
 - **Select several apps**: long-press a row to start selecting, then tap rows to mark them (a highlight and a check on the icon). A glass bar at the bottom shows how many are selected and offers: All (everything shown, with filters and search), Leave out / Put back into the saved list, Share (as text, with links and notes) and Uninstall — AppShelf asks once, then Android confirms each app in turn; cancelling one stops the rest, system apps are skipped. ✕ or Back leaves the selection

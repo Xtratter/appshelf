@@ -143,6 +143,16 @@
         <item quantity="other">Удалить %d приложения?</item>
     </plurals>
     <string name="sel_uninstall_text">Android спросит подтверждение для каждого. Если отменить одно, остальные не удалятся. Системные приложения пропускаются.</string>
+    <string name="q_start">Установить все по очереди (%d)</string>
+    <string name="q_progress">Установка %1$d из %2$d</string>
+    <string name="q_installing">%s — установите и вернитесь в AppShelf</string>
+    <string name="q_installed_next">%1$s установлено ✓ Дальше: %2$s</string>
+    <string name="q_not_installed">%s пока не установлено</string>
+    <string name="q_open">Открыть</string>
+    <string name="q_retry">Ещё раз</string>
+    <string name="q_skip">Пропустить</string>
+    <string name="q_stop">Стоп</string>
+    <string name="q_done">Готово: установлено %1$d из %2$d</string>
     <string name="glass_clarity">Прозрачность стекла</string>
     <string name="glass_clarity_btn">Прозрачность…</string>
     <string name="glass_clarity_text">Насколько сквозь стекло видно то, что за ним: матовое и спокойное или прозрачное. Это окно меняется, пока двигаете ползунок; весь экран обновится, когда закроете его.</string>

@@ -27,7 +27,7 @@ which apps are missing and opens each one in the right store.
   GitHub / GitLab / Codeberg links can go straight to Obtainium, a direct .apk link is installed right in AppShelf. In restore mode the link comes before the store
 - **Save & restore** in one window: file, share, autosave, WebDAV, which apps go into the list
 - **Autosave**: pick a file once (a cloud drive, a memory card…) and the list is rewritten there every time you open the app
-- **Restore mode**: open a saved list — see how many apps are missing, show only those, and tap to install each from its store
+- **Restore mode**: open a saved list — see how many apps are missing, show only those, and tap to install each from its store — or **install all one by one**: AppShelf opens each missing app in turn and moves on as soon as it is installed
 - **"Liquid glass" like in iOS 26** (on by default, Android 13+; older Android gets the regular glass): the top bar
   and windows are real glass — what is behind them shows through, bends at the edges with color fringes and a bright rim; the glass flows: a tapped button turns into its window like a drop of liquid and the window flows back into it when closed; the search field flows out of the magnifier. The highlight follows the tilt of the phone, glass gives elastically under the finger.
   It is a checkbox in Theme and works with every theme; the transparency is adjustable (Theme → Transparency…)

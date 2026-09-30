@@ -230,7 +230,8 @@ class MainActivity : Activity() {
             topScrim.layoutParams = topScrim.layoutParams.apply { height = scrimH }
         }
         val top = topBar.height + dp(10f)
-        val bottom = insetBottom + dp(16f) + if (::selBar.isInitialized && selBar.visibility == View.VISIBLE) selBar.height + dp(12f) else 0
+        val bottom = insetBottom + dp(16f) + (if (::selBar.isInitialized && selBar.visibility == View.VISIBLE) selBar.height + dp(12f) else 0) +
+            (if (::qBar.isInitialized && qBar.visibility == View.VISIBLE) qBar.height + dp(12f) else 0)
         if (list.paddingTop != top || list.paddingBottom != bottom)
             list.post { list.setPadding(list.paddingLeft, top, list.paddingRight, bottom) }
     }
@@ -314,9 +315,111 @@ class MainActivity : Activity() {
                 render()
                 autosave()
                 // последнее недостающее приложение установлено — предлагаем вернуться к своему списку
-                if (missingBefore != null && missingBefore > 0 && missingCount() == 0) restoredDialog()
+                if (queueWaiting) queueReturned()
+                else if (missingBefore != null && missingBefore > 0 && missingCount() == 0) restoredDialog()
             }
         }
+    }
+
+    // ---------- установить все недостающие по очереди ----------
+
+    private var queue: List<AppInfo> = emptyList()
+    private var qIndex = 0
+    private var qDone = 0
+    /** Открыли магазин / ссылку и ждём возвращения, чтобы проверить, установилось ли. */
+    private var queueWaiting = false
+    private lateinit var qBar: LinearLayout
+    private lateinit var qTitle: TextView
+    private lateinit var qSub: TextView
+    private lateinit var qRetry: TextView
+
+    private fun startQueue() {
+        val snap = restore ?: return
+        queue = ListFile.sorted(visible(snap.apps).filter { it.pkg !in installedPkgs })
+        if (queue.isEmpty()) return
+        qIndex = 0; qDone = 0
+        if (!::qBar.isInitialized) buildQueueBar()
+        openCurrent()
+    }
+
+    /** Открыть, откуда ставить текущее: своя ссылка или из каталога, иначе магазин. */
+    private fun openCurrent() {
+        val a = queue.getOrNull(qIndex) ?: return finishQueue()
+        if (a.pkg in installedPkgs) { qIndex++; return openCurrent() }   // уже поставили вручную
+        showQueueBar(waitingFor = true)
+        queueWaiting = true
+        val link = LinkStore.forApp(this, a.pkg).firstOrNull()?.first
+        if (link != null) LinkStore.open(this, link, a.pkg, a.label) else Store.open(this, a)
+    }
+
+    /** Вернулись в AppShelf (список перечитан): установилось — дальше, нет — предложить «ещё раз» или «пропустить». */
+    private fun queueReturned() {
+        queueWaiting = false
+        val a = queue.getOrNull(qIndex) ?: return finishQueue()
+        if (a.pkg in installedPkgs) {
+            qDone++; qIndex++
+            Haptics.play(Haptics.Kind.SUCCESS)
+            if (qIndex >= queue.size) return finishQueue()
+            showQueueBar(waitingFor = false, justInstalled = a)
+            main.postDelayed({ if (::qBar.isInitialized && qBar.visibility == View.VISIBLE && !queueWaiting) openCurrent() }, 900)
+        } else showQueueBar(waitingFor = false, notInstalled = a)
+    }
+
+    private fun finishQueue() {
+        val total = queue.size
+        stopQueue()
+        if (total > 0) Toast.makeText(this, getString(R.string.q_done, qDone, total), Toast.LENGTH_LONG).show()
+        render()
+    }
+
+    private fun stopQueue() {
+        queueWaiting = false
+        queue = emptyList()
+        if (::qBar.isInitialized) { qBar.visibility = View.GONE; updateListPadding() }
+    }
+
+    /** Стеклянная панель снизу: «Установка 3 из 31 — Telegram» и «Ещё раз / Пропустить / Стоп». */
+    private fun buildQueueBar() {
+        val root = findViewById<android.widget.FrameLayout>(R.id.root)
+        qBar = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16f), dp(12f), dp(16f), dp(14f))
+            background = GlassDrawable(this@MainActivity, 28f, Ui.withAlpha(Ui.mix(Ui.base, Ui.surface, 0.6f), 0.92f))
+            elevation = Ui.dp(this@MainActivity, 8f)
+            visibility = View.GONE
+            isClickable = true
+        }
+        qTitle = text(16f, Ui.TEXT, Ui.medium)
+        qSub = text(13.5f, Ui.TEXT2).apply { setPadding(0, dp(2f), 0, 0) }
+        qBar.addView(qTitle)
+        qBar.addView(qSub)
+        val row = LinearLayout(this).apply { isBaselineAligned = false }
+        fun act(label: String, filled: Boolean, block: () -> Unit) = button(label, filled, block).also {
+            row.addView(it, LinearLayout.LayoutParams(0, dp(42f), 1f).apply { if (row.childCount > 0) leftMargin = dp(8f) })
+        }
+        qRetry = act(getString(R.string.q_retry), true) { openCurrent() }
+        act(getString(R.string.q_skip), false) { qIndex++; openCurrent() }
+        act(getString(R.string.q_stop), false) { finishQueue() }
+        qBar.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10f) })
+        root.addView(qBar, android.widget.FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM).apply {
+            leftMargin = dp(12f); rightMargin = dp(12f); bottomMargin = insetBottom + dp(12f)
+        })
+        qBar.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateListPadding() }
+    }
+
+    private fun showQueueBar(waitingFor: Boolean, justInstalled: AppInfo? = null, notInstalled: AppInfo? = null) {
+        val a = queue.getOrNull(qIndex)
+        qTitle.text = getString(R.string.q_progress, (qIndex + 1).coerceAtMost(queue.size), queue.size)
+        qSub.setTextColor(if (notInstalled != null) Ui.WARN else Ui.TEXT2)
+        qSub.text = when {
+            justInstalled != null -> getString(R.string.q_installed_next, justInstalled.label, a?.label.orEmpty())
+            notInstalled != null -> getString(R.string.q_not_installed, notInstalled.label)
+            else -> a?.let { getString(R.string.q_installing, it.label) }.orEmpty()
+        }
+        qRetry.text = getString(if (notInstalled != null) R.string.q_retry else R.string.q_open)
+        val lp = qBar.layoutParams as android.widget.FrameLayout.LayoutParams
+        if (lp.bottomMargin != insetBottom + dp(12f)) { lp.bottomMargin = insetBottom + dp(12f); qBar.layoutParams = lp }
+        if (qBar.visibility != View.VISIBLE) { qBar.visibility = View.VISIBLE; updateListPadding() }
     }
 
     // ---------- выбор нескольких приложений ----------
@@ -444,6 +547,7 @@ class MainActivity : Activity() {
     private fun missingCount(): Int? = restore?.let { s -> visible(s.apps).count { it.pkg !in installedPkgs } }
 
     private fun closeRestore() {
+        stopQueue()
         restore = null; missingOnly = false; filter = null; noLink = false
         list.setSelection(0)
         render()
@@ -621,8 +725,11 @@ class MainActivity : Activity() {
                 summary.addView(button(getString(R.string.back_to_mine), true) { closeRestore() }, LinearLayout.LayoutParams(-1, dp(44f)))
                 return
             }
+            // главное — поставить всё недостающее по очереди
+            summary.addView(button(getString(R.string.q_start, missing), true) { startQueue() },
+                LinearLayout.LayoutParams(-1, dp(44f)).apply { bottomMargin = dp(10f) })
             val buttons = LinearLayout(this).apply { isBaselineAligned = false }
-            buttons.addView(button(getString(if (missingOnly) R.string.show_all else R.string.show_missing), true) {
+            buttons.addView(button(getString(if (missingOnly) R.string.show_all else R.string.show_missing), false) {
                 missingOnly = !missingOnly; render()
             }, LinearLayout.LayoutParams(0, dp(44f), 1f))
             buttons.addView(button(getString(R.string.close_list), false) { closeRestore() },
