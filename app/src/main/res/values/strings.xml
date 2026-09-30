@@ -123,16 +123,11 @@
     <string name="glass_matte">Frosted</string>
     <string name="glass_clear">Clear</string>
     <string name="glass_clarity_value">Transparency: %d%%</string>
-    <string name="font">Font</string>
-    <string name="font_cascadia">Cascadia Mono (like Consolas)</string>
-    <string name="font_system">System</string>
-    <string name="font_mono">System monospace</string>
     <string name="liquid_sub">Glass that refracts what is behind it and flows like a drop — works with any theme</string>
     <string name="liquid_unavailable">Needs Android 13 or newer — the regular glass is used here</string>
     <string name="uninstall">Uninstall</string>
     <string name="uninstall_done">Uninstalled: %s</string>
     <string name="uninstall_failed">Could not uninstall: %s</string>
-    <string name="th_toast">Theme: %1$s</string>
 
 
     <string name="dav_title">WebDAV sync</string>

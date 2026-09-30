@@ -29,9 +29,7 @@ which apps are missing and opens each one in the right store.
 - **"Liquid glass" like in iOS 26** (on by default, Android 13+; older Android gets the regular glass): the top bar
   and windows are real glass — what is behind them shows through, bends at the edges with color fringes and a bright rim; the glass flows: a tapped button turns into its window like a drop of liquid and the window flows back into it when closed; the search field flows out of the magnifier.
   It is a checkbox in Theme and works with every theme; the transparency is adjustable (Theme → Transparency…)
-- **Themes**: standard, follow system, AMOLED black, light, graphite; colors follow the wallpaper (Android 12+) —
-  tap the "AppShelf" title to switch to the next one, long-press it to go back to the standard one
-- **Font**: Cascadia Mono (like Consolas, by default), the system font or system monospace (menu → Font)
+- **Themes**: standard, follow system, AMOLED black, light, graphite; colors follow the wallpaper (Android 12+)  (menu ⋮ → Theme)
 
 ## Download
 
@@ -78,5 +76,4 @@ You need JDK 17 and the Android SDK (platform 35, build-tools 35.0.0). No librar
 
 ## License
 
-[GPL-3.0-or-later](LICENSE). The bundled font Cascadia Mono © Microsoft Corporation is under the
-[SIL Open Font License 1.1](fonts/OFL-CascadiaMono.txt).
+[GPL-3.0-or-later](LICENSE).

@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.15 — 2026-09-30
+
+- Tapping the "AppShelf" title opens the app search (like the magnifier), no longer switches the theme; the theme is chosen in menu ⋮ → Theme
+- The font choice is gone together with the bundled Cascadia Mono — the system font is used everywhere, and the app is almost three times smaller (about 160 KB)
+
 ## 1.14.2 — 2026-09-30
 
 - "Liquid glass": when scrolling inside a window (for example "Save & restore"), the background seen through the glass buttons no longer slides along with them — the glass is redrawn while scrolling, so the background stays put like behind real glass

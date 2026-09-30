@@ -40,16 +40,6 @@
         <item name="android:windowMinWidthMinor">90%</item>
     </style>
 
-    <!-- шрифт интерфейса: накладывается на тему в MainActivity -->
-    <style name="Font" />
-    <style name="Font.Cascadia">
-        <item name="android:fontFamily">@font/cascadia</item>
-    </style>
-    <style name="Font.System" />
-    <style name="Font.Mono">
-        <item name="android:fontFamily">monospace</item>
-    </style>
-
     <style name="BarButton">
         <item name="android:layout_width">44dp</item>
         <item name="android:layout_height">44dp</item>

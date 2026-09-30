@@ -13,11 +13,3 @@ enum class Theme(val title: Int) {
         val DEFAULT: Theme get() = STANDARD
     }
 }
-
-/** Шрифт интерфейса: [style] — наложение на тему (android:fontFamily), чтобы шрифт получили все надписи. */
-enum class AppFont(val title: Int, val style: Int) {
-    /** Cascadia Mono (Microsoft, OFL) — моноширинный, похож на Consolas; по умолчанию. */
-    CASCADIA(R.string.font_cascadia, R.style.Font_Cascadia),
-    SYSTEM(R.string.font_system, R.style.Font_System),
-    MONO(R.string.font_mono, R.style.Font_Mono),
-}
