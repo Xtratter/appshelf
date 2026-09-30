@@ -96,9 +96,12 @@ class MainActivity : Activity() {
             val tint = Ui.withAlpha(Ui.base, Ui.barTintAlpha)
             bar.background = LiquidBackdrop(bar, listOf(list), 32f, tint)
             searchBox.background = LiquidBackdrop(searchBox, listOf(list), 26f, tint)
-            // мягкая тень: стекло «висит» над списком
+            // мягкая тень: стекло «висит» над списком; контейнер панели не должен обрезать её по своим отступам —
+            // иначе тень видна только прямоугольником в уголках у круглых концов панели
             bar.elevation = Ui.dp(this, 8f)
             searchBox.elevation = Ui.dp(this, 8f)
+            (topBar as? ViewGroup)?.apply { clipToPadding = false; clipChildren = false }
+            (topBar.parent as? ViewGroup)?.clipChildren = false
         } else {
             findViewById<View>(R.id.bar).background = GlassDrawable(this, 32f, barFill)
             searchBox.background = GlassDrawable(this, 26f, barFill)

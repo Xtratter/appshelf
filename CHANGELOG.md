@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.12.1 — 2026-09-30
+
+- "Liquid glass": the dark patches beside the ends of the top bar in light themes are gone — the bar's shadow was cut off by its container into a rectangle; now it falls softly around the whole bar
+
 ## 1.12 — 2026-09-30
 
 - **Uninstall apps** from the app card ("Uninstall", in red): Android asks to confirm, then the list updates. Not shown for system apps and for AppShelf itself
