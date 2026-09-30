@@ -2,6 +2,12 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.12 — 2026-09-30
+
+- **Uninstall apps** from the app card ("Uninstall", in red): Android asks to confirm, then the list updates. Not shown for system apps and for AppShelf itself
+- AMOLED theme: filled buttons and selected chips are black with a thin light outline and light text instead of the accent color
+- "Liquid glass": no more dark corners beside the ends of the top bar in light themes — the shadow now follows the fully rounded shape of the glass
+
 ## 1.11 — 2026-09-30
 
 - **"Liquid glass" is now a checkbox in Theme** instead of a separate theme — it works with every theme (standard, follow system, AMOLED, light, graphite; in the light theme the glass is light). On by default; on Android older than 13 the checkbox is unavailable and the regular glass is used. The "Liquid glass" theme chosen before becomes standard + checkbox, so nothing changes on screen

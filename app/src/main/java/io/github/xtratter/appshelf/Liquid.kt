@@ -340,7 +340,8 @@ class LiquidBackdrop(private val host: View, private val sources: List<View>, ra
         c.drawRect(bounds.left - 1f, bounds.top - 1f, bounds.right + 1f, bounds.bottom + 1f, paint)
     }
 
-    override fun getOutline(outline: Outline) = outline.setRoundRect(bounds, radius)
+    // тот же радиус, что у стекла (не больше половины высоты), иначе тень ложится прямоугольником в уголки
+    override fun getOutline(outline: Outline) = outline.setRoundRect(bounds, minOf(radius, bounds.height() / 2f, bounds.width() / 2f))
     override fun setAlpha(alpha: Int) {}
     override fun setColorFilter(colorFilter: ColorFilter?) {}
     @Deprecated("Deprecated in Java")

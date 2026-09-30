@@ -124,14 +124,15 @@ object DetailsDialog {
         box.addView(linksBox)
 
         // действия — тональные кнопки-«пилюли»; главная — залитая
-        fun action(text: String, main: Boolean = false, block: () -> Unit) {
+        fun action(text: String, main: Boolean = false, danger: Boolean = false, block: () -> Unit) {
             box.addView(TextView(a).apply {
                 this.text = text
                 gravity = Gravity.CENTER
                 textSize = 15f
                 typeface = Ui.medium
-                setTextColor(if (main) Ui.ON_ACCENT else Ui.primary)
+                setTextColor(if (main) Ui.ON_ACCENT else if (danger) Ui.HOT else Ui.primary)
                 background = if (main) Ui.pill(a, Ui.primary)
+                else if (danger) Ui.pill(a, Ui.withAlpha(Ui.HOT, 0.12f), Ui.withAlpha(Ui.HOT, 0.35f))
                 else Ui.pill(a, Ui.withAlpha(Ui.primary, 0.12f), Ui.withAlpha(Ui.primary, 0.3f))
                 foreground = Ui.ripple(a, 100f)
                 setOnClickListener { dialog.dismiss(); block() }
@@ -153,6 +154,9 @@ object DetailsDialog {
                 val out = a.isExcluded(app.pkg)
                 action(a.getString(if (out) R.string.include else R.string.exclude)) { a.toggleExcluded(app.pkg) }
             }
+            // системные удалить нельзя; AppShelf сам себя не удаляет
+            if (!app.system && app.pkg != a.packageName)
+                action(a.getString(R.string.uninstall), danger = true) { ApkInstaller.uninstall(a, app.pkg, app.label) }
         }
         action(a.getString(R.string.copy_pkg)) {
             a.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(app.label, app.pkg))

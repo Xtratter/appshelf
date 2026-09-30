@@ -129,6 +129,9 @@
     <string name="font_mono">System monospace</string>
     <string name="liquid_sub">Glass that refracts what is behind it, like in iOS 26 — works with any theme</string>
     <string name="liquid_unavailable">Needs Android 13 or newer — the regular glass is used here</string>
+    <string name="uninstall">Uninstall</string>
+    <string name="uninstall_done">Uninstalled: %s</string>
+    <string name="uninstall_failed">Could not uninstall: %s</string>
     <string name="th_toast">Theme: %1$s</string>
 
 

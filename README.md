@@ -42,6 +42,7 @@ Ready-made APKs are on the [Releases](https://github.com/Xtratter/appshelf/relea
 - `QUERY_ALL_PACKAGES` — without it Android 11+ shows an app just a few of the installed apps.
 - `INTERNET`, `ACCESS_NETWORK_STATE` — only for WebDAV sync, and only to the server you enter; nothing else goes online.
 - `REQUEST_INSTALL_PACKAGES` — to install an APK from a direct link (Android still asks you to confirm each install).
+- `REQUEST_DELETE_PACKAGES` — to uninstall an app from its card (Android asks you to confirm).
 - `RECEIVE_BOOT_COMPLETED` — to restore the sync schedule after a reboot.
 
 ## How it works

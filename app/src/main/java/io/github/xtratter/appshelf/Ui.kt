@@ -40,6 +40,8 @@ object Ui {
     var auroraStrength = 1f; private set
     /** Тема «Жидкое стекло» и она поддерживается (Android 13+: шейдеры AGSL). */
     var liquid = false; private set
+    /** AMOLED: кнопки не цветные, а чёрные с окантовкой. */
+    var amoled = false; private set
     /** Фон окна для стеклянных карточек: картинка пятен (в 1/4 размера) и размер окна; корень главного окна. */
     var backdrop: android.graphics.Bitmap? = null
     var backdropW = 0f
@@ -185,6 +187,7 @@ object Ui {
         val you = Build.VERSION.SDK_INT >= 31
         fun c(id: Int) = ctx.getColor(id)
         light = r == Theme.LIGHT
+        amoled = r == Theme.AMOLED
         clarity = Prefs(ctx).glassClarity / 100f
         liquid = Prefs(ctx).liquidGlass && Liquid.works
         if (light) {
@@ -222,6 +225,7 @@ object Ui {
         auroraStrength = 1f
         when (r) {
             Theme.AMOLED -> {
+                ON_ACCENT = TEXT   // кнопки чёрные — текст на них светлый
                 base = 0xFF000000.toInt()
                 card = 0x0DFFFFFF
                 dialogBlur = 0xE6000000.toInt(); dialogSolid = 0xFA050505.toInt()
@@ -280,12 +284,17 @@ object Ui {
     }
 
     /** Кнопка-«пилюля»; в теме «Жидкое стекло» — стеклянная (цветная заливка становится цветным стеклом). */
-    fun pill(ctx: Context, fill: Int, stroke: Int = 0, radiusDp: Float = 100f): Drawable =
-        if (liquid) GlassDrawable(ctx, radiusDp, fill) else GradientDrawable().apply {
+    fun pill(ctx: Context, fill: Int, stroke: Int = 0, radiusDp: Float = 100f): Drawable {
+        // AMOLED: залитая акцентом кнопка — чёрная с окантовкой (текст на ней — светлый, см. ON_ACCENT)
+        val black = amoled && fill == primary
+        val f = if (black) 0xFF000000.toInt() else fill
+        val s = if (black) ink(0x73) else stroke
+        return if (liquid) GlassDrawable(ctx, radiusDp, f) else GradientDrawable().apply {
             cornerRadius = dp(ctx, radiusDp)
-            setColor(fill)
-            if (stroke != 0) setStroke(dp(ctx, 1f).toInt().coerceAtLeast(1), stroke)
+            setColor(f)
+            if (s != 0) setStroke(dp(ctx, 1f).toInt().coerceAtLeast(1), s)
         }
+    }
 
     private val dialogs = HashSet<View>()
     /** Сколько «стеклянных» диалогов сейчас открыто. */
@@ -383,7 +392,7 @@ class GlassDrawable(ctx: Context, radiusDp: Float, private val fill: Int = Ui.ca
         c.drawRoundRect(r, radius, radius, edgeP)
     }
 
-    override fun getOutline(outline: Outline) = outline.setRoundRect(bounds, radius)
+    override fun getOutline(outline: Outline) = outline.setRoundRect(bounds, minOf(radius, bounds.height() / 2f, bounds.width() / 2f))
     override fun setAlpha(alpha: Int) {}
     override fun setColorFilter(colorFilter: ColorFilter?) {}
     @Deprecated("Deprecated in Java")

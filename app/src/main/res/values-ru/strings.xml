@@ -121,6 +121,9 @@
     <string name="font_mono">Системный моноширинный</string>
     <string name="liquid_sub">Стекло, которое преломляет то, что за ним, как в iOS 26, — работает с любой темой</string>
     <string name="liquid_unavailable">Нужен Android 13 или новее — здесь обычное стекло</string>
+    <string name="uninstall">Удалить приложение</string>
+    <string name="uninstall_done">Удалено: %s</string>
+    <string name="uninstall_failed">Не удалось удалить: %s</string>
     <string name="th_toast">Тема: %1$s</string>
 
 

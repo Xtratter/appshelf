@@ -150,6 +150,18 @@ object ApkInstaller {
         }
     }
 
+    /** Удалить приложение: Android сам спросит подтверждение; ответ — в [InstallReceiver]. */
+    fun uninstall(ctx: Context, pkg: String, label: String) {
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0)
+        val intent = Intent(ctx, InstallReceiver::class.java).putExtra(InstallReceiver.EXTRA_REMOVED, label)
+        try {
+            ctx.packageManager.packageInstaller.uninstall(pkg,
+                PendingIntent.getBroadcast(ctx, pkg.hashCode(), intent, flags).intentSender)
+        } catch (e: Exception) {
+            Toast.makeText(ctx, ctx.getString(R.string.uninstall_failed, e.message.orEmpty()), Toast.LENGTH_LONG).show()
+        }
+    }
+
     private fun commit(ctx: Context, file: File) {
         try {
             val installer = ctx.packageManager.packageInstaller
@@ -173,7 +185,13 @@ object ApkInstaller {
 
 /** Ответ системы об установке: попросить подтверждение, сообщить результат. */
 class InstallReceiver : BroadcastReceiver() {
+    companion object {
+        /** Это ответ на удаление; значение — название приложения. */
+        const val EXTRA_REMOVED = "io.github.xtratter.appshelf.REMOVED"
+    }
+
     override fun onReceive(ctx: Context, intent: Intent) {
+        val removed = intent.getStringExtra(EXTRA_REMOVED)
         when (intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
                 val confirm = if (Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)
@@ -181,11 +199,12 @@ class InstallReceiver : BroadcastReceiver() {
                 confirm?.let { ctx.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
             }
             PackageInstaller.STATUS_SUCCESS -> {
-                Toast.makeText(ctx, R.string.inst_done, Toast.LENGTH_SHORT).show()
+                Toast.makeText(ctx, if (removed != null) ctx.getString(R.string.uninstall_done, removed)
+                    else ctx.getString(R.string.inst_done), Toast.LENGTH_SHORT).show()
                 MainActivity.current?.get()?.let { m -> m.runOnUiThread { m.onInstalled() } }
             }
             PackageInstaller.STATUS_FAILURE_ABORTED -> {}   // отменили в системном окне
-            else -> Toast.makeText(ctx, ctx.getString(R.string.inst_failed,
+            else -> Toast.makeText(ctx, ctx.getString(if (removed != null) R.string.uninstall_failed else R.string.inst_failed,
                 intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE).orEmpty()), Toast.LENGTH_LONG).show()
         }
     }
