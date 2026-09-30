@@ -887,16 +887,39 @@ class MainActivity : Activity() {
             .setNeutralButton(R.string.catalog_default) { _, _ -> }
             .create()
         /** Применить: заново размыть снимок экрана и перерисовать стекло этого окна. */
+        // размытие считается в фоне из готового снимка; пока считается — новые значения копятся, берётся последнее
+        var blurring = false
+        var blurAgain = false
+        fun reblur() {
+            if (blurring) { blurAgain = true; return }
+            blurring = true
+            val app = applicationContext
+            Thread {
+                val bmp = Ui.reblurredSnapshot(app)
+                main.post {
+                    blurring = false
+                    if (bmp != null && dialog.isShowing) {
+                        Ui.snapshot = bmp
+                        dialog.window?.decorView?.invalidate()
+                    }
+                    if (blurAgain) { blurAgain = false; reblur() }
+                }
+            }.start()
+        }
+        /** Применить сразу: заливка окна — мгновенно, размытие того, что за ним, — догоняет в фоне. */
         fun apply(p: Int) {
             prefs.glassClarity = p
             Ui.setClarity(p / 100f)
-            Ui.takeSnapshot()
             dialog.window?.setBackgroundDrawable(GlassDrawable(this, 28f, Ui.dialogBlurColor()))
+            reblur()
         }
         seek.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(s: android.widget.SeekBar?, p: Int, fromUser: Boolean) = showValue(p)
+            override fun onProgressChanged(s: android.widget.SeekBar?, p: Int, fromUser: Boolean) {
+                showValue(p)
+                if (fromUser) apply(p)
+            }
             override fun onStartTrackingTouch(s: android.widget.SeekBar?) {}
-            override fun onStopTrackingTouch(s: android.widget.SeekBar?) = apply(seek.progress)
+            override fun onStopTrackingTouch(s: android.widget.SeekBar?) {}
         })
         // при закрытии — пересоздать экран, чтобы панель и карточки взяли новую прозрачность
         dialog.setOnDismissListener { if (prefs.glassClarity != start) recreate() }

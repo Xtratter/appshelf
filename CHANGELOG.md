@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.12.3 — 2026-09-30
+
+- Glass transparency changes live while you move the slider: the glass fill follows at once, and the blur of what is behind the window catches up in the background (the screen is captured once when the window opens, not on every change)
+
 ## 1.12.2 — 2026-09-30
 
 - Search: while the search field is open, the summary card and filter chips are hidden, so the apps found appear right under the search field; the search covers all apps regardless of the chosen filter, and everything comes back when the search is closed

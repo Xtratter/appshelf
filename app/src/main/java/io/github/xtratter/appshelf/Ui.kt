@@ -87,6 +87,18 @@ object Ui {
         return ((a * 255).toInt() shl 24) or (ch(16) shl 16) or (ch(8) shl 8) or ch(0)
     }
 
+    private var snapshotRaw: android.graphics.Bitmap? = null
+
+    /** Копия снимка, плавно размытая под текущую прозрачность (без зерна, как системное размытие). */
+    private fun blurred(ctx: Context, raw: android.graphics.Bitmap): android.graphics.Bitmap {
+        val out = raw.copy(android.graphics.Bitmap.Config.ARGB_8888, true)
+        Blur.apply(out, (dp(ctx, dialogBlurDp) * raw.width / snapshotW.coerceAtLeast(1f)).toInt().coerceAtLeast(1))
+        return out
+    }
+
+    /** Размыть снимок заново под текущую прозрачность; в фоновом потоке. null — снимка нет. */
+    fun reblurredSnapshot(ctx: Context): android.graphics.Bitmap? = snapshotRaw?.let { blurred(ctx, it) }
+
     /** Снять главный экран (для окон «жидкого стекла»): под окном будет видно, как за ним преломляется список. */
     fun takeSnapshot() {
         val root = liquidRoot ?: return
@@ -98,11 +110,13 @@ object Ui {
         c.scale(1f / q, 1f / q)
         Liquid.capturing = true
         try { root.draw(c) } catch (e: Exception) { return } finally { Liquid.capturing = false }
-        // размываем сразу и плавно — как системное размытие под окном, без зерна
-        Blur.apply(bmp, (dp(root.context, dialogBlurDp) / q).toInt().coerceAtLeast(1))
+        // неразмытый снимок храним: при смене прозрачности размытие пересчитывается из него, без перерисовки экрана
+        snapshotRaw = bmp
+        snapshotW = root.width.toFloat(); snapshotH = root.height.toFloat()
+        val blurred = blurred(root.context, bmp)
         val at = IntArray(2)
         root.getLocationOnScreen(at)
-        snapshot = bmp
+        snapshot = blurred
         snapshotX = at[0].toFloat(); snapshotY = at[1].toFloat()
         snapshotW = root.width.toFloat(); snapshotH = root.height.toFloat()
     }
