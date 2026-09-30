@@ -55,8 +55,6 @@
 
             <ImageButton android:id="@+id/btnSearch" style="@style/BarButton"
                 android:contentDescription="@string/search" android:src="@drawable/ic_search" />
-            <ImageButton android:id="@+id/btnSave" style="@style/BarButton"
-                android:contentDescription="@string/save" android:src="@drawable/ic_save" />
             <ImageButton android:id="@+id/btnMore" style="@style/BarButton"
                 android:contentDescription="@string/more" android:src="@drawable/ic_more" />
         </LinearLayout>

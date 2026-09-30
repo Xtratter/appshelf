@@ -141,9 +141,13 @@ object LinkStore {
 
     private fun obtainium(ctx: Context) = OBTAINIUM.firstOrNull { Apps.isInstalled(ctx, it) }
 
-    /** Открыть ссылку, чтобы установить приложение; если есть Obtainium и он умеет этот сайт — предложить и его. */
-    fun open(ctx: Context, link: Link) {
+    /**
+     * Открыть ссылку, чтобы установить приложение [pkg]: прямую ссылку на .apk — скачать и установить прямо здесь;
+     * если есть Obtainium и он умеет этот сайт — предложить и его.
+     */
+    fun open(ctx: Context, link: Link, pkg: String? = null, label: String = "") {
         val kind = Links.kind(link.url)
+        if (kind == LinkKind.APK && ctx is MainActivity) return ApkInstaller.start(ctx, link.url, pkg, label.ifEmpty { Links.short(link.url) })
         val obt = if (kind.obtainium) obtainium(ctx) else null
         if (obt == null) return view(ctx, Links.installUrl(link.url))
         AlertDialog.Builder(ctx)

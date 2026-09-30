@@ -8,6 +8,8 @@
     <!-- отправка списка на свой сервер WebDAV (только если настроена) -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- установка по прямой ссылке на .apk (Android всё равно спрашивает подтверждение) -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- восстановить расписание после перезагрузки -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
@@ -35,6 +37,9 @@
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>
+        <receiver
+            android:name=".InstallReceiver"
+            android:exported="false" />
         <service
             android:name=".SyncJob"
             android:exported="false"

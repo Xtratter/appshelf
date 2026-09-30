@@ -2,6 +2,12 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.7 — 2026-09-30
+
+- **Install an APK right from AppShelf**: a direct link to an .apk file is downloaded (with progress and Cancel), checked that it contains the same app, and handed to Android's installer. The first time AppShelf asks for the "Install unknown apps" permission and continues by itself when you come back
+- **One entry point — "Save & restore"** on the main screen: saving (file, share, autosave, WebDAV, apps in the list, links for the catalog) and restoring (from a file or the server) in one window. The ⬇ button and the duplicate menu items are gone
+- The link window has "Link" and "Label" captions; a link pasted into the label is caught with a hint
+
 ## 1.6 — 2026-09-30
 
 - **Where to download** in the app card: your own links for any app — GitHub, GitLab, Codeberg, Telegram, 4PDA, a site or a direct .apk; the link from the clipboard is filled in by itself, long-press to change or delete. Repositories open on the latest release

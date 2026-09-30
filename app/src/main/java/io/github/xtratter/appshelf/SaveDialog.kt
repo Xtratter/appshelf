@@ -6,8 +6,9 @@ import android.widget.ScrollView
 import android.widget.TextView
 
 /**
- * «Сохранение и экспорт» — все способы сохранить список в одном окне:
- * файл, «Поделиться», автосохранение, WebDAV и выбор приложений. У каждого пункта видно его состояние.
+ * «Сохранение и восстановление» — единственная точка входа: все способы сохранить список
+ * (файл, «Поделиться», автосохранение, WebDAV, выбор приложений, ссылки для каталога) и открыть сохранённый
+ * (из файла или с сервера). У каждого пункта видно его состояние.
  */
 object SaveDialog {
     fun show(a: MainActivity) {
@@ -21,8 +22,12 @@ object SaveDialog {
             setPadding(px(20f), px(22f), px(20f), px(8f))
         }
         box.addView(TextView(a).apply {
-            setText(R.string.save_export); textSize = 20f; typeface = Ui.medium; setTextColor(Ui.TEXT)
-            setPadding(px(4f), 0, 0, px(12f))
+            setText(R.string.save_restore); textSize = 20f; typeface = Ui.medium; setTextColor(Ui.TEXT)
+            setPadding(px(4f), 0, 0, px(4f))
+        })
+        fun header(text: Int) = box.addView(TextView(a).apply {
+            setText(text); textSize = 14f; typeface = Ui.medium; setTextColor(Ui.primary)
+            setPadding(px(4f), px(12f), 0, px(8f))
         })
         val dialog = AlertDialog.Builder(a)
             .setView(ScrollView(a).apply { addView(box) })
@@ -49,6 +54,7 @@ object SaveDialog {
             }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = px(8f) })
         }
 
+        header(R.string.sec_save)
         item(R.string.save_file, a.getString(R.string.save_file_sub)) { a.saveToFile() }
         item(R.string.share_list, a.getString(R.string.share_sub)) { a.share() }
         val auto = a.autosaveName()
@@ -63,6 +69,11 @@ object SaveDialog {
         item(R.string.select_title, a.getString(R.string.select_sub, included, total)) { a.selectApps { show(a) } }
         val withLinks = LinkStore.mine(a).count { it.value.links.isNotEmpty() }
         item(R.string.links_export, a.resources.getQuantityString(R.plurals.links_export_sub, withLinks, withLinks)) { a.exportLinks() }
+
+        header(R.string.sec_restore)
+        item(R.string.open_from_file, a.getString(R.string.open_file_sub)) { a.openList() }
+        if (p.davUrl.isNotEmpty()) item(R.string.open_from_server, a.getString(R.string.open_server_sub)) { SyncDialog.openFromServer(a) }
+        else item(R.string.open_from_server, a.getString(R.string.open_server_off)) { SyncDialog.show(a) }
 
         dialog.show()
         Ui.glassDialog(dialog)

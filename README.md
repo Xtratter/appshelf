@@ -22,8 +22,8 @@ which apps are missing and opens each one in the right store.
   on a new phone open the list straight from the server
 - **Where to download**: your own links for each app (GitHub, Telegram, a site…) in the app card, saved with the list
   and shared by all phones via WebDAV; plus a shared [link catalog](https://github.com/Xtratter/appshelf-sources) on GitHub;
-  GitHub / GitLab / Codeberg links can go straight to Obtainium. In restore mode the link comes before the store
-- **Save & export** in one window: file, share, autosave, WebDAV, which apps go into the list
+  GitHub / GitLab / Codeberg links can go straight to Obtainium, a direct .apk link is installed right in AppShelf. In restore mode the link comes before the store
+- **Save & restore** in one window: file, share, autosave, WebDAV, which apps go into the list
 - **Autosave**: pick a file once (a cloud drive, a memory card…) and the list is rewritten there every time you open the app
 - **Restore mode**: open a saved list — see how many apps are missing, show only those, and tap to install each from its store
 - **Material 3 "liquid glass" design**: translucent cards over a soft colored background, colors follow the wallpaper
@@ -38,6 +38,7 @@ Ready-made APKs are on the [Releases](https://github.com/Xtratter/appshelf/relea
 
 - `QUERY_ALL_PACKAGES` — without it Android 11+ shows an app just a few of the installed apps.
 - `INTERNET`, `ACCESS_NETWORK_STATE` — only for WebDAV sync, and only to the server you enter; nothing else goes online.
+- `REQUEST_INSTALL_PACKAGES` — to install an APK from a direct link (Android still asks you to confirm each install).
 - `RECEIVE_BOOT_COMPLETED` — to restore the sync schedule after a reboot.
 
 ## How it works

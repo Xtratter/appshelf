@@ -191,7 +191,7 @@
     <string name="lk_edit">Link</string>
     <string name="lk_url">https://…</string>
     <string name="lk_label">Label (optional)</string>
-    <string name="lk_hint">GitHub, GitLab and Codeberg repositories open on the latest release. Your links are saved with the list and on the WebDAV server.</string>
+    <string name="lk_hint">A direct link to an .apk file is downloaded and installed right in AppShelf. GitHub, GitLab and Codeberg repositories open on the latest release. Your links are saved with the list and on the WebDAV server.</string>
     <string name="lk_need_url">Paste a link starting with https://</string>
     <string name="lk_delete">Delete</string>
     <string name="lk_open">Open %s</string>
@@ -217,6 +217,27 @@
     <string name="catalog_default">Default</string>
     <string name="catalog_bad">This is not an AppShelf catalog</string>
     <string name="catalog_priority">Your own links (in the app card, on WebDAV and in saved lists) always come first; catalog links are shown after them.</string>
+
+    <string name="save_restore">Save &amp; restore</string>
+    <string name="sec_save">Save</string>
+    <string name="sec_restore">Restore on this phone</string>
+    <string name="open_file_sub">A list saved earlier — JSON or CSV</string>
+    <string name="open_server_sub">Choose the phone and the version</string>
+    <string name="open_server_off">Set up WebDAV sync first</string>
+    <string name="lk_url_caption">Link</string>
+    <string name="lk_label_caption">Label</string>
+    <string name="lk_label_is_url">This is a link — paste it into the “Link” field above; the label is just a name, e.g. “Releases”</string>
+    <string name="inst_perm_title">Allow installing apps</string>
+    <string name="inst_perm_text">To install an APK from a link, Android needs your permission for AppShelf to install apps. Turn it on in the settings that open, then come back — the download starts by itself.</string>
+    <string name="inst_perm_open">Open settings</string>
+    <string name="inst_downloading">Downloading %s</string>
+    <string name="inst_progress">%1$s of %2$s</string>
+    <string name="inst_failed">Could not install: %s</string>
+    <string name="inst_not_apk">The downloaded file is not an Android app (APK)</string>
+    <string name="inst_other_title">A different app in the file</string>
+    <string name="inst_other_text">The link was saved for %1$s (%2$s), but the file contains %3$s. Install it anyway?</string>
+    <string name="inst_anyway">Install</string>
+    <string name="inst_done">Installed ✓</string>
 
     <string name="about_text"><![CDATA[Version %1$s<br><br>A list of your installed apps — where each one came from and when it was installed — to reinstall them on a new phone.<br><br><a href="https://github.com/Xtratter/appshelf">github.com/Xtratter/appshelf</a><br>GPL-3.0-or-later]]></string>
 </resources>

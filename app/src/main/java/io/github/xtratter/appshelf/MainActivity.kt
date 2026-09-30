@@ -32,11 +32,14 @@ import java.util.Locale
 import java.util.concurrent.Executors
 
 class MainActivity : Activity() {
-    private companion object {
-        const val REQ_SAVE = 1
-        const val REQ_AUTOSAVE = 2
-        const val REQ_OPEN = 3
-        const val REQ_LINKS = 4
+    companion object {
+        /** Открытый экран — чтобы после установки APK обновить список. */
+        var current: java.lang.ref.WeakReference<MainActivity>? = null
+
+        private const val REQ_SAVE = 1
+        private const val REQ_AUTOSAVE = 2
+        private const val REQ_OPEN = 3
+        private const val REQ_LINKS = 4
     }
 
     private lateinit var prefs: Prefs
@@ -101,6 +104,21 @@ class MainActivity : Activity() {
         render()
     }
 
+    override fun onResume() {
+        super.onResume()
+        current = java.lang.ref.WeakReference(this)
+        // вернулись из настроек с разрешением на установку — продолжаем отложенную установку APK
+        ApkInstaller.resume(this)
+    }
+
+    override fun onDestroy() {
+        if (current?.get() === this) current = null
+        super.onDestroy()
+    }
+
+    /** Приложение установлено — перечитать список (в режиме восстановления может закончиться восстановление). */
+    fun onInstalled() { if (!isDestroyed) reload() }
+
     override fun onStart() {
         super.onStart()
         reload()
@@ -132,7 +150,7 @@ class MainActivity : Activity() {
             window.insetsController?.setSystemBarsAppearance(if (Ui.light) light else 0, light)
         }
         val tint = android.content.res.ColorStateList.valueOf(Ui.TEXT)
-        for (id in intArrayOf(R.id.btnSearch, R.id.btnSave, R.id.btnMore, R.id.btnSearchClose))
+        for (id in intArrayOf(R.id.btnSearch, R.id.btnMore, R.id.btnSearchClose))
             findViewById<ImageButton>(id).imageTintList = tint
         findViewById<android.widget.ImageView>(R.id.searchIcon).imageTintList = tint
         findViewById<TextView>(R.id.title).setTextColor(Ui.TEXT)
@@ -179,7 +197,6 @@ class MainActivity : Activity() {
         }
         findViewById<View>(R.id.btnSearch).setOnClickListener { showSearch(searchBox.visibility != View.VISIBLE) }
         findViewById<View>(R.id.btnSearchClose).setOnClickListener { showSearch(false) }
-        findViewById<View>(R.id.btnSave).setOnClickListener { SaveDialog.show(this) }
         findViewById<View>(R.id.btnMore).setOnClickListener { showMenu(it) }
         searchField.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
@@ -400,7 +417,7 @@ class MainActivity : Activity() {
                 }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14f) })
             }
             // без выравнивания по тексту: у кнопки с уменьшенным шрифтом базовая линия ниже, и её бы сдвинуло и обрезало
-            summary.addView(button(getString(R.string.save_export), true) { SaveDialog.show(this) },
+            summary.addView(button(getString(R.string.save_restore), true) { SaveDialog.show(this) },
                 LinearLayout.LayoutParams(-1, dp(44f)))
         } else {
             val missing = apps.count { it.pkg !in installedPkgs }
@@ -640,19 +657,7 @@ class MainActivity : Activity() {
         }, REQ_AUTOSAVE)
     }
 
-    /** Открыть сохранённый список: из файла или, если WebDAV настроен, с сервера. */
-    private fun openFrom() {
-        if (prefs.davUrl.isEmpty()) return openList()
-        AlertDialog.Builder(this)
-            .setTitle(R.string.open_list)
-            .setItems(arrayOf(getString(R.string.open_from_file), getString(R.string.open_from_server))) { _, i ->
-                if (i == 0) openList() else SyncDialog.openFromServer(this)
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show().also { Ui.glassDialog(it) }
-    }
-
-    private fun openList() {
+    fun openList() {
         startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = "*/*"
@@ -724,8 +729,6 @@ class MainActivity : Activity() {
         pm.menu.findItem(R.id.m_system).isChecked = prefs.showSystem
         pm.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                R.id.m_save -> SaveDialog.show(this)
-                R.id.m_open -> openFrom()
                 R.id.m_catalog -> CatalogDialog.show(this)
                 R.id.m_system -> { prefs.showSystem = !prefs.showSystem; render() }
                 R.id.m_theme -> themeDialog()

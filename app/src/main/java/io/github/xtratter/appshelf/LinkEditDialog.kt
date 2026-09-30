@@ -31,8 +31,13 @@ object LinkEditDialog {
         val url = field(R.string.lk_url, InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI)
         val name = field(R.string.lk_label, InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES)
         val kind = TextView(a).apply { textSize = 13f; setTextColor(Ui.TEXT2); setPadding(px(4f), px(6f), 0, px(10f)) }
+        fun caption(text: Int) = box.addView(TextView(a).apply {
+            setText(text); textSize = 12.5f; typeface = Ui.medium; setTextColor(Ui.TEXT2); setPadding(px(4f), 0, 0, px(4f))
+        })
+        caption(R.string.lk_url_caption)
         box.addView(url)
         box.addView(kind)
+        caption(R.string.lk_label_caption)
         box.addView(name)
         box.addView(TextView(a).apply {
             setText(R.string.lk_hint); textSize = 12f; setTextColor(Ui.TEXT3); setLineSpacing(0f, 1.1f); setPadding(px(4f), px(8f), 0, 0)
@@ -75,6 +80,10 @@ object LinkEditDialog {
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
             val u = url.text.toString().trim()
             if (!Links.valid(u)) { kind.setTextColor(Ui.WARN); kind.setText(R.string.lk_need_url); return@setOnClickListener }
+            // ссылку вставили в поле подписи — подсказываем, а не сохраняем как есть
+            if (Links.valid(name.text.toString().trim())) {
+                kind.setTextColor(Ui.WARN); kind.setText(R.string.lk_label_is_url); return@setOnClickListener
+            }
             val link = Link(u, name.text.toString().trim())
             val list = LinkStore.get(a, pkg).toMutableList()
             val i = if (old != null) list.indexOf(old) else -1

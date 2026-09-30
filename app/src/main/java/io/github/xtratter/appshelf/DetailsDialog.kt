@@ -108,7 +108,7 @@ object DetailsDialog {
             val kind = Links.kind(l.url)
             linkRow(l.label.ifBlank { a.getString(kind.title) } + " ›",
                 Links.short(l.url) + if (fromCatalog) " · " + a.getString(R.string.lk_from_catalog) else "",
-                Ui.TEXT2, { LinkStore.open(a, l) },
+                Ui.TEXT2, { LinkStore.open(a, l, app.pkg, app.label) },
                 if (fromCatalog) null else ({ dialog.dismiss(); LinkEditDialog.show(a, app.pkg, app.label, l, reopen) }))
         }
         if (links.isEmpty()) linksBox.addView(TextView(a).apply {
@@ -141,7 +141,7 @@ object DetailsDialog {
         if (!installedNow) {
             // своя ссылка или из каталога — главнее магазина
             links.firstOrNull()?.let { (l, _) ->
-                action(a.getString(R.string.install_link, l.label.ifBlank { a.getString(Links.kind(l.url).title) }), main = true) { LinkStore.open(a, l) }
+                action(a.getString(R.string.install_link, l.label.ifBlank { a.getString(Links.kind(l.url).title) }), main = true) { LinkStore.open(a, l, app.pkg, app.label) }
             }
             action(a.getString(R.string.install_from, storeName(a, app, source)), main = links.isEmpty()) { Store.open(a, app) }
         } else {

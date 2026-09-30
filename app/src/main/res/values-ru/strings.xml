@@ -187,7 +187,7 @@
     <string name="lk_edit">Ссылка</string>
     <string name="lk_url">https://…</string>
     <string name="lk_label">Подпись (необязательно)</string>
-    <string name="lk_hint">Репозитории GitHub, GitLab и Codeberg открываются на последнем релизе. Свои ссылки сохраняются вместе со списком и на сервере WebDAV.</string>
+    <string name="lk_hint">Прямая ссылка на файл .apk скачивается и устанавливается прямо в AppShelf. Репозитории GitHub, GitLab и Codeberg открываются на последнем релизе. Свои ссылки сохраняются вместе со списком и на сервере WebDAV.</string>
     <string name="lk_need_url">Вставьте ссылку, начинающуюся с https://</string>
     <string name="lk_delete">Удалить</string>
     <string name="lk_open">Открыть %s</string>
@@ -217,6 +217,27 @@
     <string name="catalog_default">По умолчанию</string>
     <string name="catalog_bad">Это не каталог AppShelf</string>
     <string name="catalog_priority">Свои ссылки (в карточке приложения, на WebDAV и в сохранённых списках) всегда первые; ссылки из каталога — после них.</string>
+
+    <string name="save_restore">Сохранение и восстановление</string>
+    <string name="sec_save">Сохранить</string>
+    <string name="sec_restore">Восстановить на этом телефоне</string>
+    <string name="open_file_sub">Сохранённый ранее список — JSON или CSV</string>
+    <string name="open_server_sub">Выбрать телефон и версию</string>
+    <string name="open_server_off">Сначала настройте синхронизацию WebDAV</string>
+    <string name="lk_url_caption">Ссылка</string>
+    <string name="lk_label_caption">Подпись</string>
+    <string name="lk_label_is_url">Это ссылка — вставьте её в поле «Ссылка» выше; подпись — просто название, например «Релизы»</string>
+    <string name="inst_perm_title">Разрешите установку приложений</string>
+    <string name="inst_perm_text">Чтобы установить APK по ссылке, Android должен разрешить AppShelf устанавливать приложения. Включите это в открывшихся настройках и вернитесь — загрузка начнётся сама.</string>
+    <string name="inst_perm_open">Открыть настройки</string>
+    <string name="inst_downloading">Скачиваю %s</string>
+    <string name="inst_progress">%1$s из %2$s</string>
+    <string name="inst_failed">Не удалось установить: %s</string>
+    <string name="inst_not_apk">Скачанный файл — не приложение Android (APK)</string>
+    <string name="inst_other_title">В файле другое приложение</string>
+    <string name="inst_other_text">Ссылка сохранена для «%1$s» (%2$s), а в файле — %3$s. Всё равно установить?</string>
+    <string name="inst_anyway">Установить</string>
+    <string name="inst_done">Установлено ✓</string>
 
     <string name="about_text"><![CDATA[Версия %1$s<br><br>Список установленных приложений — откуда каждое и когда установлено, — чтобы восстановить их на новом телефоне.<br><br><a href="https://github.com/Xtratter/appshelf">github.com/Xtratter/appshelf</a><br>GPL-3.0-or-later]]></string>
 </resources>
