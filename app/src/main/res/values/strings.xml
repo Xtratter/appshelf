@@ -137,6 +137,18 @@
     <string name="note_section">Note</string>
     <string name="note_empty">Add a note — why you need the app, which account, what to set up after installing</string>
     <string name="note_hint">For example: login via Gosuslugi; turn off notifications; the backup is in Settings → Export</string>
+    <string name="sel_count">Selected: %d</string>
+    <string name="sel_all">All</string>
+    <string name="sel_exclude">Leave out</string>
+    <string name="sel_include">Put back</string>
+    <string name="sel_share">Share</string>
+    <string name="sel_uninstall">Uninstall</string>
+    <string name="sel_nothing_to_remove">System apps and AppShelf itself cannot be uninstalled</string>
+    <plurals name="sel_uninstall_title">
+        <item quantity="one">Uninstall %d app?</item>
+        <item quantity="other">Uninstall %d apps?</item>
+    </plurals>
+    <string name="sel_uninstall_text">Android will ask to confirm each one. Cancelling one stops the rest. System apps are skipped.</string>
     <string name="glass_clarity">Glass transparency</string>
     <string name="glass_clarity_btn">Transparency…</string>
     <string name="glass_clarity_text">How much of what is behind shows through the glass: frosted and calm, or clear. This window changes as you move the slider; the whole screen updates when you close it.</string>

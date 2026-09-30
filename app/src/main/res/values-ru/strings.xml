@@ -129,6 +129,20 @@
     <string name="note_section">Заметка</string>
     <string name="note_empty">Добавить заметку — зачем приложение, какой вход, что настроить после установки</string>
     <string name="note_hint">Например: вход через Госуслуги; выключить уведомления; резервная копия — Настройки → Экспорт</string>
+    <string name="sel_count">Выбрано: %d</string>
+    <string name="sel_all">Все</string>
+    <string name="sel_exclude">Убрать из списка</string>
+    <string name="sel_include">Вернуть в список</string>
+    <string name="sel_share">Поделиться</string>
+    <string name="sel_uninstall">Удалить</string>
+    <string name="sel_nothing_to_remove">Системные приложения и сам AppShelf удалить нельзя</string>
+    <plurals name="sel_uninstall_title">
+        <item quantity="one">Удалить %d приложение?</item>
+        <item quantity="few">Удалить %d приложения?</item>
+        <item quantity="many">Удалить %d приложений?</item>
+        <item quantity="other">Удалить %d приложения?</item>
+    </plurals>
+    <string name="sel_uninstall_text">Android спросит подтверждение для каждого. Если отменить одно, остальные не удалятся. Системные приложения пропускаются.</string>
     <string name="glass_clarity">Прозрачность стекла</string>
     <string name="glass_clarity_btn">Прозрачность…</string>
     <string name="glass_clarity_text">Насколько сквозь стекло видно то, что за ним: матовое и спокойное или прозрачное. Это окно меняется, пока двигаете ползунок; весь экран обновится, когда закроете его.</string>

@@ -20,6 +20,8 @@ class Row(
     val link: String? = null,
     /** Своя заметка к приложению — её начало видно в строке. */
     val note: String = "",
+    /** Отмечена в режиме выбора нескольких приложений. */
+    val selected: Boolean = false,
 )
 
 /**
@@ -65,6 +67,11 @@ class AppItemView(ctx: Context) : View(ctx) {
         val rw = row ?: return
         val a = rw.app
         glass.draw(c)
+        if (rw.selected) {
+            // отмеченная строка: подсветка цветом темы
+            fill.color = Ui.withAlpha(Ui.primary, 0.16f)
+            c.drawRoundRect(card, dp(22f), dp(22f), fill)
+        }
 
         // значок или буква на цветном кружке (для приложений, которых на телефоне нет)
         val left = card.left + dp(14f)
@@ -79,6 +86,18 @@ class AppItemView(ctx: Context) : View(ctx) {
             letterP.color = Ui.TEXT
             c.drawText(a.label.trim().take(1).uppercase(), left + iconSize / 2f,
                 card.centerY() - (letterP.ascent() + letterP.descent()) / 2, letterP)
+        }
+
+        if (rw.selected) {
+            // галочка на значке
+            val cx = left + iconSize - dp(4f); val cy = top + iconSize - dp(4f)
+            fill.color = Ui.primary
+            c.drawCircle(cx, cy, dp(10f), fill)
+            letterP.color = Ui.ON_ACCENT
+            val ts = letterP.textSize
+            letterP.textSize = Ui.sp(context, 12f)
+            c.drawText("✓", cx, cy - (letterP.ascent() + letterP.descent()) / 2, letterP)
+            letterP.textSize = ts
         }
 
         val x = left + iconSize + dp(14f)

@@ -65,6 +65,15 @@ class MainActivity : Activity() {
     private var restore: Snapshot? = null
     private var missingOnly = false
     private var filter: Source? = null
+    /** Выбор нескольких приложений (долгое нажатие на строку): отмеченные пакеты. */
+    private val selected = LinkedHashSet<String>()
+    private val selecting get() = selected.isNotEmpty()
+    private lateinit var selBar: LinearLayout
+    private lateinit var selTitle: TextView
+    private lateinit var selExclude: TextView
+    /** Строки, видимые сейчас (для «Все»). */
+    private var shownApps: List<AppInfo> = emptyList()
+
     /** Фильтр «APK без ссылки»: приложения из APK-файлов, для которых нет ни своей ссылки, ни ссылки из каталога. */
     private var noLink = false
     private var query = ""
@@ -119,10 +128,19 @@ class MainActivity : Activity() {
         list.adapter = adapter
         list.setOnItemClickListener { parent, view, pos, _ ->
             val r = parent.getItemAtPosition(pos) as? Row ?: return@setOnItemClickListener
+            if (selecting) { toggleSelected(r.app.pkg); return@setOnItemClickListener }
             Motion.from(view)   // карточка вытечет из строки
             Haptics.play(Haptics.Kind.TAP)
             DetailsDialog.show(this, r, sourceText(r.app))
         }
+        // долгое нажатие — выбор нескольких приложений (не в режиме восстановления)
+        list.setOnItemLongClickListener { parent, _, pos, _ ->
+            val r = parent.getItemAtPosition(pos) as? Row ?: return@setOnItemLongClickListener false
+            if (restore != null) return@setOnItemLongClickListener false
+            toggleSelected(r.app.pkg)
+            true
+        }
+        buildSelectionBar()
         render()
     }
 
@@ -212,7 +230,7 @@ class MainActivity : Activity() {
             topScrim.layoutParams = topScrim.layoutParams.apply { height = scrimH }
         }
         val top = topBar.height + dp(10f)
-        val bottom = insetBottom + dp(16f)
+        val bottom = insetBottom + dp(16f) + if (::selBar.isInitialized && selBar.visibility == View.VISIBLE) selBar.height + dp(12f) else 0
         if (list.paddingTop != top || list.paddingBottom != bottom)
             list.post { list.setPadding(list.paddingLeft, top, list.paddingRight, bottom) }
     }
@@ -301,6 +319,110 @@ class MainActivity : Activity() {
         }
     }
 
+    // ---------- выбор нескольких приложений ----------
+
+    private fun toggleSelected(pkg: String) {
+        if (!selected.remove(pkg)) selected += pkg
+        Haptics.play(Haptics.Kind.TICK)
+        render()
+    }
+
+    private fun clearSelection() {
+        selected.clear()
+        render()
+    }
+
+    /** Стеклянная панель снизу: «Выбрано: N» и действия с отмеченными приложениями. */
+    private fun buildSelectionBar() {
+        val root = findViewById<android.widget.FrameLayout>(R.id.root)
+        selBar = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16f), dp(12f), dp(16f), dp(14f))
+            background = GlassDrawable(this@MainActivity, 28f, Ui.withAlpha(Ui.mix(Ui.base, Ui.surface, 0.6f), 0.92f))
+            elevation = Ui.dp(this@MainActivity, 8f)
+            visibility = View.GONE
+            isClickable = true   // касания не проходят к списку под панелью
+        }
+        val head = LinearLayout(this).apply { gravity = Gravity.CENTER_VERTICAL }
+        selTitle = text(16f, Ui.TEXT, Ui.medium)
+        head.addView(selTitle, LinearLayout.LayoutParams(0, -2, 1f))
+        head.addView(TextView(this).apply {
+            text = "✕"; textSize = 18f; setTextColor(Ui.TEXT2); gravity = Gravity.CENTER
+            background = Ui.ripple(this@MainActivity, 100f)
+            setOnClickListener { clearSelection() }
+            Haptics.onClick(this)
+        }, LinearLayout.LayoutParams(dp(40f), dp(40f)))
+        selBar.addView(head)
+        val row = LinearLayout(this).apply { isBaselineAligned = false }
+        fun act(label: String, filled: Boolean, block: () -> Unit) = button(label, filled, block).also {
+            row.addView(it, LinearLayout.LayoutParams(0, dp(42f), 1f).apply { if (row.childCount > 0) leftMargin = dp(8f) })
+        }
+        act(getString(R.string.sel_all), false) {
+            selected.addAll(shownApps.map { it.pkg }); render()
+        }
+        selExclude = act(getString(R.string.sel_exclude), false) {
+            val excl = prefs.excluded
+            // все отмеченные уже убраны — возвращаем, иначе убираем
+            setExcluded(if (selected.all { it in excl }) excl - selected else excl + selected)
+        }
+        act(getString(R.string.sel_share), false) { shareSelected() }
+        act(getString(R.string.sel_uninstall), true) { uninstallSelected() }
+        selBar.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8f) })
+        root.addView(selBar, android.widget.FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM).apply {
+            leftMargin = dp(12f); rightMargin = dp(12f); bottomMargin = insetBottom + dp(12f)
+        })
+        selBar.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateListPadding() }
+    }
+
+    /** Показать или спрятать панель выбора и обновить её надписи. */
+    private fun updateSelectionBar() {
+        if (!::selBar.isInitialized) return
+        val show = selecting && restore == null
+        if (show) {
+            selTitle.text = getString(R.string.sel_count, selected.size)
+            selExclude.text = getString(if (selected.all { it in prefs.excluded }) R.string.sel_include else R.string.sel_exclude)
+            val lp = selBar.layoutParams as android.widget.FrameLayout.LayoutParams
+            if (lp.bottomMargin != insetBottom + dp(12f)) { lp.bottomMargin = insetBottom + dp(12f); selBar.layoutParams = lp }
+        }
+        if ((selBar.visibility == View.VISIBLE) != show) {
+            selBar.visibility = if (show) View.VISIBLE else View.GONE
+            updateListPadding()
+        }
+    }
+
+    private fun selectedApps() = installed.orEmpty().filter { it.pkg in selected }
+
+    /** Поделиться отмеченными: текстом, со ссылками и заметками. */
+    private fun shareSelected() {
+        val apps = ListFile.sorted(selectedApps())
+        if (apps.isEmpty()) return
+        val text = apps.joinToString("\n") { a ->
+            val links = LinkStore.get(this, a.pkg).joinToString(" ") { it.url }
+            val note = LinkStore.note(this, a.pkg)
+            "• ${a.label} — ${a.pkg} — ${sourceText(a)}" + (if (links.isNotEmpty()) " — $links" else "") +
+                (if (note.isNotEmpty()) " — $note" else "")
+        }
+        startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+        }, getString(R.string.share_list)))
+    }
+
+    /** Удалить отмеченные: одно подтверждение здесь, дальше Android спрашивает про каждое по очереди. */
+    private fun uninstallSelected() {
+        val apps = ListFile.sorted(selectedApps()).filter { !it.system && it.pkg != packageName }
+        if (apps.isEmpty()) { Toast.makeText(this, R.string.sel_nothing_to_remove, Toast.LENGTH_SHORT).show(); return }
+        AlertDialog.Builder(this)
+            .setTitle(resources.getQuantityString(R.plurals.sel_uninstall_title, apps.size, apps.size))
+            .setMessage(apps.joinToString(", ") { it.label } + "\n\n" + getString(R.string.sel_uninstall_text))
+            .setPositiveButton(R.string.sel_uninstall) { _, _ ->
+                ApkInstaller.uninstallAll(this, apps.map { it.pkg to it.label })
+                clearSelection()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show().also { Ui.glassDialog(it) }
+    }
+
     private fun needsLink(a: AppInfo) = a.source == Source.APK && LinkStore.forApp(this, a.pkg).isEmpty()
 
     /** Обновить список и сводку (например, после изменения ссылок). */
@@ -340,6 +462,7 @@ class MainActivity : Activity() {
     override fun onBackPressed() {
         // «назад»: сначала закрыть поиск, потом выйти из восстановления, потом — из приложения
         when {
+            selecting -> clearSelection()
             searchBox.visibility == View.VISIBLE -> showSearch(false)
             restore != null -> closeRestore()
             else -> @Suppress("DEPRECATION") super.onBackPressed()
@@ -369,6 +492,10 @@ class MainActivity : Activity() {
             // ищем и по названию, и по пакету, и по своим заметкам
             shown = shown.filter { q in it.label.lowercase() || q in it.pkg.lowercase() || q in LinkStore.note(this, it.pkg).lowercase() }
         }
+        shownApps = if (restoring) emptyList() else shown
+        // отмеченные, которых больше нет (удалили), из выбора убираем
+        installed?.let { all -> val have = all.mapTo(HashSet()) { it.pkg }; selected.retainAll(have) }
+        updateSelectionBar()
         val items = ArrayList<Any>()
         val excl = prefs.excluded
         var section = ""
@@ -377,7 +504,7 @@ class MainActivity : Activity() {
             if (s != section) { section = s; items += s }
             val missing = restoring && a.pkg !in installedPkgs
             items += Row(a, sourceText(a), dateText(a.firstInstall), if (restoring) !missing else null,
-                excluded = !restoring && a.pkg in excl,
+                excluded = !restoring && a.pkg in excl, selected = a.pkg in selected,
                 link = if (missing) LinkStore.forApp(this, a.pkg).firstOrNull()?.let { getString(Links.kind(it.first.url).title) } else null,
                 note = LinkStore.note(this, a.pkg))
         }

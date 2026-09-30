@@ -150,6 +150,22 @@ object ApkInstaller {
         }
     }
 
+    /** Очередь удаления нескольких приложений: следующее — когда Android ответил про предыдущее. */
+    private val queue = ArrayDeque<Pair<String, String>>()
+
+    fun uninstallAll(ctx: Context, apps: List<Pair<String, String>>) {
+        queue.clear()
+        queue.addAll(apps)
+        next(ctx)
+    }
+
+    /** Следующее из очереди (или ничего). [stop] — пользователь отменил: остальные не трогаем. */
+    fun next(ctx: Context, stop: Boolean = false) {
+        if (stop) { queue.clear(); return }
+        val (pkg, label) = queue.removeFirstOrNull() ?: return
+        uninstall(ctx, pkg, label)
+    }
+
     /** Удалить приложение: Android сам спросит подтверждение; ответ — в [InstallReceiver]. */
     fun uninstall(ctx: Context, pkg: String, label: String) {
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0)
@@ -204,10 +220,12 @@ class InstallReceiver : BroadcastReceiver() {
                 Toast.makeText(ctx, if (removed != null) ctx.getString(R.string.uninstall_done, removed)
                     else ctx.getString(R.string.inst_done), Toast.LENGTH_SHORT).show()
                 MainActivity.current?.get()?.let { m -> m.runOnUiThread { m.onInstalled() } }
+                if (removed != null) ApkInstaller.next(ctx)
             }
-            PackageInstaller.STATUS_FAILURE_ABORTED -> {}   // отменили в системном окне
+            PackageInstaller.STATUS_FAILURE_ABORTED -> if (removed != null) ApkInstaller.next(ctx, stop = true)   // отменили — остальные не удаляем
             else -> Haptics.play(Haptics.Kind.ERROR).let { _ -> Toast.makeText(ctx, ctx.getString(if (removed != null) R.string.uninstall_failed else R.string.inst_failed,
-                intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE).orEmpty()), Toast.LENGTH_LONG).show() }
+                intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE).orEmpty()), Toast.LENGTH_LONG).show()
+                if (removed != null) ApkInstaller.next(ctx) }
         }
     }
 }

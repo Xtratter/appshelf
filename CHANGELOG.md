@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.19 — 2026-09-30
+
+- **Select several apps**: long-press a row to start selecting, then tap rows to mark them (a highlight and a check on the icon). A glass bar at the bottom shows how many are selected and offers: All (everything shown, with filters and search), Leave out / Put back into the saved list, Share (as text, with links and notes) and Uninstall — AppShelf asks once, then Android confirms each app in turn; cancelling one stops the rest, system apps are skipped. ✕ or Back leaves the selection
+
 ## 1.18 — 2026-09-30
 
 - **Notes for apps**: a "Note" block in the app card — why you need the app, which account, what to set up after installing. Notes are saved inside every list (JSON, CSV, Markdown) and shared through links.json on the WebDAV server together with your links, so on a new phone they are right there. The start of the note shows in the list row, and search finds apps by their notes too
