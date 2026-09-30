@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/m_catalog" android:title="@string/catalog_title" />
-    <item android:id="@+id/m_system" android:title="@string/show_system" android:checkable="true" />
-    <item android:id="@+id/m_theme" android:title="@string/theme" />
-    <item android:id="@+id/m_about" android:title="@string/about" />
-</menu>

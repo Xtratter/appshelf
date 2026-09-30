@@ -2,6 +2,14 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.8.3 — 2026-09-30
+
+- "Liquid glass": the top bar is drawn from a copy of what is under it with the same lens as the cards — it no longer drifts or gets cut off
+- Everything is glass: buttons, filter chips and buttons in windows; colored buttons become tinted glass with a highlight
+- The ⋮ menu is a glass window instead of the solid system popup
+- Windows no longer show a rectangular "frame" inside the rounded glass (the extra blur under the window is off; the screen behind is still blurred)
+- The "liquid glass" background is plain and even (Material style) — no bright spots moving inside the cards while scrolling
+
 ## 1.8.2 — 2026-09-30
 
 - "Liquid glass": the top of the bar is no longer cut off — the light frosting is now done by the glass shader itself instead of a separate blur, which shifted the lens

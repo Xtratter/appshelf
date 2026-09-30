@@ -23,7 +23,6 @@ import android.widget.HorizontalScrollView
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ListView
-import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import java.text.SimpleDateFormat
@@ -736,20 +735,45 @@ class MainActivity : Activity() {
 
     // ---------- меню ----------
 
+    /** Меню ⋮ — стеклянное окно под кнопкой (системное всплывающее меню стеклом не сделать). */
     private fun showMenu(anchor: View) {
-        val pm = PopupMenu(this, anchor, Gravity.END)
-        pm.menuInflater.inflate(R.menu.main, pm.menu)
-        pm.menu.findItem(R.id.m_system).isChecked = prefs.showSystem
-        pm.setOnMenuItemClickListener { item ->
-            when (item.itemId) {
-                R.id.m_catalog -> CatalogDialog.show(this)
-                R.id.m_system -> { prefs.showSystem = !prefs.showSystem; render() }
-                R.id.m_theme -> themeDialog()
-                R.id.m_about -> about()
-            }
-            true
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(8f), dp(10f), dp(8f), dp(10f))
         }
-        pm.show()
+        val dialog = AlertDialog.Builder(this).setView(box).create()
+        fun item(title: Int, checked: Boolean? = null, action: () -> Unit) = box.addView(TextView(this).apply {
+            setText(title)
+            textSize = 16f
+            setTextColor(Ui.TEXT)
+            gravity = Gravity.CENTER_VERTICAL
+            minHeight = dp(52f)
+            setPadding(dp(18f), 0, dp(18f), 0)
+            background = Ui.ripple(this@MainActivity, 16f)
+            if (checked != null) {
+                setCompoundDrawablesRelativeWithIntrinsicBounds(null, null,
+                    if (checked) getDrawable(android.R.drawable.checkbox_on_background) else getDrawable(android.R.drawable.checkbox_off_background), null)
+                compoundDrawableTintList = android.content.res.ColorStateList.valueOf(if (checked) Ui.primary else Ui.TEXT3)
+            }
+            setOnClickListener { dialog.dismiss(); action() }
+        }, LinearLayout.LayoutParams(-1, -2))
+        item(R.string.catalog_title) { CatalogDialog.show(this) }
+        item(R.string.show_system, prefs.showSystem) { prefs.showSystem = !prefs.showSystem; render() }
+        item(R.string.theme) { themeDialog() }
+        item(R.string.about) { about() }
+        dialog.show()
+        Ui.glassDialog(dialog)
+        dialog.window?.apply {
+            val at = IntArray(2)
+            anchor.getLocationOnScreen(at)
+            setGravity(Gravity.TOP or Gravity.END)
+            attributes = attributes.apply {
+                width = dp(270f)
+                x = dp(10f)
+                y = at[1] + anchor.height - dp(4f)
+            }
+            setDimAmount(0.15f)
+        }
     }
 
     private fun themeDialog() {

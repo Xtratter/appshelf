@@ -143,10 +143,9 @@ object Ui {
             }
             Theme.LIQUID -> {
                 // яркий насыщенный фон — чтобы было что преломлять; стекло почти прозрачное
-                base = if (you) mix(c(android.R.color.system_neutral1_900), 0xFF000000.toInt(), 0.55f) else 0xFF08090D.toInt()
-                aurora = true
-                auroraStrength = 1.9f
-                card = 0x0AFFFFFF
+                base = if (you) mix(c(android.R.color.system_neutral1_900), 0xFF000000.toInt(), 0.3f) else 0xFF111318.toInt()
+                aurora = true   // ровный фон (без пятен) — его картинку «преломляют» карточки
+                card = 0x12FFFFFF
                 dialogBlur = 0x5C14161C; dialogSolid = 0xF014161C.toInt()
                 surface = 0xFF14161C.toInt()
             }
@@ -201,11 +200,13 @@ object Ui {
             InsetDrawable(mask, insetH.toInt(), insetV.toInt(), insetH.toInt(), insetV.toInt()))
     }
 
-    fun pill(ctx: Context, fill: Int, stroke: Int = 0, radiusDp: Float = 100f) = GradientDrawable().apply {
-        cornerRadius = dp(ctx, radiusDp)
-        setColor(fill)
-        if (stroke != 0) setStroke(dp(ctx, 1f).toInt().coerceAtLeast(1), stroke)
-    }
+    /** Кнопка-«пилюля»; в теме «Жидкое стекло» — стеклянная (цветная заливка становится цветным стеклом). */
+    fun pill(ctx: Context, fill: Int, stroke: Int = 0, radiusDp: Float = 100f): Drawable =
+        if (liquid) GlassDrawable(ctx, radiusDp, fill) else GradientDrawable().apply {
+            cornerRadius = dp(ctx, radiusDp)
+            setColor(fill)
+            if (stroke != 0) setStroke(dp(ctx, 1f).toInt().coerceAtLeast(1), stroke)
+        }
 
     private val dialogs = HashSet<View>()
     /** Сколько «стеклянных» диалогов сейчас открыто. */
@@ -233,7 +234,8 @@ object Ui {
             ctx.getSystemService(WindowManager::class.java).isCrossWindowBlurEnabled
         w.setBackgroundDrawable(GlassDrawable(ctx, 28f, if (blur) dialogBlur else dialogSolid))
         if (blur && Build.VERSION.SDK_INT >= 31) {
-            w.setBackgroundBlurRadius(dp(ctx, 40f).toInt())
+            // размываем весь экран позади; отдельное размытие под самим окном не включаем —
+            // система размывает прямоугольник, и внутри скруглённого стекла была видна «рамка»
             w.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
             w.attributes = w.attributes.apply { blurBehindRadius = dp(ctx, 10f).toInt() }
         }
@@ -311,13 +313,8 @@ class AuroraDrawable : Drawable() {
         blob(w * 1.0f, h * 0.38f, w * 0.85f, c2, 0.30f * k)
         blob(w * 0.1f, h * 0.78f, w * 0.9f, c3, 0.22f * k)
         blob(w * 0.9f, h * 1.02f, w * 0.7f, c1, 0.25f * k)
-        if (Ui.liquid) {
-            // для стекла — ещё несколько чётких пятен помельче: на них видно, как кромка изгибает фон
-            blob(w * 0.72f, h * 0.16f, w * 0.26f, c2, 0.55f)
-            blob(w * 0.22f, h * 0.46f, w * 0.22f, c1, 0.5f)
-            blob(w * 0.8f, h * 0.66f, w * 0.3f, c3, 0.5f)
-            blob(w * 0.35f, h * 0.93f, w * 0.24f, c2, 0.45f)
-        }
+        // «жидкое стекло»: фон ровный, без пятен — иначе при прокрутке пятна «гуляют» внутри стеклянных карточек
+        if (Ui.liquid) { blobs.clear(); shaders.clear() }
         val out = android.graphics.Bitmap.createBitmap(w.toInt().coerceAtLeast(1), h.toInt().coerceAtLeast(1),
             android.graphics.Bitmap.Config.ARGB_8888)
         val c = Canvas(out)

@@ -9,8 +9,6 @@ import android.graphics.Paint
 import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.RectF
-import android.graphics.RenderEffect
-import android.graphics.RenderNode
 import android.graphics.RuntimeShader
 import android.graphics.Shader
 import android.graphics.drawable.Drawable
@@ -26,6 +24,8 @@ import android.annotation.TargetApi
 object Liquid {
     /** Содержимое под стеклом поменялось без прокрутки (новый список, фильтр, значки) — панель перезапишет его. */
     @JvmStatic var version = 0
+    /** Сейчас список копируется в картинку под стеклом панели: карточки рисуем попроще (обычный холст). */
+    @JvmStatic var capturing = false
 
     const val AGSL = """
 uniform shader content;
@@ -139,6 +139,7 @@ class LiquidCard(private val dp: Float) {
 
     /** false — рисовать нечем (фон ещё не готов или стекло не в главном окне). */
     fun draw(c: Canvas, host: View, r: RectF, radius: Float, tint: Int): Boolean {
+        if (!c.isHardwareAccelerated || Liquid.capturing) return false
         val bmp = Ui.backdrop ?: return false
         if (host.rootView !== Ui.liquidRoot || Ui.backdropW <= 0) return false
         if (bmpFor !== bmp) { bmpShader = BitmapShader(bmp, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP); bmpFor = bmp }
@@ -156,25 +157,26 @@ class LiquidCard(private val dp: Float) {
 }
 
 /**
- * Настоящее стекло для плавающей панели: то, что под ней (фон окна и [sources]), записывается в RenderNode
- * ровно её размера, слегка размывается и пропускается через линзу.
- * Панель рисуется в собственный слой и перерисовывается только целиком: координаты шейдерного эффекта
- * система считает от перерисовываемой области, и частичная перерисовка (например, гаснущая полоса прокрутки)
- * сдвигала бы стекло.
+ * Настоящее стекло для плавающей панели: то, что под ней (фон окна и [sources]), копируется в картинку
+ * в половину размера — только когда список сдвинулся или поменялся, — и рисуется той же линзой, что и карточки.
+ * Системные эффекты (RenderEffect) для этого не годятся: их координаты система считает от перерисовываемой
+ * области, и стекло то уплывало, то срезалось.
  */
 @TargetApi(33)
 class LiquidBackdrop(private val host: View, private val sources: List<View>, radiusDp: Float, private val tint: Int) :
     Drawable(), ViewTreeObserver.OnPreDrawListener {
     private val dp = host.resources.displayMetrics.density
     private val radius = radiusDp * dp
-    private val node = RenderNode("liquid")
+    private val scale = 0.5f
     private val shader = RuntimeShader(Liquid.AGSL)
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val m = Matrix()
     private val loc = IntArray(2)
     private val src = IntArray(2)
+    private var bmp: android.graphics.Bitmap? = null
     private var shown = ""
 
     init {
-        host.setLayerType(View.LAYER_TYPE_HARDWARE, null)
         host.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) = v.viewTreeObserver.addOnPreDrawListener(this@LiquidBackdrop)
             override fun onViewDetachedFromWindow(v: View) = v.viewTreeObserver.removeOnPreDrawListener(this@LiquidBackdrop)
@@ -184,15 +186,21 @@ class LiquidBackdrop(private val host: View, private val sources: List<View>, ra
 
     override fun onBoundsChange(b: Rect) {
         if (b.isEmpty) return
-        node.setPosition(0, 0, b.width(), b.height())
-        // лёгкое размытие считает сам шейдер: отдельный эффект размытия расширяет картинку за края,
-        // и система сдвигала бы координаты линзы на эту ширину (стекло «срезалось» сверху)
-        Liquid.uniforms(shader, 0f, 0f, b.width().toFloat(), b.height().toFloat(), radius, dp, tint, blur = 3f * dp)
-        node.setRenderEffect(RenderEffect.createRuntimeShaderEffect(shader, "content"))
+        val out = android.graphics.Bitmap.createBitmap((b.width() * scale).toInt().coerceAtLeast(1),
+            (b.height() * scale).toInt().coerceAtLeast(1), android.graphics.Bitmap.Config.ARGB_8888)
+        bmp = out
+        val bs = BitmapShader(out, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        m.setScale(b.width() / out.width.toFloat(), b.height() / out.height.toFloat())
+        m.postTranslate(b.left.toFloat(), b.top.toFloat())
+        bs.setLocalMatrix(m)
+        shader.setInputShader("content", bs)
+        Liquid.uniforms(shader, b.left.toFloat(), b.top.toFloat(), b.width().toFloat(), b.height().toFloat(),
+            radius, dp, tint, blur = 3f * dp)
+        paint.shader = shader
         shown = ""
     }
 
-    /** Что сейчас под панелью: если ничего не сдвинулось — не трогаем (иначе панель перерисовывалась бы бесконечно). */
+    /** Что сейчас под панелью: если ничего не сдвинулось — не копируем заново. */
     private fun state(): String {
         host.getLocationInWindow(loc)
         val sb = StringBuilder().append(loc[0]).append(',').append(loc[1]).append(',').append(Liquid.version)
@@ -211,35 +219,43 @@ class LiquidBackdrop(private val host: View, private val sources: List<View>, ra
         val now = state()
         if (now != shown) {
             shown = now
-            record()
-            host.invalidate()   // весь слой панели целиком
+            capture()
+            invalidateSelf()
         }
         return true
     }
 
-    private fun record() {
+    /** Нарисовать в картинку то, что под панелью: фон окна и список (в обычном, не аппаратном режиме). */
+    private fun capture() {
+        val out = bmp ?: return
         host.getLocationInWindow(loc)
-        val c = node.beginRecording()
-        c.translate((-loc[0] - bounds.left).toFloat(), (-loc[1] - bounds.top).toFloat())
-        host.rootView.background?.draw(c)
-        for (v in sources) {
-            if (v.visibility != View.VISIBLE) continue
-            v.getLocationInWindow(src)
-            c.save()
-            c.translate(src[0].toFloat(), src[1].toFloat())
-            v.draw(c)
-            c.restore()
+        val x = (loc[0] + bounds.left).toFloat()
+        val y = (loc[1] + bounds.top).toFloat()
+        out.eraseColor(Ui.base)
+        val c = Canvas(out)
+        c.scale(out.width / bounds.width().toFloat(), out.height / bounds.height().toFloat())
+        c.translate(-x, -y)
+        c.clipRect(x, y, x + bounds.width(), y + bounds.height())
+        Liquid.capturing = true
+        try {
+            host.rootView.background?.draw(c)
+            for (v in sources) {
+                if (v.visibility != View.VISIBLE) continue
+                v.getLocationInWindow(src)
+                c.save()
+                c.translate(src[0].toFloat(), src[1].toFloat())
+                v.draw(c)
+                c.restore()
+            }
+        } finally {
+            Liquid.capturing = false
         }
-        node.endRecording()
     }
 
     override fun draw(c: Canvas) {
-        if (!c.isHardwareAccelerated) return
-        if (shown.isEmpty()) { shown = state(); record() }
-        c.save()
-        c.translate(bounds.left.toFloat(), bounds.top.toFloat())
-        c.drawRenderNode(node)
-        c.restore()
+        if (bmp == null) return
+        if (shown.isEmpty()) { shown = state(); capture() }
+        c.drawRect(bounds.left - 1f, bounds.top - 1f, bounds.right + 1f, bounds.bottom + 1f, paint)
     }
 
     override fun getOutline(outline: Outline) = outline.setRoundRect(bounds, radius)
