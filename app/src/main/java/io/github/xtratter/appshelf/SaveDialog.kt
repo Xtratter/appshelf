@@ -67,6 +67,11 @@ object SaveDialog {
             else -> a.getString(R.string.dav_sub_off)
         }, on = sync != null && !sync.second, warn = sync?.second == true) { SyncDialog.show(a) }
         item(R.string.select_title, a.getString(R.string.select_sub, included, total)) { a.selectApps { show(a) } }
+        item(R.string.bk_title, when (ApkBackup.dest(p)) {
+            ApkBackup.Dest.WEBDAV -> a.getString(R.string.bk_sub_webdav)
+            ApkBackup.Dest.FOLDER -> a.getString(R.string.bk_sub_folder)
+            null -> a.getString(R.string.bk_sub_off)
+        }, on = ApkBackup.dest(p) != null) { ApkBackupDialog.show(a) }
         val withLinks = LinkStore.mine(a).count { it.value.links.isNotEmpty() }
         item(R.string.links_export, a.resources.getQuantityString(R.plurals.links_export_sub, withLinks, withLinks)) { a.exportLinks() }
 

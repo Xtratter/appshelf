@@ -40,6 +40,7 @@ class MainActivity : Activity() {
         private const val REQ_AUTOSAVE = 2
         private const val REQ_OPEN = 3
         private const val REQ_LINKS = 4
+        private const val REQ_APK_FOLDER = 5
     }
 
     private lateinit var prefs: Prefs
@@ -321,6 +322,27 @@ class MainActivity : Activity() {
         }
     }
 
+    // ---------- резервные копии APK ----------
+
+    /** Какие копии APK есть (пакет → файл) — чтобы при восстановлении ставить из копии. */
+    private var backups: Map<String, String> = emptyMap()
+
+    fun backupFor(pkg: String): String? = backups[pkg]
+
+    /** Перечитать, какие копии есть (в фоне), и перерисовать список. */
+    fun refreshBackups() {
+        val app = applicationContext
+        Thread {
+            val b = runCatching { ApkBackup.index(app) }.getOrDefault(emptyMap())
+            main.post { if (!isDestroyed) { backups = b; render() } }
+        }.start()
+    }
+
+    /** Выбрать папку на телефоне для копий APK. */
+    fun pickApkFolder() {
+        startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), REQ_APK_FOLDER)
+    }
+
     // ---------- установить все недостающие по очереди ----------
 
     private var queue: List<AppInfo> = emptyList()
@@ -349,7 +371,13 @@ class MainActivity : Activity() {
         showQueueBar(waitingFor = true)
         queueWaiting = true
         val link = LinkStore.forApp(this, a.pkg).firstOrNull()?.first
-        if (link != null) LinkStore.open(this, link, a.pkg, a.label) else Store.open(this, a)
+        val backup = backupFor(a.pkg)
+        // своя ссылка или из каталога → резервная копия → магазин
+        when {
+            link != null -> LinkStore.open(this, link, a.pkg, a.label)
+            backup != null -> ApkInstaller.fromBackup(this, a.pkg, a.label, backup)
+            else -> Store.open(this, a)
+        }
     }
 
     /** Вернулись в AppShelf (список перечитан): установилось — дальше, нет — предложить «ещё раз» или «пропустить». */
@@ -609,7 +637,8 @@ class MainActivity : Activity() {
             val missing = restoring && a.pkg !in installedPkgs
             items += Row(a, sourceText(a), dateText(a.firstInstall), if (restoring) !missing else null,
                 excluded = !restoring && a.pkg in excl, selected = a.pkg in selected,
-                link = if (missing) LinkStore.forApp(this, a.pkg).firstOrNull()?.let { getString(Links.kind(it.first.url).title) } else null,
+                link = if (missing) LinkStore.forApp(this, a.pkg).firstOrNull()?.let { getString(Links.kind(it.first.url).title) }
+                    ?: backupFor(a.pkg)?.let { getString(R.string.bk_row) } else null,
                 note = LinkStore.note(this, a.pkg))
         }
         if (items.isEmpty()) items += getString(
@@ -756,6 +785,7 @@ class MainActivity : Activity() {
         // ссылки из списка — к своим; и свежий каталог / ссылки с сервера, раз уж настраиваем телефон
         LinkStore.import(this, s.links)
         refreshLinks(catalogAge = 60 * 60 * 1000L, forceDav = true)
+        refreshBackups()   // для каких недостающих есть резервные копии APK
         restore = s
         missingOnly = s.apps.any { it.pkg !in installedPkgs }
         filter = null
@@ -979,6 +1009,15 @@ class MainActivity : Activity() {
                     if (err != null) prefs.autosaveUri = ""
                     renderSummary()
                 }
+            }
+            REQ_APK_FOLDER -> {
+                try {
+                    contentResolver.takePersistableUriPermission(uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                } catch (e: SecurityException) {}
+                prefs.apkFolderUri = uri.toString()
+                prefs.apkDest = ApkBackup.Dest.FOLDER.name
+                ApkBackupDialog.show(this)
             }
             REQ_LINKS -> io.execute {
                 val err = try {

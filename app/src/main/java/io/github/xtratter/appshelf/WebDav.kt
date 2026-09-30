@@ -67,6 +67,23 @@ class WebDav(folderUrl: String, private val user: String, private val pass: Stri
 
     fun get(name: String): ByteArray = ok(request("GET", fileUrl(name))).body
 
+    /** Скачать большой файл сразу в [dest] (с прогрессом). */
+    fun download(path: String, dest: java.io.File, progress: ((Long) -> Unit)? = null) {
+        dest.outputStream().use { out -> ok(request("GET", fileUrl(path), stream = Stream(sink = out, progress = progress))) }
+    }
+
+    /** Загрузить большой файл из [file] потоком; если папок нет — создать их и загрузить ещё раз. */
+    fun putFile(path: String, file: java.io.File, type: String, progress: ((Long) -> Unit)? = null) {
+        val headers = mapOf("Content-Type" to type)
+        val r = request("PUT", fileUrl(path), headers, stream = Stream(upload = file, progress = progress))
+        if (r.code == 404 || r.code == 409) {
+            createFolder()
+            val parent = path.substringBeforeLast('/', "")
+            if (parent.isNotEmpty()) createFolder(parent)
+            ok(request("PUT", fileUrl(path), headers, stream = Stream(upload = file, progress = progress)))
+        } else ok(r)
+    }
+
     /** Содержимое папки [sub] (пустая строка — основной): файлы и вложенные папки. */
     fun list(sub: String = ""): List<Entry> {
         val url = folderUrl(sub)
@@ -81,8 +98,15 @@ class WebDav(folderUrl: String, private val user: String, private val pass: Stri
 
     // ---------- HTTP ----------
 
+    /**
+     * Большие файлы — потоком: [upload] отправляется из файла кусками, тело успешного ответа пишется в [sink];
+     * [progress] получает, сколько байт передано.
+     */
+    private class Stream(val upload: java.io.File? = null, val sink: java.io.OutputStream? = null,
+                         val progress: ((Long) -> Unit)? = null)
+
     private fun request(method: String, url: URL, headers: Map<String, String> = emptyMap(), body: ByteArray? = null,
-                        hops: Int = 3): Response {
+                        hops: Int = 3, stream: Stream? = null): Response {
         val https = url.protocol.equals("https", true)
         if (!https && !url.protocol.equals("http", true)) throw IllegalArgumentException("http:// / https://")
         val host = url.host.removeSurrounding("[", "]")
@@ -106,21 +130,34 @@ class WebDav(folderUrl: String, private val user: String, private val pass: Stri
             if (user.isNotEmpty() || pass.isNotEmpty()) head.append("Authorization: Basic ")
                 .append(Base64.getEncoder().encodeToString("$user:$pass".toByteArray(Charsets.UTF_8))).append("\r\n")
             for ((k, v) in headers) head.append(k).append(": ").append(v).append("\r\n")
+            val upload = stream?.upload
             if (body != null) head.append("Content-Length: ").append(body.size).append("\r\n")
+            else if (upload != null) head.append("Content-Length: ").append(upload.length()).append("\r\n")
             head.append("\r\n")
-            val out = it.getOutputStream()
+            val out = java.io.BufferedOutputStream(it.getOutputStream(), 64 * 1024)
             out.write(head.toString().toByteArray(Charsets.UTF_8))
             body?.let(out::write)
+            if (upload != null) upload.inputStream().use { inp ->
+                val buf = ByteArray(64 * 1024)
+                var sent = 0L
+                while (true) {
+                    val n = inp.read(buf)
+                    if (n < 0) break
+                    out.write(buf, 0, n)
+                    sent += n
+                    stream.progress?.invoke(sent)
+                }
+            }
             out.flush()
-            read(BufferedInputStream(it.getInputStream()), method)
+            read(BufferedInputStream(it.getInputStream()), method, stream)
         }
         // переадресация — только на тот же сервер, чтобы не отдать пароль чужому
         val location = r.headers["location"]
         if (r.code in intArrayOf(301, 302, 303, 307, 308) && location != null && hops > 0) {
             val to = URL(url, location)
             if (to.host.equals(url.host, true)) {
-                return if (r.code == 303) request("GET", to, emptyMap(), null, hops - 1)
-                else request(method, to, headers, body, hops - 1)
+                return if (r.code == 303) request("GET", to, emptyMap(), null, hops - 1, stream?.let { Stream(sink = it.sink, progress = it.progress) })
+                else request(method, to, headers, body, hops - 1, stream)
             }
         }
         return r
@@ -143,7 +180,7 @@ class WebDav(folderUrl: String, private val user: String, private val pass: Stri
         throw last ?: IOException("no address for $host")
     }
 
-    private fun read(inp: InputStream, method: String): Response {
+    private fun read(inp: InputStream, method: String, stream: Stream? = null): Response {
         var status: String
         var headers: Map<String, String>
         do {   // промежуточные ответы 1xx пропускаем
@@ -161,6 +198,12 @@ class WebDav(folderUrl: String, private val user: String, private val pass: Stri
         val parts = status.split(' ', limit = 3)
         val code = parts[1].toInt()
         val len = headers["content-length"]?.toLongOrNull()
+        val sink = stream?.sink
+        if (sink != null && code in 200..299 && method != "HEAD") {
+            // большой ответ — сразу в файл, не в память
+            copyBody(inp, sink, len, headers["transfer-encoding"]?.contains("chunked", true) == true, stream.progress)
+            return Response(code, parts.getOrElse(2) { "" }, headers, ByteArray(0))
+        }
         val body = when {
             method == "HEAD" || code == 204 || code == 304 -> ByteArray(0)
             headers["transfer-encoding"]?.contains("chunked", true) == true -> chunked(inp)
@@ -168,6 +211,31 @@ class WebDav(folderUrl: String, private val user: String, private val pass: Stri
             else -> limited(inp)
         }
         return Response(code, parts.getOrElse(2) { "" }, headers, body)
+    }
+
+    private fun copyBody(inp: InputStream, out: java.io.OutputStream, len: Long?, chunked: Boolean, progress: ((Long) -> Unit)?) {
+        val buf = ByteArray(64 * 1024)
+        var done = 0L
+        fun pump(limit: Long) {   // limit < 0 — до конца потока
+            var left = limit
+            while (limit < 0 || left > 0) {
+                val n = inp.read(buf, 0, if (limit < 0) buf.size else minOf(buf.size.toLong(), left).toInt())
+                if (n < 0) { if (limit < 0) return else throw IOException("connection closed") }
+                out.write(buf, 0, n)
+                done += n; left -= n
+                progress?.invoke(done)
+            }
+        }
+        when {
+            chunked -> while (true) {
+                val size = line(inp)?.substringBefore(';')?.trim()?.toLongOrNull(16) ?: throw IOException("bad chunk")
+                if (size == 0L) { while (!line(inp).isNullOrEmpty()) { }; return }
+                pump(size)
+                line(inp)
+            }
+            len != null -> pump(len)
+            else -> pump(-1)
+        }
     }
 
     private fun line(inp: InputStream): String? {

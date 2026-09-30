@@ -15,6 +15,12 @@ class Prefs(ctx: Context) {
     /** Показывать системные приложения (предустановленные, без обновлений из магазина — тоже). */
     var showSystem by bool("show_system", false)
 
+    /** Резервные копии APK: куда ([ApkBackup.Dest]), папка на телефоне, что копировать, обновлять ли при отправке. */
+    var apkDest by str("apk_dest", "")
+    var apkFolderUri by str("apk_folder_uri", "")
+    var apkScope by str("apk_scope", ApkBackup.Scope.APK_ONLY.name)
+    var apkAuto by bool("apk_auto", false)
+
     /** Сила отклика вибрацией ([Haptics.Level]). */
     var haptics by str("haptics", Haptics.Level.MEDIUM.name)
     fun haptics(): Haptics.Level = runCatching { Haptics.Level.valueOf(haptics) }.getOrDefault(Haptics.Level.MEDIUM)

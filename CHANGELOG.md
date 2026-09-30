@@ -2,6 +2,12 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.21 — 2026-09-30
+
+- **APK backups** (Save & restore → APK backups): copies of the apps themselves — for apps you cannot get anywhere else. Where: the WebDAV server (folder apk/) or a folder on the phone. What: apps from APK files or all apps except system ones. One file per app with the latest version ("package__versionCode.apk"); split apps are packed into one .apks; the same version is not uploaded twice and older ones are deleted. "Back up now" shows progress and can be stopped; "Update backups every time the list is sent to WebDAV" keeps them fresh in the background
+- **Restoring from a backup**: when a list is opened, AppShelf checks which missing apps have backups — the list shows "Backup ›", the app card offers "Install from the backup" (split apps are installed in one session), and "Install all one by one" uses the backup after your links and before the store
+- The WebDAV client streams large files instead of holding them in memory
+
 ## 1.20 — 2026-09-30
 
 - **Install all missing apps one by one**: in restore mode, "Install all one by one (N)" opens the first missing app where it comes from (your link or the catalog's, otherwise its store); a glass bar at the bottom shows "Installing 3 of 31 — Telegram". Come back to AppShelf once it is installed and the next one opens by itself; if it is not installed, choose Try again, Skip or Stop. At the end: "Done: N of M installed"

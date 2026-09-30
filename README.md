@@ -20,6 +20,7 @@ which apps are missing and opens each one in the right store.
   or every N days at a set time, optionally only over Wi-Fi; a folder per phone, keeps the last versions (10 by default),
   a missed send is made up as soon as possible;
   on a new phone open the list straight from the server
+- **APK backups**: copies of apps you cannot get anywhere else (installed from APK files, or all apps) on the WebDAV server or in a folder; split apps are packed into one .apks; only changed versions are uploaded, optionally with every scheduled send; on a new phone "Install from the backup" (also in "Install all one by one")
 - **Select several apps** (long-press a row): uninstall them one after another, leave out of / put back into the list, share
 - **Notes** in the app card — why you need the app, which account, what to set up; they travel with the list and via WebDAV to a new phone, show in the list and are searchable
 - **Where to download**: your own links for each app (GitHub, Telegram, a site…) in the app card, saved with the list

@@ -163,7 +163,12 @@ object DetailsDialog {
             links.firstOrNull()?.let { (l, _) ->
                 action(a.getString(R.string.install_link, l.label.ifBlank { a.getString(Links.kind(l.url).title) }), main = true) { LinkStore.open(a, l, app.pkg, app.label) }
             }
-            action(a.getString(R.string.install_from, storeName(a, app, source)), main = links.isEmpty()) { Store.open(a, app) }
+            // резервная копия APK — раньше магазина
+            val backup = a.backupFor(app.pkg)
+            if (backup != null) action(a.getString(R.string.bk_install), main = links.isEmpty()) {
+                ApkInstaller.fromBackup(a, app.pkg, app.label, backup)
+            }
+            action(a.getString(R.string.install_from, storeName(a, app, source)), main = links.isEmpty() && backup == null) { Store.open(a, app) }
         } else {
             if (a.packageManager.getLaunchIntentForPackage(app.pkg) != null)
                 action(a.getString(R.string.open_app), main = true) { Store.launch(a, app.pkg) }

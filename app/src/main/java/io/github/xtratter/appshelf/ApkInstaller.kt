@@ -25,36 +25,87 @@ import java.net.URL
  * Нужно разрешение «Установка неизвестных приложений»: если его нет — просим и продолжаем, когда вернутся из настроек.
  */
 object ApkInstaller {
-    private class Pending(val url: String, val pkg: String?, val label: String)
+    /** Что сделать, когда дадут разрешение на установку (вернулись из настроек). */
+    private var pending: (() -> Unit)? = null
 
-    private var pending: Pending? = null
+    /** Нет разрешения на установку — объяснить и открыть настройки; [then] выполнится, когда вернутся с разрешением. */
+    private fun needPermission(a: MainActivity, then: () -> Unit): Boolean {
+        if (a.packageManager.canRequestPackageInstalls()) { pending = null; return false }
+        pending = then
+        AlertDialog.Builder(a)
+            .setTitle(R.string.inst_perm_title)
+            .setMessage(R.string.inst_perm_text)
+            .setPositiveButton(R.string.inst_perm_open) { _, _ ->
+                try {
+                    a.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + a.packageName)))
+                } catch (e: Exception) {
+                    a.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES))
+                }
+            }
+            .setNegativeButton(android.R.string.cancel) { _, _ -> pending = null }
+            .show().also { Ui.glassDialog(it) }
+        return true
+    }
+
+    /**
+     * Поставить приложение из резервной копии [name] (см. [ApkBackup]): скачать с прогрессом и отдать установщику;
+     * копия из нескольких частей (.apks) ставится одним сеансом.
+     */
+    fun fromBackup(a: MainActivity, pkg: String, label: String, name: String) {
+        if (needPermission(a) { fromBackup(a, pkg, label, name) }) return
+        val dp = a.resources.displayMetrics.density
+        val bar = ProgressBar(a, null, android.R.attr.progressBarStyleHorizontal).apply {
+            isIndeterminate = true
+            indeterminateTintList = android.content.res.ColorStateList.valueOf(Ui.primary)
+        }
+        val info = TextView(a).apply { textSize = 13.5f; setTextColor(Ui.TEXT2); setText(R.string.dav_connecting) }
+        val box = LinearLayout(a).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((24 * dp).toInt(), (8 * dp).toInt(), (24 * dp).toInt(), 0)
+            addView(bar)
+            addView(info, LinearLayout.LayoutParams(-1, -2).apply { topMargin = (6 * dp).toInt() })
+        }
+        val stop = java.util.concurrent.atomic.AtomicBoolean(false)
+        val dialog = AlertDialog.Builder(a).setTitle(a.getString(R.string.bk_restoring, label)).setView(box)
+            .setNegativeButton(android.R.string.cancel) { _, _ -> stop.set(true) }.setCancelable(false).create()
+        dialog.show()
+        Ui.glassDialog(dialog)
+        val dir = File(a.cacheDir, "apk").apply { mkdirs(); listFiles()?.forEach { it.delete() } }
+        val file = File(dir, name)
+        Thread {
+            var shown = 0L
+            val err = try {
+                ApkBackup.fetch(a, name, file) { done ->
+                    if (stop.get()) throw java.io.InterruptedIOException()
+                    if (done - shown > 512 * 1024) { shown = done; a.runOnUiThread { info.text = Formatter.formatShortFileSize(a, done) } }
+                }
+                null
+            } catch (e: Exception) { e }
+            a.runOnUiThread {
+                dialog.dismiss()
+                when {
+                    stop.get() -> file.delete()
+                    err != null -> {
+                        Haptics.play(Haptics.Kind.ERROR)
+                        Toast.makeText(a, a.getString(R.string.inst_failed, Sync.error(a, err)), Toast.LENGTH_LONG).show()
+                    }
+                    name.endsWith(".apks") -> commit(a, file)
+                    else -> check(a, file, pkg, label)
+                }
+            }
+        }.start()
+    }
 
     fun start(a: MainActivity, url: String, pkg: String?, label: String) {
-        if (!a.packageManager.canRequestPackageInstalls()) {
-            pending = Pending(url, pkg, label)
-            AlertDialog.Builder(a)
-                .setTitle(R.string.inst_perm_title)
-                .setMessage(R.string.inst_perm_text)
-                .setPositiveButton(R.string.inst_perm_open) { _, _ ->
-                    try {
-                        a.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:" + a.packageName)))
-                    } catch (e: Exception) {
-                        a.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES))
-                    }
-                }
-                .setNegativeButton(android.R.string.cancel) { _, _ -> pending = null }
-                .show().also { Ui.glassDialog(it) }
-            return
-        }
-        pending = null
+        if (needPermission(a) { start(a, url, pkg, label) }) return
         download(a, url, pkg, label)
     }
 
     /** Вернулись на экран: если разрешение дали — продолжить отложенную установку. */
     fun resume(a: MainActivity) {
         val p = pending ?: return
-        // не разрешили — забываем, чтобы загрузка не началась неожиданно потом
-        if (a.packageManager.canRequestPackageInstalls()) start(a, p.url, p.pkg, p.label) else pending = null
+        pending = null   // не разрешили — забываем, чтобы загрузка не началась неожиданно потом
+        if (a.packageManager.canRequestPackageInstalls()) p()
     }
 
     private fun download(a: MainActivity, url: String, pkg: String?, label: String) {
@@ -184,7 +235,17 @@ object ApkInstaller {
             val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
             val id = installer.createSession(params)
             installer.openSession(id).use { s ->
-                s.openWrite("base.apk", 0, file.length()).use { out ->
+                if (file.name.endsWith(".apks")) {
+                    // копия из нескольких частей: все .apk из архива — в один сеанс установки
+                    java.util.zip.ZipFile(file).use { zip ->
+                        for (e in zip.entries().asSequence().filter { it.name.endsWith(".apk") }) {
+                            s.openWrite(e.name.substringAfterLast('/'), 0, e.size).use { out ->
+                                zip.getInputStream(e).use { it.copyTo(out) }
+                                s.fsync(out)
+                            }
+                        }
+                    }
+                } else s.openWrite("base.apk", 0, file.length()).use { out ->
                     file.inputStream().use { it.copyTo(out) }
                     s.fsync(out)
                 }

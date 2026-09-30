@@ -28,6 +28,8 @@ object Sync {
     private const val JOB_ID = 1
     /** Периодическая проверка: не пропущена ли плановая отправка (будильник мог не сработать). */
     const val WATCH_ID = 2
+    /** Обновить резервные копии APK на WebDAV (после отправки списка; долго — отдельной задачей). */
+    const val APK_ID = 3
     private const val WATCH_EVERY = 3 * 60 * 60 * 1000L
     /** Имя списка в папке телефона; с версиями к нему добавляются дата и время. */
     const val FILE = "AppShelf.json"
@@ -64,6 +66,7 @@ object Sync {
             p.lastSaved = snap.created
             p.lastSavedName = "WebDAV · $device/$name"
             p.syncPending = false
+            if (p.apkAuto && ApkBackup.dest(p) == ApkBackup.Dest.WEBDAV) enqueueApk(ctx)
             Result(true, "$device/$name", false)
         } catch (e: Exception) {
             // сеть и ошибки сервера — повторим позже; неверный пароль или адрес — нет смысла
@@ -158,6 +161,16 @@ object Sync {
         if (!r.ok && r.retry) enqueue(ctx)
     }
 
+    /** Досылать изменившиеся копии APK, когда будет сеть (с Wi-Fi, если так настроено). */
+    fun enqueueApk(ctx: Context) {
+        val p = Prefs(ctx)
+        ctx.getSystemService(JobScheduler::class.java).schedule(
+            JobInfo.Builder(APK_ID, ComponentName(ctx, SyncJob::class.java))
+                .setRequiredNetworkType(if (p.syncWifi) JobInfo.NETWORK_TYPE_UNMETERED else JobInfo.NETWORK_TYPE_ANY)
+                .setPersisted(true)
+                .build())
+    }
+
     /** Отправить, как только будет сеть (с Wi-Fi, если так настроено); при сбое сети — повтор с паузой. */
     fun enqueue(ctx: Context) {
         val p = Prefs(ctx)
@@ -193,7 +206,15 @@ class SyncReceiver : BroadcastReceiver() {
 class SyncJob : JobService() {
     override fun onStartJob(params: JobParameters): Boolean {
         Thread {
-            if (params.jobId == Sync.WATCH_ID) {
+            if (params.jobId == Sync.APK_ID) {
+                val p = Prefs(applicationContext)
+                val scope = runCatching { ApkBackup.Scope.valueOf(p.apkScope) }.getOrDefault(ApkBackup.Scope.APK_ONLY)
+                val stop = java.util.concurrent.atomic.AtomicBoolean(false)
+                apkStop = stop
+                val r = ApkBackup.run(applicationContext, ApkBackup.targets(applicationContext, scope), stop)
+                // не успели или сеть пропала — повторим позже (уже загруженные повторно не загружаются)
+                jobFinished(params, stop.get() || (r.failed > 0 && r.saved + r.skipped == 0))
+            } else if (params.jobId == Sync.WATCH_ID) {
                 Sync.watch(applicationContext)
                 jobFinished(params, false)
             } else {
@@ -204,5 +225,10 @@ class SyncJob : JobService() {
         return true
     }
 
-    override fun onStopJob(params: JobParameters) = true
+    @Volatile private var apkStop: java.util.concurrent.atomic.AtomicBoolean? = null
+
+    override fun onStopJob(params: JobParameters): Boolean {
+        apkStop?.set(true)   // система просит остановиться — копирование прервётся после текущего приложения
+        return true
+    }
 }

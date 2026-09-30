@@ -92,4 +92,13 @@ class LinksTest {
         assertEquals("вход через Госуслуги", ListFile.read(ListFile.write(s, Format.CSV)).links["x"]!!.note)
         assertTrue(ListFile.write(s, Format.MARKDOWN).contains("вход через Госуслуги"))
     }
+
+    @Test
+    fun backupNames() {
+        assertEquals("org.telegram__123.apk", ApkBackup.fileName("org.telegram", 123, false))
+        assertEquals("a.b__7.apks", ApkBackup.fileName("a.b", 7, true))
+        assertEquals("org.telegram" to 123L, ApkBackup.parse("org.telegram__123.apk"))
+        assertEquals("a.b" to 7L, ApkBackup.parse("a.b__7.apks"))
+        assertEquals(null, ApkBackup.parse("AppShelf.json"))
+    }
 }
