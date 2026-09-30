@@ -45,6 +45,43 @@ object Ui {
     var backdropW = 0f
     var backdropH = 0f
     var liquidRoot: View? = null
+    /** Снимок главного экрана для стеклянных окон (в 1/4 размера) и где он на экране. */
+    var snapshot: android.graphics.Bitmap? = null
+    var snapshotX = 0f
+    var snapshotY = 0f
+    var snapshotW = 0f
+    var snapshotH = 0f
+
+    /** Заливка стеклянного окна. */
+    fun dialogBlurColor() = dialogBlur
+
+    /** Цвет [top] поверх [bottom] (оба могут быть полупрозрачными). */
+    fun over(top: Int, bottom: Int): Int {
+        val ta = (top ushr 24) / 255f
+        val ba = (bottom ushr 24) / 255f
+        val a = ta + ba * (1 - ta)
+        if (a <= 0f) return 0
+        fun ch(s: Int) = ((((top shr s) and 0xFF) * ta + ((bottom shr s) and 0xFF) * ba * (1 - ta)) / a).toInt().coerceIn(0, 255)
+        return ((a * 255).toInt() shl 24) or (ch(16) shl 16) or (ch(8) shl 8) or ch(0)
+    }
+
+    /** Снять главный экран (для окон «жидкого стекла»): под окном будет видно, как за ним преломляется список. */
+    fun takeSnapshot() {
+        val root = liquidRoot ?: return
+        if (!liquid || root.width <= 0 || root.height <= 0) return
+        val q = 4
+        val bmp = snapshot?.takeIf { it.width == root.width / q && it.height == root.height / q }
+            ?: android.graphics.Bitmap.createBitmap(root.width / q, root.height / q, android.graphics.Bitmap.Config.ARGB_8888)
+        val c = Canvas(bmp)
+        c.scale(1f / q, 1f / q)
+        Liquid.capturing = true
+        try { root.draw(c) } catch (e: Exception) { return } finally { Liquid.capturing = false }
+        val at = IntArray(2)
+        root.getLocationOnScreen(at)
+        snapshot = bmp
+        snapshotX = at[0].toFloat(); snapshotY = at[1].toFloat()
+        snapshotW = root.width.toFloat(); snapshotH = root.height.toFloat()
+    }
 
     var TEXT = 0xFFF2F2F6.toInt(); private set
     var TEXT2 = 0xB3F2F2F6.toInt(); private set
@@ -234,6 +271,8 @@ object Ui {
     /** Оформить диалог стеклом; на Android 12+ ещё и размыть то, что под ним. */
     fun glassDialog(d: AlertDialog) {
         val w = d.window ?: return
+        // первое окно поверх главного экрана — снимаем экран, чтобы стекло окна его преломляло
+        if (liquid && dialogs.isEmpty()) takeSnapshot()
         // под размытым диалогом главный экран не обновляем: каждое его изменение заставляет
         // систему заново размывать весь экран, а под стеклом всё равно ничего не разобрать
         dialogs += w.decorView
@@ -295,6 +334,7 @@ class GlassDrawable(ctx: Context, radiusDp: Float, private val fill: Int = Ui.ca
         // «жидкое стекло»: линза над фоном окна; не вышло (диалог, фон не готов) — обычное стекло
         val v = callback as? View ?: host
         if (liquid != null && v != null && liquid.draw(c, v, r, radius, fill)) return
+        if (liquid != null && v != null && liquid.drawOverSnapshot(c, v, r, radius, fill)) return
         if (liquid != null && liquid.drawRim(c, r, radius, fill)) return
         c.drawRoundRect(r, radius, radius, fillP)
         c.drawRoundRect(r, radius, radius, hiP)

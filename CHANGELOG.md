@@ -2,6 +2,12 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.8.7 — 2026-09-30
+
+- "Liquid glass" windows refract what is behind them: when a window opens, AppShelf takes a snapshot of the main screen, and the window with every card and button in it shows it blurred and bent at its edges with color fringes — like the top bar over the list
+- The bright rim of every glass element splits light like a prism — warm on the outside, cool on the inside — so the fringe is visible even over a plain background; stronger color separation in the refraction
+- The shading added in 1.8.6 is much softer
+
 ## 1.8.6 — 2026-09-30
 
 - "Liquid glass": the edge of every glass element now has visible thickness even over a plain background — a brighter band on the side facing the light, a shaded band on the far side and a thin dark line just inside the bright rim; over content (the top bar above the list) the edge still bends what is under it

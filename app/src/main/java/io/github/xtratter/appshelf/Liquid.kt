@@ -58,6 +58,10 @@ float sdf(float2 p, float2 b, float r) {
     return length(max(q, float2(0.0))) + min(max(q.x, q.y), 0.0) - r;
 }
 
+float rimAt(float d, float w) {
+    return smoothstep(-w - 1.2, -w * 0.35, d) * (1.0 - smoothstep(-0.4, 0.7, d));
+}
+
 half4 main(float2 xy) {
     float2 hs = size * 0.5;
     float2 p = xy - origin - hs;
@@ -81,7 +85,7 @@ half4 main(float2 xy) {
         base = frost(xy);
     } else {
         half4 g = frost(xy + disp);
-        base = half4(frost(xy + disp * 1.18).r, g.g, frost(xy + disp * 0.82).b, g.a);
+        base = half4(frost(xy + disp * 1.32).r, g.g, frost(xy + disp * 0.68).b, g.a);
     }
     // the content may be translucent (a glass fill): work with plain colors and keep its opacity
     float ca = float(base.a);
@@ -101,15 +105,18 @@ half4 main(float2 xy) {
     // the side facing the light is brighter, the far side is shaded, and just inside the bright rim
     // runs a thin dark line - the squeezed, refracted image at the very edge
     float bev = pow(t, 2.0);
-    col = col * (1.0 - bev * 0.45 * max(-k, 0.0)) + bev * 0.16 * light * max(k, 0.0);
+    col = col * (1.0 - bev * 0.18 * max(-k, 0.0)) + bev * 0.10 * light * max(k, 0.0);
     float inner = smoothstep(-7.0 * dp, -3.0 * dp, d) * (1.0 - smoothstep(-3.0 * dp, -1.6 * dp, d));
-    col *= 1.0 - inner * 0.35;
-    ca = max(ca, bev * 0.55);
+    col *= 1.0 - inner * 0.18;
+    ca = max(ca, bev * 0.35);
     float spec = 0.25 + 0.75 * pow(max(k, 0.0), 1.5) + 0.6 * pow(max(-k, 0.0), 2.0);
+    // the rim splits light like a prism: warm on the outside, cool on the inside
     float rimW = 1.4 * dp;
-    float rim = smoothstep(-rimW - 1.2, -rimW * 0.35, d) * (1.0 - smoothstep(-0.4, 0.7, d));
-    float ra = clamp(rim * spec * light, 0.0, 1.0);
-    col = mix(col, float3(1.0), ra);
+    float sh = 0.9 * dp;
+    float3 rim3 = float3(rimAt(d + sh, rimW), rimAt(d, rimW), rimAt(d - sh, rimW));
+    float3 ra3 = clamp(rim3 * spec * light, 0.0, 1.0);
+    col = col * (1.0 - ra3) + ra3;
+    float ra = max(ra3.r, max(ra3.g, ra3.b));
     float glow = smoothstep(-9.0 * dp, 0.0, d);
     float ga = glow * glow * 0.09 * light * (0.35 + max(k, 0.0) + 0.5 * max(-k, 0.0));
     col += ga;
@@ -169,6 +176,32 @@ class LiquidCard(private val dp: Float) {
         }
         shader.setInputShader("content", fillShader!!)
         Liquid.uniforms(shader, r.left, r.top, r.width(), r.height(), radius, dp, 0)
+        paint.shader = shader
+        c.drawRect(r.left - 2, r.top - 2, r.right + 2, r.bottom + 2, paint)
+        return true
+    }
+
+    private var snapShader: BitmapShader? = null
+    private var snapFor: android.graphics.Bitmap? = null
+
+    /**
+     * Стекло в окне-диалоге: под ним — снимок главного экрана ([Ui.snapshot]), размытый и преломлённый у краёв,
+     * поверх — заливка окна и самого элемента. false — снимка нет или холст не аппаратный.
+     */
+    fun drawOverSnapshot(c: Canvas, host: View, r: RectF, radius: Float, fill: Int): Boolean {
+        if (!c.isHardwareAccelerated || Liquid.capturing) return false
+        val bmp = Ui.snapshot ?: return false
+        if (snapFor !== bmp) { snapShader = BitmapShader(bmp, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP); snapFor = bmp }
+        val bs = snapShader ?: return false
+        host.getLocationOnScreen(loc)
+        m.setScale(Ui.snapshotW / bmp.width.toFloat(), Ui.snapshotH / bmp.height.toFloat())
+        m.postTranslate(Ui.snapshotX - loc[0].toFloat(), Ui.snapshotY - loc[1].toFloat())
+        bs.setLocalMatrix(m)
+        shader.setInputShader("content", bs)
+        // элемент внутри окна: его заливка поверх заливки окна, как если бы он лежал на стекле окна
+        val tint = if (host.rootView === host) Ui.dialogBlurColor() else Ui.over(fill, Ui.dialogBlurColor())
+        Liquid.uniforms(shader, r.left, r.top, r.width(), r.height(), radius, dp, if (host.rootView === host) fill else tint,
+            blur = 6 * dp)
         paint.shader = shader
         c.drawRect(r.left - 2, r.top - 2, r.right + 2, r.bottom + 2, paint)
         return true
@@ -291,6 +324,11 @@ class LiquidBackdrop(private val host: View, private val sources: List<View>, ra
 
     override fun draw(c: Canvas) {
         if (bmp == null) return
+        if (!c.isHardwareAccelerated) {   // снимок экрана для окон: рисуем просто, без шейдера
+            c.drawRoundRect(bounds.left.toFloat(), bounds.top.toFloat(), bounds.right.toFloat(), bounds.bottom.toFloat(),
+                radius, radius, Paint(Paint.ANTI_ALIAS_FLAG).apply { color = Ui.withAlpha(Ui.surface, 0.9f) })
+            return
+        }
         if (shown.isEmpty()) { shown = state(); capture() }
         c.drawRect(bounds.left - 1f, bounds.top - 1f, bounds.right + 1f, bounds.bottom + 1f, paint)
     }
