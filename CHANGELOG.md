@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.8.6 — 2026-09-30
+
+- "Liquid glass": the edge of every glass element now has visible thickness even over a plain background — a brighter band on the side facing the light, a shaded band on the far side and a thin dark line just inside the bright rim; over content (the top bar above the list) the edge still bends what is under it
+
 ## 1.8.5 — 2026-09-30
 
 - "Liquid glass": the same edge as on the top bar everywhere — windows, cards and buttons inside them get the thin bright rim with the highlight top-left, the reflection bottom-right and the soft inner glow (the fill stays translucent)

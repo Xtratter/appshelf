@@ -96,6 +96,15 @@ half4 main(float2 xy) {
     // light: a thin bright rim (strongest top-left, a reflection bottom-right) and a soft inner glow
     float2 L = normalize(float2(-0.6, -0.8));
     float k = dot(n, L);
+
+    // thickness of the glass at the rim, visible even over a plain background:
+    // the side facing the light is brighter, the far side is shaded, and just inside the bright rim
+    // runs a thin dark line - the squeezed, refracted image at the very edge
+    float bev = pow(t, 2.0);
+    col = col * (1.0 - bev * 0.45 * max(-k, 0.0)) + bev * 0.16 * light * max(k, 0.0);
+    float inner = smoothstep(-7.0 * dp, -3.0 * dp, d) * (1.0 - smoothstep(-3.0 * dp, -1.6 * dp, d));
+    col *= 1.0 - inner * 0.35;
+    ca = max(ca, bev * 0.55);
     float spec = 0.25 + 0.75 * pow(max(k, 0.0), 1.5) + 0.6 * pow(max(-k, 0.0), 2.0);
     float rimW = 1.4 * dp;
     float rim = smoothstep(-rimW - 1.2, -rimW * 0.35, d) * (1.0 - smoothstep(-0.4, 0.7, d));
