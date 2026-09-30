@@ -318,6 +318,28 @@ object Ui {
     /** Вызывается, когда закрылся последний диалог. */
     var onDialogsClosed: (() -> Unit)? = null
 
+    /**
+     * Стеклянные карточки и кнопки в окне показывают кусок снимка экрана по своему месту на экране.
+     * При прокрутке система не перерисовывает их, а сдвигает готовые — и «фон» уезжал вместе с кнопкой.
+     * Поэтому при прокрутке перерисовываем всё стекло внутри.
+     */
+    private fun watchScroll(v: View) {
+        when (v) {
+            is android.widget.ScrollView, is android.widget.HorizontalScrollView ->
+                v.setOnScrollChangeListener { sv, _, _, _, _ -> invalidateGlass(sv) }
+            is android.widget.AbsListView -> v.setOnScrollListener(object : android.widget.AbsListView.OnScrollListener {
+                override fun onScrollStateChanged(view: android.widget.AbsListView, state: Int) {}
+                override fun onScroll(view: android.widget.AbsListView, first: Int, visible: Int, total: Int) = invalidateGlass(view)
+            })
+        }
+        if (v is android.view.ViewGroup) for (i in 0 until v.childCount) watchScroll(v.getChildAt(i))
+    }
+
+    private fun invalidateGlass(v: View) {
+        if (v.background is GlassDrawable) v.invalidate()
+        if (v is android.view.ViewGroup) for (i in 0 until v.childCount) invalidateGlass(v.getChildAt(i))
+    }
+
     /** Убрать фон у служебных панелей диалога и у рамок между окном и содержимым (наше содержимое не трогаем). */
     private fun clearPanels(decor: View) {
         val res = decor.resources
@@ -367,6 +389,7 @@ object Ui {
             .forEach { d.getButton(it)?.setTextColor(primary) }
         // «жидкое стекло»: окно, открытое кнопкой главного экрана, вытекает из неё и стекает обратно
         Motion.takeSource()?.let { Motion.morphIn(d, it) }
+        if (liquid) watchScroll(w.decorView)
     }
 }
 

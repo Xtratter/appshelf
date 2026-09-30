@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.14.2 — 2026-09-30
+
+- "Liquid glass": when scrolling inside a window (for example "Save & restore"), the background seen through the glass buttons no longer slides along with them — the glass is redrawn while scrolling, so the background stays put like behind real glass
+
 ## 1.14.1 — 2026-09-30
 
 - The flowing glass is no longer empty: the window's content (text, buttons, cards) travels inside the drop, stretched to its shape — it fades in while the drop grows and fades out while it flows back into the button; the same for the search field
