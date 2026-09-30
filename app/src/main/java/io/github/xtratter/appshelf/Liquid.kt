@@ -39,16 +39,16 @@ uniform float light;       // highlight brightness
 uniform float dp;
 uniform float blur;        // frosting radius, px (0 = clear)
 
-// frosted sample: the point and two rings around it, kept inside the glass
-half3 frost(float2 pos) {
+// frosted sample: the point and two rings around it, kept inside the glass (premultiplied)
+half4 frost(float2 pos) {
     pos = clamp(pos, origin + 0.5, origin + size - 0.5);
-    half3 acc = content.eval(pos).rgb;
+    half4 acc = content.eval(pos);
     if (blur < 0.5) return acc;
     for (int i = 0; i < 8; i++) {
         float a = float(i) * 0.785398 + 0.39;
         float2 o = float2(cos(a), sin(a));
-        acc += content.eval(clamp(pos + o * blur, origin + 0.5, origin + size - 0.5)).rgb;
-        acc += content.eval(clamp(pos + o * blur * 0.45, origin + 0.5, origin + size - 0.5)).rgb;
+        acc += content.eval(clamp(pos + o * blur, origin + 0.5, origin + size - 0.5));
+        acc += content.eval(clamp(pos + o * blur * 0.45, origin + 0.5, origin + size - 0.5));
     }
     return acc / 17.0;
 }
@@ -76,17 +76,22 @@ half4 main(float2 xy) {
     float t = clamp(1.0 + d / bezel, 0.0, 1.0);
     float bend = pow(t, 3.0) * strength;
     float2 disp = -n * bend;
-    float3 col;
+    half4 base;
     if (bend < 0.3) {
-        col = float3(frost(xy));
+        base = frost(xy);
     } else {
-        col = float3(frost(xy + disp * 1.18).r, frost(xy + disp).g, frost(xy + disp * 0.82).b);
+        half4 g = frost(xy + disp);
+        base = half4(frost(xy + disp * 1.18).r, g.g, frost(xy + disp * 0.82).b, g.a);
     }
+    // the content may be translucent (a glass fill): work with plain colors and keep its opacity
+    float ca = float(base.a);
+    float3 col = ca > 0.001 ? float3(base.rgb) / ca : float3(0.0);
 
     // livelier colors under the glass, then the tint
     float lum = dot(col, float3(0.299, 0.587, 0.114));
     col = mix(float3(lum), col, 1.2);
     col = mix(col, tint.rgb, tint.a);
+    ca = max(ca, tint.a);
 
     // light: a thin bright rim (strongest top-left, a reflection bottom-right) and a soft inner glow
     float2 L = normalize(float2(-0.6, -0.8));
@@ -94,11 +99,14 @@ half4 main(float2 xy) {
     float spec = 0.25 + 0.75 * pow(max(k, 0.0), 1.5) + 0.6 * pow(max(-k, 0.0), 2.0);
     float rimW = 1.4 * dp;
     float rim = smoothstep(-rimW - 1.2, -rimW * 0.35, d) * (1.0 - smoothstep(-0.4, 0.7, d));
-    col = mix(col, float3(1.0), clamp(rim * spec * light, 0.0, 1.0));
+    float ra = clamp(rim * spec * light, 0.0, 1.0);
+    col = mix(col, float3(1.0), ra);
     float glow = smoothstep(-9.0 * dp, 0.0, d);
-    col += glow * glow * 0.09 * light * (0.35 + max(k, 0.0) + 0.5 * max(-k, 0.0));
+    float ga = glow * glow * 0.09 * light * (0.35 + max(k, 0.0) + 0.5 * max(-k, 0.0));
+    col += ga;
+    ca = max(ca, max(ra, ga * 2.0));
 
-    float a = 1.0 - smoothstep(-0.75, 0.75, d);
+    float a = (1.0 - smoothstep(-0.75, 0.75, d)) * ca;
     return half4(half3(clamp(col, 0.0, 1.0) * a), half(a));
 }
 """
@@ -136,6 +144,26 @@ class LiquidCard(private val dp: Float) {
     private val loc = IntArray(2)
     private var bmpShader: BitmapShader? = null
     private var bmpFor: android.graphics.Bitmap? = null
+
+    private var fillShader: Shader? = null
+    private var fillFor = 0
+
+    /**
+     * Стекло без того, что под ним (окна-диалоги, кнопки в них): та же кромка, блик и свечение, что у панели,
+     * поверх полупрозрачной заливки [fill]. false — холст не аппаратный (копия под панелью), рисовать по-старому.
+     */
+    fun drawRim(c: Canvas, r: RectF, radius: Float, fill: Int): Boolean {
+        if (!c.isHardwareAccelerated || Liquid.capturing) return false
+        if (fillShader == null || fillFor != fill) {
+            fillShader = android.graphics.LinearGradient(0f, 0f, 1f, 0f, fill, fill, Shader.TileMode.CLAMP)
+            fillFor = fill
+        }
+        shader.setInputShader("content", fillShader!!)
+        Liquid.uniforms(shader, r.left, r.top, r.width(), r.height(), radius, dp, 0)
+        paint.shader = shader
+        c.drawRect(r.left - 2, r.top - 2, r.right + 2, r.bottom + 2, paint)
+        return true
+    }
 
     /** false — рисовать нечем (фон ещё не готов или стекло не в главном окне). */
     fun draw(c: Canvas, host: View, r: RectF, radius: Float, tint: Int): Boolean {

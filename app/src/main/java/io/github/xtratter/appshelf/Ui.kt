@@ -295,6 +295,7 @@ class GlassDrawable(ctx: Context, radiusDp: Float, private val fill: Int = Ui.ca
         // «жидкое стекло»: линза над фоном окна; не вышло (диалог, фон не готов) — обычное стекло
         val v = callback as? View ?: host
         if (liquid != null && v != null && liquid.draw(c, v, r, radius, fill)) return
+        if (liquid != null && liquid.drawRim(c, r, radius, fill)) return
         c.drawRoundRect(r, radius, radius, fillP)
         c.drawRoundRect(r, radius, radius, hiP)
         c.drawRoundRect(r, radius, radius, edgeP)

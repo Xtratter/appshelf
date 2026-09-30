@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.8.5 — 2026-09-30
+
+- "Liquid glass": the same edge as on the top bar everywhere — windows, cards and buttons inside them get the thin bright rim with the highlight top-left, the reflection bottom-right and the soft inner glow (the fill stays translucent)
+
 ## 1.8.4 — 2026-09-30
 
 - No faint light "frame" inside windows anymore: glass windows cast no system shadow (it showed through the translucent glass near the edges) and the dialog's inner panels have no backing of their own
