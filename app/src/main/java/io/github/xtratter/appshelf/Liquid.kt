@@ -230,7 +230,14 @@ class LiquidBackdrop(private val host: View, private val sources: List<View>, ra
     private val m = Matrix()
     private val loc = IntArray(2)
     private val src = IntArray(2)
-    private var bmp: android.graphics.Bitmap? = null
+    /**
+     * Три картинки по очереди: новая рисуется в свободную, а на экран уходит только готовая.
+     * С одной картинкой системный поток отрисовки иногда брал её в момент перерисовки — шапка моргала чёрным.
+     */
+    private val bmps = arrayOfNulls<android.graphics.Bitmap>(3)
+    private val shaders = arrayOfNulls<BitmapShader>(3)
+    private var front = 0
+    private val bmp get() = bmps[front]
     private var shown = ""
 
     init {
@@ -243,14 +250,20 @@ class LiquidBackdrop(private val host: View, private val sources: List<View>, ra
 
     override fun onBoundsChange(b: Rect) {
         if (b.isEmpty) return
-        val out = android.graphics.Bitmap.createBitmap((b.width() * scale).toInt().coerceAtLeast(1),
-            (b.height() * scale).toInt().coerceAtLeast(1), android.graphics.Bitmap.Config.ARGB_8888)
-        bmp = out
-        val bs = BitmapShader(out, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply { filterMode = BitmapShader.FILTER_MODE_LINEAR }
-        m.setScale(b.width() / out.width.toFloat(), b.height() / out.height.toFloat())
-        m.postTranslate(b.left.toFloat(), b.top.toFloat())
-        bs.setLocalMatrix(m)
-        shader.setInputShader("content", bs)
+        for (i in bmps.indices) {
+            val out = android.graphics.Bitmap.createBitmap((b.width() * scale).toInt().coerceAtLeast(1),
+                (b.height() * scale).toInt().coerceAtLeast(1), android.graphics.Bitmap.Config.ARGB_8888)
+            out.eraseColor(Ui.base)
+            bmps[i] = out
+            m.setScale(b.width() / out.width.toFloat(), b.height() / out.height.toFloat())
+            m.postTranslate(b.left.toFloat(), b.top.toFloat())
+            shaders[i] = BitmapShader(out, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
+                filterMode = BitmapShader.FILTER_MODE_LINEAR
+                setLocalMatrix(m)
+            }
+        }
+        front = 0
+        shader.setInputShader("content", shaders[0]!!)
         Liquid.uniforms(shader, b.left.toFloat(), b.top.toFloat(), b.width().toFloat(), b.height().toFloat(),
             radius, dp, tint)
         paint.shader = shader
@@ -284,7 +297,8 @@ class LiquidBackdrop(private val host: View, private val sources: List<View>, ra
 
     /** Нарисовать в картинку то, что под панелью: фон окна и список (в обычном, не аппаратном режиме). */
     private fun capture() {
-        val out = bmp ?: return
+        val next = (front + 1) % bmps.size
+        val out = bmps[next] ?: return
         host.getLocationInWindow(loc)
         val x = (loc[0] + bounds.left).toFloat()
         val y = (loc[1] + bounds.top).toFloat()
@@ -309,6 +323,10 @@ class LiquidBackdrop(private val host: View, private val sources: List<View>, ra
         }
         // лёгкое плавное размытие (картинка в полразмера: 1,5 dp здесь ≈ 3 dp на экране)
         Blur.apply(out, (Ui.barBlurDp * dp * out.width / bounds.width()).toInt())
+        // готово — показываем её; прежняя остаётся нетронутой, пока её дорисовывает система
+        front = next
+        shader.setInputShader("content", shaders[next]!!)
+        paint.shader = shader
     }
 
     override fun draw(c: Canvas) {

@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.9.1 — 2026-09-30
+
+- "Liquid glass": the top bar no longer flashes black while scrolling — what is under it is drawn into one of three pictures in turn, and only a finished one goes on screen (before, the screen sometimes caught the single picture halfway through being redrawn)
+
 ## 1.9 — 2026-09-30
 
 - **Glass transparency** for the "Liquid glass" theme: Theme → "Transparency…" — a slider from frosted to clear. It sets how blurred the list is under the top bar and behind windows and how dense the glass fill is; the window itself changes as you move the slider, the whole screen when you close it. "Default" returns the middle

@@ -85,8 +85,8 @@ object Ui {
         val root = liquidRoot ?: return
         if (!liquid || root.width <= 0 || root.height <= 0) return
         val q = 2
-        val bmp = snapshot?.takeIf { it.width == root.width / q && it.height == root.height / q }
-            ?: android.graphics.Bitmap.createBitmap(root.width / q, root.height / q, android.graphics.Bitmap.Config.ARGB_8888)
+        // всегда новая картинка: прежнюю, возможно, ещё рисует окно на экране
+        val bmp = android.graphics.Bitmap.createBitmap(root.width / q, root.height / q, android.graphics.Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
         c.scale(1f / q, 1f / q)
         Liquid.capturing = true
