@@ -127,7 +127,8 @@ object Motion {
                         pressTo(view, 1f, 140)
                     }
                 }
-                MotionEvent.ACTION_MOVE -> if (elastic) {
+                // тянется за пальцем только на главном экране; в окнах (карточка приложения и др.) — лишнее
+                MotionEvent.ACTION_MOVE -> if (elastic && view.rootView === Ui.liquidRoot) {
                     val max = 7 * dp
                     view.translationX = rubber(e.rawX - downX, max)
                     view.translationY = rubber(e.rawY - downY, max)
@@ -259,11 +260,16 @@ object Motion {
             // перемычка истончается и рвётся), при закрытии — наоборот, нарастает у кнопки и сливается с ней
             val home = if (appear) from else to
             val homeR = if (appear) fromR else toR
-            val bridge = (if (appear) (1f - t / 0.6f) else ((t - 0.4f) / 0.6f)).coerceIn(0f, 1f)
-            if (bridge > 0.04f) {
-                anchor.set(home.centerX() - home.width() * bridge / 2, home.centerY() - home.height() * bridge / 2,
-                    home.centerX() + home.width() * bridge / 2, home.centerY() + home.height() * bridge / 2)
-                glass.drawOverSnapshot(c, this, cur, r, 0, merged = anchor, mergedR = homeR * bridge, merge = 26 * dp * bridge)
+            // p — ход перемычки: при открытии в первые 60 % пути, при закрытии — в последние 60 %
+            val p = (if (appear) t / 0.6f else (t - 0.4f) / 0.6f).coerceIn(0f, 1f)
+            // остаток на месте кнопки: при открытии тает, при закрытии нарастает до размера кнопки
+            val size = if (appear) 1f - p else p
+            // толщина перемычки — ноль в начале и в конце: капля стартует ровно из кнопки и возвращается ровно в неё
+            val neck = kotlin.math.sin(PI.toFloat() * p)
+            if (size > 0.04f && neck > 0.02f) {
+                anchor.set(home.centerX() - home.width() * size / 2, home.centerY() - home.height() * size / 2,
+                    home.centerX() + home.width() * size / 2, home.centerY() + home.height() * size / 2)
+                glass.drawOverSnapshot(c, this, cur, r, 0, merged = anchor, mergedR = homeR * size, merge = 22 * dp * neck)
             } else glass.drawOverSnapshot(c, this, cur, r, 0)
             // содержимое окна течёт вместе с каплей: растягивается по её форме, проявляется (или растворяется)
             val bmp = content ?: return

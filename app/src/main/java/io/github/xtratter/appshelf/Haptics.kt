@@ -11,7 +11,8 @@ import android.view.ViewGroup
 /**
  * Отклик вибрацией, как Taptic Engine: короткие чёткие щелчки разного характера для разных действий.
  * Сила — в настройке (меню ⋮ → «Вибрация»), «Выключена» — никакой вибрации.
- * На Android 11+ — «примитивы» с управляемой силой (если телефон их умеет), иначе — короткий импульс нужной силы.
+ * Сначала — готовые эффекты производителя (они настроены под мотор: у линейного мотора это чёткий «стук»),
+ * иначе — «примитивы» Android 11+ с управляемой силой, иначе — короткий импульс нужной силы.
  */
 object Haptics {
     /** Уровни силы: 0 — выключено. */
@@ -49,7 +50,7 @@ object Haptics {
         val s = level.scale
         if (s <= 0f || !v.hasVibrator()) return
         try {
-            v.vibrate(composed(v, kind, s) ?: simple(v, kind, s))
+            v.vibrate(predefined(v, kind) ?: composed(v, kind, s) ?: simple(v, kind, s))
         } catch (e: Exception) {
             // вибрация — не главное: не получилось, и ладно
         }
@@ -77,7 +78,40 @@ object Haptics {
         return c.compose()
     }
 
-    /** Короткий импульс нужной силы (где нет примитивов). */
+    private val PREDEFINED = intArrayOf(VibrationEffect.EFFECT_TICK, VibrationEffect.EFFECT_CLICK,
+        VibrationEffect.EFFECT_HEAVY_CLICK, VibrationEffect.EFFECT_DOUBLE_CLICK)
+
+    /** Телефон умеет готовые эффекты производителя (настроены под его мотор — чёткий «стук» у линейного мотора). */
+    private fun predefinedSupported(v: Vibrator) = Build.VERSION.SDK_INT >= 30 &&
+        v.areAllEffectsSupported(*PREDEFINED) == Vibrator.VIBRATION_EFFECT_SUPPORT_YES
+
+    /** Готовые эффекты: силу задаёт сам эффект — лёгкая → TICK, средняя → CLICK, сильная → HEAVY_CLICK. */
+    private fun predefined(v: Vibrator, kind: Kind): VibrationEffect? {
+        if (!predefinedSupported(v)) return null
+        val byLevel = when (level) {
+            Level.LIGHT -> VibrationEffect.EFFECT_TICK
+            Level.STRONG -> VibrationEffect.EFFECT_HEAVY_CLICK
+            else -> VibrationEffect.EFFECT_CLICK
+        }
+        return VibrationEffect.createPredefined(when (kind) {
+            Kind.TAP, Kind.OPEN -> byLevel
+            Kind.TICK, Kind.CLOSE -> VibrationEffect.EFFECT_TICK
+            Kind.SUCCESS -> VibrationEffect.EFFECT_DOUBLE_CLICK
+            Kind.ERROR -> VibrationEffect.EFFECT_HEAVY_CLICK
+        })
+    }
+
+    /** Каким способом вибрирует этот телефон — для подсказки в настройке. */
+    fun engine(): Int {
+        val v = vibrator ?: return R.string.hap_engine_none
+        if (!v.hasVibrator()) return R.string.hap_engine_none
+        if (predefinedSupported(v)) return R.string.hap_engine_effects
+        if (Build.VERSION.SDK_INT >= 30 && v.areAllPrimitivesSupported(VibrationEffect.Composition.PRIMITIVE_CLICK,
+                VibrationEffect.Composition.PRIMITIVE_TICK)) return R.string.hap_engine_primitives
+        return R.string.hap_engine_simple
+    }
+
+    /** Короткий импульс нужной силы (где нет ни примитивов, ни готовых эффектов). */
     private fun simple(v: Vibrator, kind: Kind, s: Float): VibrationEffect {
         val amp = if (v.hasAmplitudeControl()) (s * 255).toInt().coerceIn(1, 255) else VibrationEffect.DEFAULT_AMPLITUDE
         return when (kind) {

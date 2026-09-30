@@ -2,6 +2,12 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.17.1 — 2026-09-30
+
+- The glass drop now flows back exactly into the size of the button when a window closes (and starts exactly from it when it opens): the mercury bridge only appears mid-way and is gone at both ends, so it no longer inflates the shape
+- Vibration uses the manufacturer's ready-made click effects first — they are tuned for the phone's motor, so a linear motor gives a crisp tap instead of a buzz (strength: Light → tick, Medium → click, Strong → heavy click); then vibration primitives, then a short pulse. The Vibration window shows which way this phone uses
+- Glass buttons in windows (the app card and others) no longer stretch after the finger; the light press remains
+
 ## 1.17 — 2026-09-30
 
 - **The highlight follows the tilt of the phone**: the light "hangs" in the room — tilt the phone and the bright rim on every piece of glass slides round accordingly (gravity sensor, only while AppShelf is on screen with "Liquid glass" on)

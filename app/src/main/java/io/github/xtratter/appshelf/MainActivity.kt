@@ -887,7 +887,8 @@ class MainActivity : Activity() {
         })
         box.addView(group)
         box.addView(TextView(this).apply {
-            setText(if (Haptics.available()) R.string.hap_hint else R.string.hap_none)
+            text = if (Haptics.available()) getString(R.string.hap_hint) + "\n\n" + getString(Haptics.engine())
+            else getString(R.string.hap_none)
             textSize = 13f; setTextColor(Ui.TEXT3); setLineSpacing(0f, 1.1f)
             setPadding(0, dp(6f), 0, dp(4f))
         })
