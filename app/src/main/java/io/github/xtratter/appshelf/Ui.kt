@@ -366,6 +366,7 @@ object Ui {
         // «жидкое стекло»: окно, открытое кнопкой главного экрана, вытекает из неё и стекает обратно
         Motion.takeSource()?.let { Motion.morphIn(d, it) }
         if (liquid) watchScroll(w.decorView)
+        Haptics.attachAll(w.decorView)   // щелчки при нажатии на кнопки и пункты окна
     }
 }
 

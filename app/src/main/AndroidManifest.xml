@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- удаление приложений из карточки (Android всё равно спрашивает подтверждение) -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <!-- отклик вибрацией (меню ⋮ → «Вибрация», можно выключить) -->
+    <uses-permission android:name="android.permission.VIBRATE" />
     <!-- восстановить расписание после перезагрузки -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 

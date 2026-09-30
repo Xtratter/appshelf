@@ -192,6 +192,7 @@ class InstallReceiver : BroadcastReceiver() {
 
     override fun onReceive(ctx: Context, intent: Intent) {
         val removed = intent.getStringExtra(EXTRA_REMOVED)
+        Haptics.init(ctx)
         when (intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
                 val confirm = if (Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)
@@ -199,13 +200,14 @@ class InstallReceiver : BroadcastReceiver() {
                 confirm?.let { ctx.startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
             }
             PackageInstaller.STATUS_SUCCESS -> {
+                Haptics.play(Haptics.Kind.SUCCESS)
                 Toast.makeText(ctx, if (removed != null) ctx.getString(R.string.uninstall_done, removed)
                     else ctx.getString(R.string.inst_done), Toast.LENGTH_SHORT).show()
                 MainActivity.current?.get()?.let { m -> m.runOnUiThread { m.onInstalled() } }
             }
             PackageInstaller.STATUS_FAILURE_ABORTED -> {}   // отменили в системном окне
-            else -> Toast.makeText(ctx, ctx.getString(if (removed != null) R.string.uninstall_failed else R.string.inst_failed,
-                intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE).orEmpty()), Toast.LENGTH_LONG).show()
+            else -> Haptics.play(Haptics.Kind.ERROR).let { _ -> Toast.makeText(ctx, ctx.getString(if (removed != null) R.string.uninstall_failed else R.string.inst_failed,
+                intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE).orEmpty()), Toast.LENGTH_LONG).show() }
         }
     }
 }

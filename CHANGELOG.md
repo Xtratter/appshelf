@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.16 — 2026-09-30
+
+- **Haptic feedback** like a Taptic Engine — short, crisp clicks of different character: a click on buttons, window items, list rows and the top bar; a light tick on filter chips, checkboxes and the transparency slider (every 5%); a rising pulse when a button flows into its window and a falling one when it flows back; a double click on success (sent to the server, saved, installed, uninstalled) and a thud on errors. It fires when the finger lifts, not when you start scrolling
+- **Menu ⋮ → Vibration**: Off, Light, Medium (default) or Strong; choosing a level plays a sample. Uses crisp vibration primitives with adjustable strength on Android 11+ where the phone supports them, otherwise a short pulse of that strength
+
 ## 1.15.1 — 2026-09-30
 
 - The whole top bar except the ⋮ button opens the search — the title, the empty space and the magnifier; a tap anywhere on it shows a ripple

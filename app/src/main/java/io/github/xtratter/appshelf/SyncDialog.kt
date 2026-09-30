@@ -147,7 +147,10 @@ object SyncDialog {
                 val r = try { work() } catch (e: Exception) { e }
                 box.post {
                     busy = false
-                    if (r is Exception) { status.setTextColor(Ui.WARN); status.text = Sync.error(a, r) } else done(r)
+                    if (r is Exception) {
+                        status.setTextColor(Ui.WARN); status.text = Sync.error(a, r)
+                        Haptics.play(Haptics.Kind.ERROR)
+                    } else done(r)
                 }
             }.start()
         }
@@ -156,12 +159,14 @@ object SyncDialog {
         actions.addView(pill(a.getString(R.string.dav_check)) {
             network({ Sync.dav(p).check() }) {
                 status.setTextColor(Ui.OK); status.setText(R.string.dav_check_ok)
+                Haptics.play(Haptics.Kind.SUCCESS)
             }
         }, LinearLayout.LayoutParams(0, px(44f), 1f))
         actions.addView(pill(a.getString(R.string.dav_send_now)) {
             network({ Sync.run(a) }) { r ->
                 showLast()
-                if ((r as Sync.Result).ok) status.setTextColor(Ui.OK)
+                if ((r as Sync.Result).ok) { status.setTextColor(Ui.OK); Haptics.play(Haptics.Kind.SUCCESS) }
+                else Haptics.play(Haptics.Kind.ERROR)
                 a.refreshSummary()
             }
         }, LinearLayout.LayoutParams(0, px(44f), 1f).apply { leftMargin = px(8f) })

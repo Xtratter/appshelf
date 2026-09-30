@@ -29,6 +29,7 @@ which apps are missing and opens each one in the right store.
 - **"Liquid glass" like in iOS 26** (on by default, Android 13+; older Android gets the regular glass): the top bar
   and windows are real glass — what is behind them shows through, bends at the edges with color fringes and a bright rim; the glass flows: a tapped button turns into its window like a drop of liquid and the window flows back into it when closed; the search field flows out of the magnifier.
   It is a checkbox in Theme and works with every theme; the transparency is adjustable (Theme → Transparency…)
+- **Haptic feedback** like a Taptic Engine: crisp clicks on buttons, a rising pulse when a button flows into its window, a double click on success, a thud on errors; strength or off in menu ⋮ → Vibration
 - **Themes**: standard, follow system, AMOLED black, light, graphite; colors follow the wallpaper (Android 12+)  (menu ⋮ → Theme)
 
 ## Download
@@ -41,6 +42,7 @@ Ready-made APKs are on the [Releases](https://github.com/Xtratter/appshelf/relea
 - `INTERNET`, `ACCESS_NETWORK_STATE` — only for WebDAV sync, and only to the server you enter; nothing else goes online.
 - `REQUEST_INSTALL_PACKAGES` — to install an APK from a direct link (Android still asks you to confirm each install).
 - `REQUEST_DELETE_PACKAGES` — to uninstall an app from its card (Android asks you to confirm).
+- `VIBRATE` — for haptic feedback (can be turned off).
 - `RECEIVE_BOOT_COMPLETED` — to restore the sync schedule after a reboot.
 
 ## How it works

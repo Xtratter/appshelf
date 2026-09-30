@@ -15,6 +15,10 @@ class Prefs(ctx: Context) {
     /** Показывать системные приложения (предустановленные, без обновлений из магазина — тоже). */
     var showSystem by bool("show_system", false)
 
+    /** Сила отклика вибрацией ([Haptics.Level]). */
+    var haptics by str("haptics", Haptics.Level.MEDIUM.name)
+    fun haptics(): Haptics.Level = runCatching { Haptics.Level.valueOf(haptics) }.getOrDefault(Haptics.Level.MEDIUM)
+
     /** «Жидкое стекло» поверх любой темы (работает на Android 13+, ниже — обычное стекло). */
     var liquidGlass by bool("liquid_glass", true)
 

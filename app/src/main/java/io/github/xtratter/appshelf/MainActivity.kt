@@ -76,6 +76,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         prefs = Prefs(this)
+        Haptics.init(this)
         // тема может смениться и без нас: «как в системе» при переключении тёмного режима
         if (!Ui.isCurrent(this, prefs.theme())) Ui.apply(this, prefs.theme())
         setTheme(if (Ui.light) R.style.AppTheme_Light else R.style.AppTheme)
@@ -119,6 +120,7 @@ class MainActivity : Activity() {
         list.setOnItemClickListener { parent, view, pos, _ ->
             val r = parent.getItemAtPosition(pos) as? Row ?: return@setOnItemClickListener
             Motion.from(view)   // карточка вытечет из строки
+            Haptics.play(Haptics.Kind.TAP)
             DetailsDialog.show(this, r, sourceText(r.app))
         }
         render()
@@ -220,6 +222,9 @@ class MainActivity : Activity() {
         findViewById<View>(R.id.btnSearch).setOnClickListener { showSearch(searchBox.visibility != View.VISIBLE) }
         findViewById<View>(R.id.btnSearchClose).setOnClickListener { showSearch(false) }
         findViewById<View>(R.id.btnMore).setOnClickListener { Motion.from(it); showMenu(it) }
+        // щелчок вибрацией на кнопках панели
+        for (id in intArrayOf(R.id.bar, R.id.title, R.id.btnSearch, R.id.btnSearchClose, R.id.btnMore))
+            Haptics.onClick(findViewById(id))
         searchField.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
@@ -406,6 +411,7 @@ class MainActivity : Activity() {
         else Ui.pill(this@MainActivity, Ui.withAlpha(Ui.primary, 0.12f), Ui.withAlpha(Ui.primary, 0.35f))
         foreground = Ui.ripple(this@MainActivity, 100f)
         setOnClickListener { Motion.from(it); onClick() }   // окно, которое откроет кнопка, вытечет из неё
+        Haptics.onClick(this)
     }
 
     private fun renderSummary() {
@@ -538,6 +544,7 @@ class MainActivity : Activity() {
                 compoundDrawablePadding = dp(8f)
             }
             setOnClickListener { onClick() }
+            Haptics.onClick(this, Haptics.Kind.TICK)
         }, LinearLayout.LayoutParams(-2, dp(36f)).apply { rightMargin = dp(8f) })
         chip(getString(R.string.all) + " · " + apps.size, filter == null && !noLink, null) { filter = null; noLink = false; render() }
         for ((src, count) in counts) {
@@ -712,6 +719,7 @@ class MainActivity : Activity() {
         if (resultCode != RESULT_OK || uri == null) return
         when (requestCode) {
             REQ_SAVE -> writeTo(uri, pendingFormat) { err ->
+                Haptics.play(if (err == null) Haptics.Kind.SUCCESS else Haptics.Kind.ERROR)
                 Toast.makeText(this, if (err == null) getString(R.string.saved_to, fileName(uri))
                 else getString(R.string.save_failed, err.message), Toast.LENGTH_LONG).show()
             }
@@ -787,6 +795,7 @@ class MainActivity : Activity() {
         item(R.string.catalog_title) { CatalogDialog.show(this) }
         item(R.string.show_system, prefs.showSystem) { prefs.showSystem = !prefs.showSystem; render() }
         item(R.string.theme) { themeDialog() }
+        item(R.string.haptics) { hapticsDialog() }
         item(R.string.about) { about() }
         dialog.show()
         Ui.glassDialog(dialog)
@@ -846,6 +855,39 @@ class MainActivity : Activity() {
         })
         dialog.show()
         Ui.glassDialog(dialog)
+    }
+
+    /** Вибрация: сила отклика или «Выключена»; при выборе сразу проигрывается пример. */
+    private fun hapticsDialog() {
+        val levels = Haptics.Level.entries
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20f), dp(6f), dp(20f), 0)
+        }
+        val tint = android.content.res.ColorStateList.valueOf(Ui.primary)
+        val group = android.widget.RadioGroup(this)
+        for (l in levels) group.addView(android.widget.RadioButton(this).apply {
+            id = View.generateViewId()
+            setText(l.title); textSize = 16f; setTextColor(Ui.TEXT); buttonTintList = tint
+            minHeight = dp(48f)
+            isChecked = l == Haptics.level()
+            isEnabled = Haptics.available() || l == Haptics.Level.OFF
+            setOnClickListener {
+                Haptics.setLevel(this@MainActivity, l)
+                // пример: щелчок и «открытие окна»
+                Haptics.play(Haptics.Kind.TAP)
+                main.postDelayed({ Haptics.play(Haptics.Kind.OPEN) }, 220)
+            }
+        })
+        box.addView(group)
+        box.addView(TextView(this).apply {
+            setText(if (Haptics.available()) R.string.hap_hint else R.string.hap_none)
+            textSize = 13f; setTextColor(Ui.TEXT3); setLineSpacing(0f, 1.1f)
+            setPadding(0, dp(6f), 0, dp(4f))
+        })
+        AlertDialog.Builder(this).setTitle(R.string.haptics).setView(box)
+            .setPositiveButton(R.string.done, null)
+            .show().also { Ui.glassDialog(it) }
     }
 
     /** Прозрачность стекла: ползунок «матовое — прозрачное»; само окно меняется сразу, экран — при закрытии. */
@@ -911,6 +953,7 @@ class MainActivity : Activity() {
         seek.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(s: android.widget.SeekBar?, p: Int, fromUser: Boolean) {
                 showValue(p)
+                if (fromUser && p % 5 == 0) Haptics.play(Haptics.Kind.TICK)
                 if (fromUser) apply(p)
             }
             override fun onStartTrackingTouch(s: android.widget.SeekBar?) {}

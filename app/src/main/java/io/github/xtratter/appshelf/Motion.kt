@@ -184,6 +184,7 @@ object Motion {
         val to = RectF((at[0] - base[0]).toFloat(), (at[1] - base[1]).toFloat(),
             (at[0] - base[0] + decor.width).toFloat(), (at[1] - base[1] + decor.height).toFloat())
         val toR = 28 * dp
+        Haptics.play(Haptics.Kind.OPEN)
         src.animate().alpha(0f).setDuration(90).start()
         flow(from, fromR, to, toR, 380, content = capture(decor), appear = true, atReveal = {
             decor.animate().alpha(1f).setDuration(110).start()
@@ -207,6 +208,7 @@ object Motion {
             override fun onViewAttachedToWindow(v: View) {}
             override fun onViewDetachedFromWindow(v: View) {
                 val shot = capture(decor)
+                Haptics.play(Haptics.Kind.CLOSE)
                 v.removeOnAttachStateChangeListener(this)
                 val back = if (src.isAttachedToWindow) rectOf(src) else from
                 flow(to, toR, back, fromR, 300, content = shot, appear = false, atReveal = {

@@ -117,6 +117,13 @@
     <string name="th_light">Light</string>
     <string name="th_graphite">Graphite</string>
     <string name="th_liquid">Liquid glass</string>
+    <string name="haptics">Vibration</string>
+    <string name="hap_off">Off</string>
+    <string name="hap_light">Light</string>
+    <string name="hap_medium">Medium</string>
+    <string name="hap_strong">Strong</string>
+    <string name="hap_hint">Short, crisp clicks when you tap buttons, open and close windows, and when something succeeds or fails. Choose a level to feel it.</string>
+    <string name="hap_none">This phone has no vibration motor.</string>
     <string name="glass_clarity">Glass transparency</string>
     <string name="glass_clarity_btn">Transparency…</string>
     <string name="glass_clarity_text">How much of what is behind shows through the glass: frosted and calm, or clear. This window changes as you move the slider; the whole screen updates when you close it.</string>
