@@ -118,4 +118,23 @@ class LinksTest {
         assertEquals("Xtratter/droidtop", Updates.repoOf("https://github.com/Xtratter/droidtop/releases"))
         assertEquals(null, Updates.repoOf("https://t.me/x"))
     }
+
+    @Test
+    fun history() {
+        val tg = AppInfo("Telegram", "org.telegram", firstInstall = 100)
+        val zoom = AppInfo("Zoom", "us.zoom", firstInstall = 200)
+        var log = History.update(emptyMap(), listOf(tg, zoom), 1000)
+        assertEquals(0L, log["us.zoom"]!!.removed)
+        log = History.update(log, listOf(tg), 2000)                       // Zoom удалили
+        assertEquals(2000L, log["us.zoom"]!!.removed)
+        val ev = History.events(log)
+        assertEquals(History.Event("us.zoom", "Zoom", Source.UNKNOWN.name, false, 2000), ev.first())
+        log = History.update(log, listOf(tg, zoom.copy(firstInstall = 3000)), 4000)   // поставили снова
+        assertEquals(0L, log["us.zoom"]!!.removed)
+        assertEquals(3000L, log["us.zoom"]!!.installed)
+        val v = History.fromVersions(listOf(Snapshot(10, "", listOf(tg, zoom)), Snapshot(20, "", listOf(tg))))
+        assertEquals(listOf(History.Event("us.zoom", "Zoom", Source.UNKNOWN.name, false, 20)), v)
+        val (onlyA, onlyB) = History.compare(listOf(tg, zoom), listOf(tg))
+        assertEquals(listOf(zoom), onlyA); assertEquals(emptyList<AppInfo>(), onlyB)
+    }
 }

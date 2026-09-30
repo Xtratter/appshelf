@@ -20,6 +20,7 @@ which apps are missing and opens each one in the right store.
   or every N days at a set time, optionally only over Wi-Fi; a folder per phone, keeps the last versions (10 by default),
   a missed send is made up as soon as possible;
   on a new phone open the list straight from the server
+- **What changed** (menu ⋮): a timeline of installs and uninstalls for a week, a month, 3 months or all time (older uninstalls can be added from list versions on the server), and a comparison with another phone from the server
 - **Updates from GitHub**: for apps with a GitHub link AppShelf checks the latest release (every 6 hours) — "↑ 1.11" in the list, an "Updates" chip and "Update to …" in the app card, which downloads the APK for this phone's processor and installs it
 - **APK backups**: copies of apps you cannot get anywhere else (installed from APK files, or all apps) on the WebDAV server or in a folder; split apps are packed into one .apks; only changed versions are uploaded, optionally with every scheduled send; on a new phone "Install from the backup" (also in "Install all one by one")
 - **Select several apps** (long-press a row): uninstall them one after another, leave out of / put back into the list, share

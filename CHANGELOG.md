@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.23 — 2026-09-30
+
+- **What changed** (menu ⋮): a timeline of installed and uninstalled apps by day — for a week, a month, 3 months or all time. Installs come from Android's install dates; uninstalls are noticed by AppShelf itself every time it opens, and older ones can be added from the versions of this phone's list on the WebDAV server
+- **Compare with a phone**: pick another phone on the server and see what is only on this phone and only on that one; "Open its list to restore" switches straight to restore mode
+
 ## 1.22 — 2026-09-30
 
 - **Updates from GitHub**: for installed apps with a GitHub link (yours or from the catalog) AppShelf checks the latest release, at most every 6 hours per repository (unchanged answers do not count against GitHub's limit). If it is newer than the installed version, the row shows "↑ 1.11" instead of the date, an "Updates · N" chip appears, and the app card offers "Update to 1.11 (GitHub)" — it downloads the APK for this phone's processor (or a universal one) from the release and installs it; if the release has no suitable APK, its page opens

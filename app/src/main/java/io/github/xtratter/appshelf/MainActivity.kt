@@ -309,6 +309,7 @@ class MainActivity : Activity() {
     private fun reload() {
         io.execute {
             val apps = Apps.load(this)
+            History.record(this, apps)   // журнал «Что изменилось»: новые и пропавшие приложения
             main.post {
                 if (isDestroyed) return@post
                 val missingBefore = missingCount()
@@ -334,6 +335,9 @@ class MainActivity : Activity() {
     private var backups: Map<String, String> = emptyMap()
 
     fun backupFor(pkg: String): String? = backups[pkg]
+
+    /** Установленные сейчас приложения (пусто — ещё читаются). */
+    fun installedApps(): List<AppInfo> = installed.orEmpty()
 
     /** Перечитать, какие копии есть (в фоне), и перерисовать список. */
     fun refreshBackups() {
@@ -1088,6 +1092,7 @@ class MainActivity : Activity() {
             }
             setOnClickListener { dialog.dismiss(); action() }
         }, LinearLayout.LayoutParams(-1, -2))
+        item(R.string.hi_title) { HistoryDialog.show(this) }
         item(R.string.catalog_title) { CatalogDialog.show(this) }
         item(R.string.show_system, prefs.showSystem) { prefs.showSystem = !prefs.showSystem; render() }
         item(R.string.theme) { themeDialog() }
