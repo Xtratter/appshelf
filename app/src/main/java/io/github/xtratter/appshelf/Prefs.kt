@@ -61,6 +61,15 @@ class Prefs(ctx: Context) {
     var syncLast by long("sync_last", 0L)
     var syncOk by bool("sync_ok", false)
     var syncMsg by str("sync_msg", "")
+    /** Каталог ссылок (sources.json); пустой адрес — каталог выключен. */
+    var catalogUrl by str("catalog_url", LinkStore.DEFAULT_CATALOG)
+    var catalogFetched by long("catalog_fetched", 0L)
+    var catalogFetchedUrl by str("catalog_fetched_url", "")
+    var catalogEtag by str("catalog_etag", "")
+    /** Свои ссылки изменены, но ещё не отправлены на WebDAV; когда последний раз сливали с сервером. */
+    var linksDirty by bool("links_dirty", false)
+    var linksSynced by long("links_synced", 0L)
+
     /** Плановая отправка ещё не состоялась (пропущена, не было сети, ошибка) — выполнить при первой возможности. */
     var syncPending by bool("sync_pending", false)
 

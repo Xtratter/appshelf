@@ -59,6 +59,8 @@ object Sync {
                 for (old in ListFile.oldVersions(dav.list(device).map { it.name }, FILE, keep)) dav.delete("$device/$old")
             } catch (e: Exception) {
             }
+            // свои ссылки на источники — общий файл для всех телефонов
+            runCatching { LinkStore.syncDav(ctx) }
             p.lastSaved = snap.created
             p.lastSavedName = "WebDAV · $device/$name"
             p.syncPending = false

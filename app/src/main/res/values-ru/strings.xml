@@ -171,5 +171,52 @@
     <string name="dav_e_net">ошибка соединения: %s</string>
     <string name="dav_e_url">Адрес должен начинаться с https:// или http://</string>
 
+    <string name="lk_github">GitHub</string>
+    <string name="lk_gitlab">GitLab</string>
+    <string name="lk_codeberg">Codeberg</string>
+    <string name="lk_fdroid">F-Droid</string>
+    <string name="lk_telegram">Telegram</string>
+    <string name="lk_4pda">4PDA</string>
+    <string name="lk_apk">APK-файл</string>
+    <string name="lk_site">Сайт</string>
+    <string name="lk_section">Где скачать</string>
+    <string name="lk_empty">Ссылок пока нет. Добавьте GitHub, Telegram или сайт — пригодится на новом телефоне.</string>
+    <string name="lk_long_press">Удержание на своей ссылке — изменить или удалить</string>
+    <string name="lk_from_catalog">из каталога</string>
+    <string name="lk_add">Добавить ссылку</string>
+    <string name="lk_edit">Ссылка</string>
+    <string name="lk_url">https://…</string>
+    <string name="lk_label">Подпись (необязательно)</string>
+    <string name="lk_hint">Репозитории GitHub, GitLab и Codeberg открываются на последнем релизе. Свои ссылки сохраняются вместе со списком и на сервере WebDAV.</string>
+    <string name="lk_need_url">Вставьте ссылку, начинающуюся с https://</string>
+    <string name="lk_delete">Удалить</string>
+    <string name="lk_open">Открыть %s</string>
+    <string name="lk_obtainium">Добавить в Obtainium — установит и будет обновлять</string>
+    <string name="install_link">Установить: %s</string>
+    <string name="no_link_chip">APK без ссылки</string>
+    <string name="links_export">Ссылки для каталога</string>
+    <plurals name="links_export_sub">
+        <item quantity="one">sources.json со своими ссылками для %d приложения</item>
+        <item quantity="few">sources.json со своими ссылками для %d приложений</item>
+        <item quantity="many">sources.json со своими ссылками для %d приложений</item>
+        <item quantity="other">sources.json со своими ссылками для %d приложения</item>
+    </plurals>
+    <string name="catalog_title">Каталог ссылок</string>
+    <string name="catalog_explain">Общий список ссылок для скачивания (GitHub, Telegram, сайты) — sources.json на GitHub. AppShelf скачивает его целиком, не чаще раза в день; сведения о ваших приложениях никуда не уходят.</string>
+    <string name="catalog_off_hint">Пусто — каталог выключен</string>
+    <string name="catalog_off">Каталог выключен.</string>
+    <string name="catalog_never">Ещё не загружен.</string>
+    <string name="catalog_state">%1$s · обновлён %2$s</string>
+    <plurals name="catalog_apps">
+        <item quantity="one">ссылки для %d приложения</item>
+        <item quantity="few">ссылки для %d приложений</item>
+        <item quantity="many">ссылки для %d приложений</item>
+        <item quantity="other">ссылки для %d приложения</item>
+    </plurals>
+    <string name="catalog_refresh">Обновить</string>
+    <string name="catalog_default">По умолчанию</string>
+    <string name="catalog_bad">Это не каталог AppShelf</string>
+    <string name="catalog_priority">Свои ссылки (в карточке приложения, на WebDAV и в сохранённых списках) всегда первые; ссылки из каталога — после них.</string>
+
     <string name="about_text"><![CDATA[Версия %1$s<br><br>Список установленных приложений — откуда каждое и когда установлено, — чтобы восстановить их на новом телефоне.<br><br><a href="https://github.com/Xtratter/appshelf">github.com/Xtratter/appshelf</a><br>GPL-3.0-or-later]]></string>
 </resources>

@@ -8,8 +8,8 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
-/** Сохранённый список: когда и на каком устройстве снят и сами приложения. */
-data class Snapshot(val created: Long, val device: String, val apps: List<AppInfo>)
+/** Сохранённый список: когда и на каком устройстве снят, сами приложения и их личные ссылки на источники. */
+data class Snapshot(val created: Long, val device: String, val apps: List<AppInfo>, val links: Map<String, LinkEntry> = emptyMap())
 
 /** Форматы файла со списком. JSON и CSV можно открыть обратно для восстановления. */
 enum class Format(val ext: String, val mime: String) {
@@ -61,6 +61,10 @@ object ListFile {
             put("installedMs", a.firstInstall)
             put("updatedMs", a.lastUpdate)
             put("system", a.system)
+            s.links[a.pkg]?.takeIf { it.links.isNotEmpty() }?.let { e ->
+                put("links", Links.linksJson(e.links))
+                put("linksUpdated", e.updated)
+            }
         })
         return JSONObject().apply {
             put("format", MAGIC)
@@ -77,8 +81,12 @@ object ListFile {
         val o = JSONObject(text)
         require(o.optString("format") == MAGIC) { "not an AppShelf list" }
         val arr = o.getJSONArray("apps")
+        val links = HashMap<String, LinkEntry>()
         val apps = (0 until arr.length()).map { i ->
             val a = arr.getJSONObject(i)
+            Links.parseLinks(a.optJSONArray("links")).takeIf { it.isNotEmpty() }?.let {
+                links[a.getString("package")] = LinkEntry(a.optLong("linksUpdated"), it)
+            }
             AppInfo(
                 label = a.optString("label"),
                 pkg = a.getString("package"),
@@ -91,18 +99,19 @@ object ListFile {
                 system = a.optBoolean("system"),
             )
         }
-        return Snapshot(o.optLong("createdMs"), o.optString("device"), apps)
+        return Snapshot(o.optLong("createdMs"), o.optString("device"), apps, links)
     }
 
     // ---------- CSV ----------
 
-    private val CSV_HEAD = listOf("label", "package", "version", "source", "installer", "initiator", "installed", "system")
+    private val CSV_HEAD = listOf("label", "package", "version", "source", "installer", "initiator", "installed", "system", "links")
 
     private fun csv(s: Snapshot, sourceName: (Source) -> String): String = buildString {
         append(CSV_HEAD.joinToString(",")).append("\r\n")
         for (a in s.apps) {
             append(listOf(a.label, a.pkg, a.versionName, sourceName(a.source), a.installer, a.initiator,
-                date(a.firstInstall), a.system.toString()).joinToString(",") { cell(it) }).append("\r\n")
+                date(a.firstInstall), a.system.toString(), s.links[a.pkg]?.links.orEmpty().joinToString(" ") { it.url })
+                .joinToString(",") { cell(it) }).append("\r\n")
         }
     }
 
@@ -143,7 +152,11 @@ object ListFile {
         val iPkg = head.indexOf("package")
         require(iPkg >= 0) { "no package column" }
         fun col(r: List<String>, name: String) = head.indexOf(name).let { if (it >= 0) r.getOrElse(it) { "" } else "" }
+        val links = HashMap<String, LinkEntry>()
         val apps = rows.drop(1).filter { it.getOrElse(iPkg) { "" }.isNotBlank() }.map { r ->
+            // в CSV нет даты изменения ссылок: 0 — свои, более свежие ссылки на телефоне не перезапишутся
+            col(r, "links").split(' ').filter { Links.valid(it) }.takeIf { it.isNotEmpty() }
+                ?.let { urls -> links[r[iPkg].trim()] = LinkEntry(0, urls.map { Link(it) }) }
             AppInfo(
                 label = col(r, "label").ifBlank { r[iPkg] },
                 pkg = r[iPkg].trim(),
@@ -154,7 +167,7 @@ object ListFile {
                 system = col(r, "system").equals("true", ignoreCase = true),
             )
         }
-        return Snapshot(0, "", apps)
+        return Snapshot(0, "", apps, links)
     }
 
     private fun parseDay(s: String): Long = try {
@@ -167,10 +180,16 @@ object ListFile {
         append("# AppShelf — ").append(s.apps.size).append(" apps\n\n")
         if (s.device.isNotEmpty()) append(s.device).append(" · ")
         append(iso().format(Date(s.created))).append("\n\n")
-        append("| App | Package | Source | Installed |\n|---|---|---|---|\n")
+        val withLinks = s.links.values.any { it.links.isNotEmpty() }
+        append("| App | Package | Source | Installed |").append(if (withLinks) " Links |" else "")
+            .append("\n|---|---|---|---|").append(if (withLinks) "---|" else "").append("\n")
         for (a in s.apps) {
             append("| ").append(md(a.label)).append(" | `").append(a.pkg).append("` | ")
-                .append(md(sourceName(a.source))).append(" | ").append(date(a.firstInstall)).append(" |\n")
+                .append(md(sourceName(a.source))).append(" | ").append(date(a.firstInstall)).append(" |")
+            if (withLinks) append(" ").append(s.links[a.pkg]?.links.orEmpty().joinToString(" ") { l ->
+                "[" + md(l.label.ifBlank { Links.short(l.url) }).replace("]", "\\]") + "](" + l.url.replace(")", "%29") + ")"
+            }).append(" |")
+            append("\n")
         }
     }
 

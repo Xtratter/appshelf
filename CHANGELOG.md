@@ -2,6 +2,16 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.6 — 2026-09-30
+
+- **Where to download** in the app card: your own links for any app — GitHub, GitLab, Codeberg, Telegram, 4PDA, a site or a direct .apk; the link from the clipboard is filled in by itself, long-press to change or delete. Repositories open on the latest release
+- **Obtainium**: if it is installed, GitHub / GitLab / Codeberg links can be added to it — it installs the app and keeps it updated
+- Your links travel everywhere: they are saved inside every list (JSON, CSV, Markdown with clickable links) and shared by all phones through "links.json" on the WebDAV server; opening a list adds its links to yours, the newer change wins
+- **Link catalog** (menu): a shared sources.json from GitHub — [Xtratter/appshelf-sources](https://github.com/Xtratter/appshelf-sources) by default, any address can be set. Downloaded whole at most once a day; your own links always come first
+- **Restore mode**: a missing app with a link shows "GitHub ›" in the list, and its card offers "Install: GitHub" before the store
+- "APK without a link" filter — to fill in links for apps from APK files
+- **Save & export → Links for the catalog** — your links as a ready sources.json for the catalog repository
+
 ## 1.5 — 2026-09-30
 
 - **A folder for each phone on the WebDAV server**: lists go to "AppShelf/POCO F3/AppShelf_2026-09-30_135307.json"; the folder name is set in the WebDAV settings (the phone name by default) and is created automatically

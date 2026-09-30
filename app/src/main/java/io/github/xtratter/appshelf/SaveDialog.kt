@@ -61,6 +61,8 @@ object SaveDialog {
             else -> a.getString(R.string.dav_sub_off)
         }, on = sync != null && !sync.second, warn = sync?.second == true) { SyncDialog.show(a) }
         item(R.string.select_title, a.getString(R.string.select_sub, included, total)) { a.selectApps { show(a) } }
+        val withLinks = LinkStore.mine(a).count { it.value.links.isNotEmpty() }
+        item(R.string.links_export, a.resources.getQuantityString(R.plurals.links_export_sub, withLinks, withLinks)) { a.exportLinks() }
 
         dialog.show()
         Ui.glassDialog(dialog)

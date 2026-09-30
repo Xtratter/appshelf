@@ -300,7 +300,7 @@ object SyncDialog {
     /** Списки одного телефона: [folder] — его папка на сервере («» — файлы прямо в основной папке). */
     private class Group(val folder: String, val files: List<WebDav.Entry>)
 
-    private fun isList(e: WebDav.Entry) = !e.dir && (e.name.endsWith(".json", true) || e.name.endsWith(".csv", true))
+    private fun isList(e: WebDav.Entry) = !e.dir && e.name != "links.json" && (e.name.endsWith(".json", true) || e.name.endsWith(".csv", true))
 
     private fun newestFirst(files: List<WebDav.Entry>) =
         files.sortedWith(compareByDescending<WebDav.Entry> { it.modified }.thenByDescending { it.name })

@@ -79,6 +79,50 @@ object DetailsDialog {
             .setNegativeButton(R.string.close, null)
             .create()
 
+        // ---------- где скачать: свои ссылки, затем из каталога ----------
+        val links = LinkStore.forApp(a, app.pkg)
+        /** После правки ссылок — обновить список и открыть карточку заново. */
+        val reopen = { a.refresh(); show(a, r, source) }
+        box.addView(TextView(a).apply {
+            setText(R.string.lk_section); textSize = 15f; typeface = Ui.medium; setTextColor(Ui.primary)
+            setPadding(px(4f), px(16f), 0, px(6f))
+        })
+        val linksBox = LinearLayout(a).apply {
+            orientation = LinearLayout.VERTICAL
+            background = GlassDrawable(a, 18f)
+            setPadding(px(6f), px(6f), px(6f), px(6f))
+        }
+        fun linkRow(title: String, sub: String, subColor: Int, click: () -> Unit, longClick: (() -> Unit)?) =
+            linksBox.addView(LinearLayout(a).apply {
+                orientation = LinearLayout.VERTICAL
+                background = Ui.ripple(a, 14f)
+                setPadding(px(10f), px(8f), px(10f), px(8f))
+                addView(TextView(a).apply { text = title; textSize = 15f; setTextColor(Ui.TEXT); maxLines = 1; ellipsize = TextUtils.TruncateAt.END })
+                if (sub.isNotEmpty()) addView(TextView(a).apply {
+                    text = sub; textSize = 12.5f; setTextColor(subColor); maxLines = 1; ellipsize = TextUtils.TruncateAt.MIDDLE
+                })
+                setOnClickListener { click() }
+                longClick?.let { lc -> setOnLongClickListener { lc(); true } }
+            })
+        for ((l, fromCatalog) in links) {
+            val kind = Links.kind(l.url)
+            linkRow(l.label.ifBlank { a.getString(kind.title) } + " ›",
+                Links.short(l.url) + if (fromCatalog) " · " + a.getString(R.string.lk_from_catalog) else "",
+                Ui.TEXT2, { LinkStore.open(a, l) },
+                if (fromCatalog) null else ({ dialog.dismiss(); LinkEditDialog.show(a, app.pkg, app.label, l, reopen) }))
+        }
+        if (links.isEmpty()) linksBox.addView(TextView(a).apply {
+            setText(R.string.lk_empty); textSize = 13f; setTextColor(Ui.TEXT3); setLineSpacing(0f, 1.1f)
+            setPadding(px(10f), px(6f), px(10f), px(4f))
+        })
+        if (links.any { !it.second }) linksBox.addView(TextView(a).apply {
+            setText(R.string.lk_long_press); textSize = 11.5f; setTextColor(Ui.TEXT3); setPadding(px(10f), px(2f), px(10f), px(2f))
+        })
+        linkRow("+ " + a.getString(R.string.lk_add), "", Ui.TEXT2,
+            { dialog.dismiss(); LinkEditDialog.show(a, app.pkg, app.label, null, reopen) }, null)
+        (linksBox.getChildAt(linksBox.childCount - 1) as LinearLayout).getChildAt(0).let { (it as TextView).setTextColor(Ui.primary) }
+        box.addView(linksBox)
+
         // действия — тональные кнопки-«пилюли»; главная — залитая
         fun action(text: String, main: Boolean = false, block: () -> Unit) {
             box.addView(TextView(a).apply {
@@ -95,7 +139,11 @@ object DetailsDialog {
         }
         box.addView(android.view.View(a), LinearLayout.LayoutParams(1, px(6f)))
         if (!installedNow) {
-            action(a.getString(R.string.install_from, storeName(a, app, source)), main = true) { Store.open(a, app) }
+            // своя ссылка или из каталога — главнее магазина
+            links.firstOrNull()?.let { (l, _) ->
+                action(a.getString(R.string.install_link, l.label.ifBlank { a.getString(Links.kind(l.url).title) }), main = true) { LinkStore.open(a, l) }
+            }
+            action(a.getString(R.string.install_from, storeName(a, app, source)), main = links.isEmpty()) { Store.open(a, app) }
         } else {
             if (a.packageManager.getLaunchIntentForPackage(app.pkg) != null)
                 action(a.getString(R.string.open_app), main = true) { Store.launch(a, app.pkg) }

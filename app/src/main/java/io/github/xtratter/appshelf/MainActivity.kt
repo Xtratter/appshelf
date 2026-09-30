@@ -36,6 +36,7 @@ class MainActivity : Activity() {
         const val REQ_SAVE = 1
         const val REQ_AUTOSAVE = 2
         const val REQ_OPEN = 3
+        const val REQ_LINKS = 4
     }
 
     private lateinit var prefs: Prefs
@@ -57,6 +58,8 @@ class MainActivity : Activity() {
     private var restore: Snapshot? = null
     private var missingOnly = false
     private var filter: Source? = null
+    /** Фильтр «APK без ссылки»: приложения из APK-файлов, для которых нет ни своей ссылки, ни ссылки из каталога. */
+    private var noLink = false
     private var query = ""
     private var pendingFormat = Format.JSON
     private val labels = HashMap<String, String>()
@@ -101,6 +104,7 @@ class MainActivity : Activity() {
     override fun onStart() {
         super.onStart()
         reload()
+        refreshLinks()
         // будильник WebDAV мог пропасть (остановка приложения); пропущенная отправка — догоняем
         Sync.ensure(this)
     }
@@ -234,11 +238,28 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun needsLink(a: AppInfo) = a.source == Source.APK && LinkStore.forApp(this, a.pkg).isEmpty()
+
+    /** Обновить список и сводку (например, после изменения ссылок). */
+    fun refresh() { if (!isDestroyed) render() }
+
+    /** В фоне: каталог ссылок (раз в день или [catalogAge]) и свои ссылки с WebDAV; потом — перерисовать. */
+    private fun refreshLinks(catalogAge: Long = 24 * 60 * 60 * 1000L, forceDav: Boolean = false) {
+        val app = applicationContext
+        Thread {
+            val a = runCatching { LinkStore.refreshCatalog(app, catalogAge) }.getOrDefault(false)
+            val p = Prefs(app)
+            val b = if (p.davUrl.isNotEmpty() && (forceDav || p.linksDirty || System.currentTimeMillis() - p.linksSynced > 6 * 60 * 60 * 1000L))
+                runCatching { LinkStore.syncDav(app); true }.getOrDefault(false) else false
+            if (a || b) main.post { refresh() }
+        }.start()
+    }
+
     /** Сколько приложений из открытого списка не установлено; null — список не открыт. */
     private fun missingCount(): Int? = restore?.let { s -> visible(s.apps).count { it.pkg !in installedPkgs } }
 
     private fun closeRestore() {
-        restore = null; missingOnly = false; filter = null
+        restore = null; missingOnly = false; filter = null; noLink = false
         list.setSelection(0)
         render()
     }
@@ -274,6 +295,7 @@ class MainActivity : Activity() {
         val restoring = restore != null
         var shown = apps
         filter?.let { f -> shown = shown.filter { it.source == f } }
+        if (!restoring && noLink) shown = shown.filter { needsLink(it) }
         if (restoring && missingOnly) shown = shown.filter { it.pkg !in installedPkgs }
         if (query.isNotEmpty()) {
             val q = query.lowercase()
@@ -285,8 +307,10 @@ class MainActivity : Activity() {
         for (a in ListFile.sorted(shown)) {
             val s = ListFile.section(a.label)
             if (s != section) { section = s; items += s }
-            items += Row(a, sourceText(a), dateText(a.firstInstall), if (restoring) a.pkg in installedPkgs else null,
-                excluded = !restoring && a.pkg in excl)
+            val missing = restoring && a.pkg !in installedPkgs
+            items += Row(a, sourceText(a), dateText(a.firstInstall), if (restoring) !missing else null,
+                excluded = !restoring && a.pkg in excl,
+                link = if (missing) LinkStore.forApp(this, a.pkg).firstOrNull()?.let { getString(Links.kind(it.first.url).title) } else null)
         }
         if (items.isEmpty()) items += getString(
             if (restoring && missingOnly && query.isEmpty() && filter == null) R.string.all_installed else R.string.nothing_found)
@@ -425,6 +449,9 @@ class MainActivity : Activity() {
 
     /** Открыть список (из файла или с сервера) в режиме восстановления. */
     fun showSnapshot(s: Snapshot) {
+        // ссылки из списка — к своим; и свежий каталог / ссылки с сервера, раз уж настраиваем телефон
+        LinkStore.import(this, s.links)
+        refreshLinks(catalogAge = 60 * 60 * 1000L, forceDav = true)
         restore = s
         missingOnly = s.apps.any { it.pkg !in installedPkgs }
         filter = null
@@ -456,11 +483,16 @@ class MainActivity : Activity() {
             }
             setOnClickListener { onClick() }
         }, LinearLayout.LayoutParams(-2, dp(36f)).apply { rightMargin = dp(8f) })
-        chip(getString(R.string.all) + " · " + apps.size, filter == null, null) { filter = null; render() }
+        chip(getString(R.string.all) + " · " + apps.size, filter == null && !noLink, null) { filter = null; noLink = false; render() }
         for ((src, count) in counts) {
             chip(getString(src.title) + " · " + count, filter == src, src.color) {
                 filter = if (filter == src) null else src; render()
             }
+        }
+        // приложения из APK, для которых неизвестно, где их потом взять
+        val without = if (restore == null) apps.count { needsLink(it) } else 0
+        if (without > 0 || noLink) chip(getString(R.string.no_link_chip) + " · " + without, noLink, null) {
+            noLink = !noLink; render()
         }
     }
 
@@ -518,6 +550,15 @@ class MainActivity : Activity() {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show().also { Ui.glassDialog(it) }
+    }
+
+    /** Свои ссылки в формате каталога (sources.json) — чтобы перенести их в репозиторий каталога. */
+    fun exportLinks() {
+        startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = Format.JSON.mime
+            putExtra(Intent.EXTRA_TITLE, "sources.json")
+        }, REQ_LINKS)
     }
 
     fun share() {
@@ -645,6 +686,18 @@ class MainActivity : Activity() {
                     renderSummary()
                 }
             }
+            REQ_LINKS -> io.execute {
+                val err = try {
+                    contentResolver.openOutputStream(uri, "wt")!!.use { it.write(LinkStore.catalogExport(this).toByteArray()) }
+                    null
+                } catch (e: Exception) {
+                    e
+                }
+                main.post {
+                    Toast.makeText(this, if (err == null) getString(R.string.saved_to, fileName(uri))
+                    else getString(R.string.save_failed, err.message), Toast.LENGTH_LONG).show()
+                }
+            }
             REQ_OPEN -> io.execute {
                 val result = try {
                     val text = contentResolver.openInputStream(uri)!!.use { it.readBytes().toString(Charsets.UTF_8) }
@@ -673,6 +726,7 @@ class MainActivity : Activity() {
             when (item.itemId) {
                 R.id.m_save -> SaveDialog.show(this)
                 R.id.m_open -> openFrom()
+                R.id.m_catalog -> CatalogDialog.show(this)
                 R.id.m_system -> { prefs.showSystem = !prefs.showSystem; render() }
                 R.id.m_theme -> themeDialog()
                 R.id.m_about -> about()

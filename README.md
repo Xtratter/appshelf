@@ -20,6 +20,9 @@ which apps are missing and opens each one in the right store.
   or every N days at a set time, optionally only over Wi-Fi; a folder per phone, keeps the last versions (10 by default),
   a missed send is made up as soon as possible;
   on a new phone open the list straight from the server
+- **Where to download**: your own links for each app (GitHub, Telegram, a site…) in the app card, saved with the list
+  and shared by all phones via WebDAV; plus a shared [link catalog](https://github.com/Xtratter/appshelf-sources) on GitHub;
+  GitHub / GitLab / Codeberg links can go straight to Obtainium. In restore mode the link comes before the store
 - **Save & export** in one window: file, share, autosave, WebDAV, which apps go into the list
 - **Autosave**: pick a file once (a cloud drive, a memory card…) and the list is rewritten there every time you open the app
 - **Restore mode**: open a saved list — see how many apps are missing, show only those, and tap to install each from its store
@@ -48,6 +51,7 @@ app/src/main/java/io/github/xtratter/appshelf/
 ├── Apps.kt           ← reading installed apps
 ├── Model.kt          ← AppInfo and Source (installer package → store)
 ├── ListFile.kt       ← sorting and JSON / CSV / Markdown files
+├── Links.kt, LinkStore.kt ← links to sources: your own, WebDAV links.json, the catalog
 ├── WebDav.kt         ← small WebDAV client (PUT, GET, PROPFIND, MKCOL)
 ├── Schedule.kt       ← when the next send is due
 ├── Sync.kt           ← alarm → send; waits for network if needed; SyncDialog.kt — the settings

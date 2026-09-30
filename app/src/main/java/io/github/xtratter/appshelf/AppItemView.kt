@@ -16,6 +16,8 @@ class Row(
     val installed: Boolean? = null,
     /** Не входит в сохраняемый список (пользователь исключил). */
     val excluded: Boolean = false,
+    /** Режим восстановления: откуда поставить по ссылке («GitHub»); null — ссылок нет, из магазина. */
+    val link: String? = null,
 )
 
 /**
@@ -78,7 +80,7 @@ class AppItemView(ctx: Context) : View(ctx) {
         when (rw.installed) {
             null -> { status = rw.date; dateP.color = Ui.TEXT3 }
             true -> { status = context.getString(R.string.st_installed); dateP.color = Ui.OK }
-            false -> { status = context.getString(R.string.st_missing); dateP.color = Ui.primary }
+            false -> { status = rw.link?.let { "$it ›" } ?: context.getString(R.string.st_missing); dateP.color = Ui.primary }
         }
         val y1 = card.top + dp(26f)
         c.drawText(status, right, y1, dateP)

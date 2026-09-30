@@ -175,5 +175,48 @@
     <string name="dav_e_net">connection error: %s</string>
     <string name="dav_e_url">The address must start with https:// or http://</string>
 
+    <string name="lk_github">GitHub</string>
+    <string name="lk_gitlab">GitLab</string>
+    <string name="lk_codeberg">Codeberg</string>
+    <string name="lk_fdroid">F-Droid</string>
+    <string name="lk_telegram">Telegram</string>
+    <string name="lk_4pda">4PDA</string>
+    <string name="lk_apk">APK file</string>
+    <string name="lk_site">Website</string>
+    <string name="lk_section">Where to download</string>
+    <string name="lk_empty">No links yet. Add GitHub, Telegram or a site — it will help on a new phone.</string>
+    <string name="lk_long_press">Long-press your link to change or delete it</string>
+    <string name="lk_from_catalog">from the catalog</string>
+    <string name="lk_add">Add a link</string>
+    <string name="lk_edit">Link</string>
+    <string name="lk_url">https://…</string>
+    <string name="lk_label">Label (optional)</string>
+    <string name="lk_hint">GitHub, GitLab and Codeberg repositories open on the latest release. Your links are saved with the list and on the WebDAV server.</string>
+    <string name="lk_need_url">Paste a link starting with https://</string>
+    <string name="lk_delete">Delete</string>
+    <string name="lk_open">Open %s</string>
+    <string name="lk_obtainium">Add to Obtainium — install and keep updated</string>
+    <string name="install_link">Install: %s</string>
+    <string name="no_link_chip">APK without a link</string>
+    <string name="links_export">Links for the catalog</string>
+    <plurals name="links_export_sub">
+        <item quantity="one">sources.json with your links for %d app</item>
+        <item quantity="other">sources.json with your links for %d apps</item>
+    </plurals>
+    <string name="catalog_title">Link catalog</string>
+    <string name="catalog_explain">A shared list of download links (GitHub, Telegram, sites) — sources.json on GitHub. AppShelf downloads it whole, at most once a day; nothing about your apps is sent.</string>
+    <string name="catalog_off_hint">Empty — catalog off</string>
+    <string name="catalog_off">The catalog is off.</string>
+    <string name="catalog_never">Not downloaded yet.</string>
+    <string name="catalog_state">%1$s · updated %2$s</string>
+    <plurals name="catalog_apps">
+        <item quantity="one">links for %d app</item>
+        <item quantity="other">links for %d apps</item>
+    </plurals>
+    <string name="catalog_refresh">Update now</string>
+    <string name="catalog_default">Default</string>
+    <string name="catalog_bad">This is not an AppShelf catalog</string>
+    <string name="catalog_priority">Your own links (in the app card, on WebDAV and in saved lists) always come first; catalog links are shown after them.</string>
+
     <string name="about_text"><![CDATA[Version %1$s<br><br>A list of your installed apps — where each one came from and when it was installed — to reinstall them on a new phone.<br><br><a href="https://github.com/Xtratter/appshelf">github.com/Xtratter/appshelf</a><br>GPL-3.0-or-later]]></string>
 </resources>
