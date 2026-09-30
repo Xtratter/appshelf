@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.12.2 — 2026-09-30
+
+- Search: while the search field is open, the summary card and filter chips are hidden, so the apps found appear right under the search field; the search covers all apps regardless of the chosen filter, and everything comes back when the search is closed
+
 ## 1.12.1 — 2026-09-30
 
 - "Liquid glass": the dark patches beside the ends of the top bar in light themes are gone — the bar's shadow was cut off by its container into a rectangle; now it falls softly around the whole bar

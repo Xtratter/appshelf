@@ -50,6 +50,10 @@ class MainActivity : Activity() {
     private lateinit var searchField: EditText
     private lateinit var summary: LinearLayout
     private lateinit var chipsBox: LinearLayout
+    private lateinit var chipsScroll: View
+
+    /** Открыт поиск: сводка и фильтры скрыты, найденное — сразу под строкой поиска. */
+    private val searching get() = searchBox.visibility == View.VISIBLE
     private val adapter = Adapter()
     private val io = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
@@ -226,6 +230,11 @@ class MainActivity : Activity() {
     private fun showSearch(show: Boolean) {
         val imm = getSystemService(InputMethodManager::class.java)
         searchBox.visibility = if (show) View.VISIBLE else View.GONE
+        // сводка и фильтры на время поиска прячутся (сам заголовок списка при этом сжимается до нуля)
+        summary.visibility = if (show) View.GONE else View.VISIBLE
+        chipsScroll.visibility = summary.visibility
+        render()
+        list.setSelection(0)
         if (show) {
             searchField.requestFocus()
             imm.showSoftInput(searchField, 0)
@@ -246,10 +255,11 @@ class MainActivity : Activity() {
             leftMargin = dp(12f); rightMargin = dp(12f); bottomMargin = dp(12f)
         })
         chipsBox = LinearLayout(this).apply { setPadding(dp(12f), 0, dp(12f), 0) }
-        box.addView(HorizontalScrollView(this).apply {
+        chipsScroll = HorizontalScrollView(this).apply {
             isHorizontalScrollBarEnabled = false
             addView(chipsBox)
-        }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6f) })
+        }
+        box.addView(chipsScroll, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6f) })
         list.addHeaderView(box, null, false)
     }
 
@@ -330,9 +340,12 @@ class MainActivity : Activity() {
         renderChips(apps)
         val restoring = restore != null
         var shown = apps
-        filter?.let { f -> shown = shown.filter { it.source == f } }
-        if (!restoring && noLink) shown = shown.filter { needsLink(it) }
-        if (restoring && missingOnly) shown = shown.filter { it.pkg !in installedPkgs }
+        // при поиске фильтры не видны — ищем среди всех
+        if (!searching) {
+            filter?.let { f -> shown = shown.filter { it.source == f } }
+            if (!restoring && noLink) shown = shown.filter { needsLink(it) }
+        }
+        if (restoring && missingOnly && !searching) shown = shown.filter { it.pkg !in installedPkgs }
         if (query.isNotEmpty()) {
             val q = query.lowercase()
             shown = shown.filter { q in it.label.lowercase() || q in it.pkg.lowercase() }
