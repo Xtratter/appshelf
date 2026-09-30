@@ -119,6 +119,8 @@
     <string name="font_cascadia">Cascadia Mono (как Consolas)</string>
     <string name="font_system">Системный</string>
     <string name="font_mono">Системный моноширинный</string>
+    <string name="liquid_sub">Стекло, которое преломляет то, что за ним, как в iOS 26, — работает с любой темой</string>
+    <string name="liquid_unavailable">Нужен Android 13 или новее — здесь обычное стекло</string>
     <string name="th_toast">Тема: %1$s</string>
 
 

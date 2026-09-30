@@ -23,6 +23,7 @@ import android.widget.HorizontalScrollView
 import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.ListView
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import java.text.SimpleDateFormat
@@ -780,17 +781,49 @@ class MainActivity : Activity() {
         }
     }
 
+    /** Тема: цвета (список) и галочка «Жидкое стекло» — эффект поверх любой темы, с настройкой прозрачности. */
     private fun themeDialog() {
         val themes = Theme.entries
-        val b = AlertDialog.Builder(this)
-            .setTitle(R.string.theme)
-            .setSingleChoiceItems(themes.map { getString(it.title) }.toTypedArray(), themes.indexOf(prefs.theme())) { d, i ->
-                d.dismiss()
-                if (themes[i] != prefs.theme()) changeTheme(themes[i])
+        val tint = android.content.res.ColorStateList.valueOf(Ui.primary)
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20f), dp(6f), dp(20f), 0)
+        }
+        val dialog = AlertDialog.Builder(this).setTitle(R.string.theme)
+            .setView(ScrollView(this).apply { addView(box) })
+            .setNegativeButton(R.string.close, null)
+            .apply { if (Ui.liquid) setNeutralButton(R.string.glass_clarity_btn) { _, _ -> clarityDialog() } }
+            .create()
+        val group = android.widget.RadioGroup(this)
+        for (t in themes) group.addView(android.widget.RadioButton(this).apply {
+            id = View.generateViewId()
+            setText(t.title); textSize = 16f; setTextColor(Ui.TEXT); buttonTintList = tint
+            minHeight = dp(48f)
+            isChecked = t == prefs.theme()
+            setOnClickListener { dialog.dismiss(); if (t != prefs.theme()) changeTheme(t) }
+        })
+        box.addView(group)
+        box.addView(View(this).apply { setBackgroundColor(Ui.ink(0x22)) },
+            LinearLayout.LayoutParams(-1, dp(1f)).apply { topMargin = dp(8f); bottomMargin = dp(8f) })
+        val works = Liquid.works
+        box.addView(android.widget.CheckBox(this).apply {
+            setText(R.string.th_liquid); textSize = 16f; setTextColor(Ui.TEXT); buttonTintList = tint
+            isChecked = works && prefs.liquidGlass
+            isEnabled = works
+            setOnCheckedChangeListener { _, on ->
+                prefs.liquidGlass = on
+                dialog.dismiss()
+                Ui.apply(this@MainActivity, prefs.theme())
+                recreate()
             }
-        // у «жидкого стекла» — своя настройка прозрачности
-        if (Ui.liquid) b.setNeutralButton(R.string.glass_clarity_btn) { _, _ -> clarityDialog() }
-        b.show().also { Ui.glassDialog(it) }
+        })
+        box.addView(TextView(this).apply {
+            setText(if (works) R.string.liquid_sub else R.string.liquid_unavailable)
+            textSize = 13f; setTextColor(Ui.TEXT3); setLineSpacing(0f, 1.1f)
+            setPadding(dp(32f), 0, 0, dp(8f))
+        })
+        dialog.show()
+        Ui.glassDialog(dialog)
     }
 
     private fun fontDialog() {

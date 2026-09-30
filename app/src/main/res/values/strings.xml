@@ -127,6 +127,8 @@
     <string name="font_cascadia">Cascadia Mono (like Consolas)</string>
     <string name="font_system">System</string>
     <string name="font_mono">System monospace</string>
+    <string name="liquid_sub">Glass that refracts what is behind it, like in iOS 26 — works with any theme</string>
+    <string name="liquid_unavailable">Needs Android 13 or newer — the regular glass is used here</string>
     <string name="th_toast">Theme: %1$s</string>
 
 

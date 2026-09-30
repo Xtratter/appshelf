@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.11 — 2026-09-30
+
+- **"Liquid glass" is now a checkbox in Theme** instead of a separate theme — it works with every theme (standard, follow system, AMOLED, light, graphite; in the light theme the glass is light). On by default; on Android older than 13 the checkbox is unavailable and the regular glass is used. The "Liquid glass" theme chosen before becomes standard + checkbox, so nothing changes on screen
+
 ## 1.10 — 2026-09-30
 
 - **"Liquid glass" is the default theme** and no longer experimental; it comes first in the theme list, and long-pressing the title returns to it (on Android older than 13, where its shaders are unavailable, the default stays standard)

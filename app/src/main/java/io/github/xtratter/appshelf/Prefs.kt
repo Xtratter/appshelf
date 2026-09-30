@@ -17,6 +17,9 @@ class Prefs(ctx: Context) {
     /** Показывать системные приложения (предустановленные, без обновлений из магазина — тоже). */
     var showSystem by bool("show_system", false)
 
+    /** «Жидкое стекло» поверх любой темы (работает на Android 13+, ниже — обычное стекло). */
+    var liquidGlass by bool("liquid_glass", true)
+
     /** «Жидкое стекло»: 0 — матовое, 100 — прозрачное (50 — как задумано). */
     var glassClarity by int("glass_clarity", 50)
 

@@ -2,8 +2,6 @@ package io.github.xtratter.appshelf
 
 /** Тема оформления. [SYSTEM] — стандартная тёмная или светлая, как в настройках Android. */
 enum class Theme(val title: Int) {
-    /** «Жидкое стекло», как в iOS 26 (линза и блики — на Android 13+); тема по умолчанию. */
-    LIQUID(R.string.th_liquid),
     STANDARD(R.string.th_standard),
     SYSTEM(R.string.th_system),
     AMOLED(R.string.th_amoled),
@@ -11,8 +9,8 @@ enum class Theme(val title: Int) {
     GRAPHITE(R.string.th_graphite);
 
     companion object {
-        /** По умолчанию — «жидкое стекло»; где его шейдеры недоступны (до Android 13) — стандартная. */
-        val DEFAULT: Theme get() = if (android.os.Build.VERSION.SDK_INT >= 33) LIQUID else STANDARD
+        /** Тема по умолчанию; «жидкое стекло» — отдельная галочка поверх любой темы ([Prefs.liquidGlass]). */
+        val DEFAULT: Theme get() = STANDARD
     }
 }
 

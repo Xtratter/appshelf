@@ -56,10 +56,15 @@ object Ui {
     /** Поменять прозрачность стекла на ходу (из настройки): заливка окон пересчитывается сразу. */
     fun setClarity(v: Float) {
         clarity = v.coerceIn(0f, 1f)
-        if (theme?.let { resolveLiquid(it) } == true) dialogBlur = withAlpha(0xFF14161C.toInt(), lerp(0.62f, 0.12f))
+        if (liquid) dialogBlur = withAlpha(dialogSolid, lerp(0.62f, 0.12f))
     }
 
-    private fun resolveLiquid(t: Theme) = t == Theme.LIQUID
+    /** «Жидкое стекло» поверх темы: ровный фон (его картинку преломляют карточки) и заливка окон по прозрачности. */
+    private fun liquidOverTheme() {
+        if (!liquid) return
+        aurora = true
+        dialogBlur = withAlpha(dialogSolid, lerp(0.62f, 0.12f))
+    }
     /** Снимок главного экрана для стеклянных окон (в 1/4 размера) и где он на экране. */
     var snapshot: android.graphics.Bitmap? = null
     var snapshotX = 0f
@@ -168,7 +173,8 @@ object Ui {
     }
 
     /** Применена ли уже тема [t] (с учётом системного режима). */
-    fun isCurrent(ctx: Context, t: Theme) = theme == t && (t != Theme.SYSTEM || nightNow(ctx) == night)
+    fun isCurrent(ctx: Context, t: Theme) = theme == t && (t != Theme.SYSTEM || nightNow(ctx) == night) &&
+        liquid == (Prefs(ctx).liquidGlass && Liquid.works)
 
     private fun nightNow(ctx: Context) = resolve(ctx, Theme.SYSTEM) != Theme.LIGHT
 
@@ -180,7 +186,7 @@ object Ui {
         fun c(id: Int) = ctx.getColor(id)
         light = r == Theme.LIGHT
         clarity = Prefs(ctx).glassClarity / 100f
-        liquid = r == Theme.LIQUID && Liquid.works
+        liquid = Prefs(ctx).liquidGlass && Liquid.works
         if (light) {
             primary = if (you) c(android.R.color.system_accent1_600) else 0xFF3B5BA9.toInt()
             secondary = if (you) c(android.R.color.system_accent2_600) else 0xFF565E71.toInt()
@@ -199,6 +205,7 @@ object Ui {
             dialogBlur = 0xC8F7F8FC.toInt(); dialogSolid = 0xFAF7F8FC.toInt()
             surface = 0xFFF7F8FC.toInt()
             hintFill = 0x33FFB300; hintText = 0xFF6D4C00.toInt()
+            liquidOverTheme()
             return
         }
         // тёмные темы
@@ -220,14 +227,6 @@ object Ui {
                 dialogBlur = 0xE6000000.toInt(); dialogSolid = 0xFA050505.toInt()
                 surface = 0xFF000000.toInt()
             }
-            Theme.LIQUID -> {
-                // яркий насыщенный фон — чтобы было что преломлять; стекло почти прозрачное
-                base = if (you) mix(c(android.R.color.system_neutral1_900), 0xFF000000.toInt(), 0.3f) else 0xFF111318.toInt()
-                aurora = true   // ровный фон (без пятен) — его картинку «преломляют» карточки
-                card = 0x12FFFFFF
-                dialogBlur = withAlpha(0xFF14161C.toInt(), lerp(0.62f, 0.12f)); dialogSolid = 0xF014161C.toInt()
-                surface = 0xFF14161C.toInt()
-            }
             Theme.GRAPHITE -> {
                 primary = 0xFFB0BEC5.toInt(); secondary = 0xFF90A4AE.toInt(); tertiary = 0xFFCFD8DC.toInt()
                 base = 0xFF1B1C1F.toInt()
@@ -244,6 +243,7 @@ object Ui {
             }
         }
         auroraColors = intArrayOf(primary, tertiary, secondary)
+        liquidOverTheme()
     }
 
     fun withAlpha(color: Int, a: Float) = (color and 0xFFFFFF) or ((a * 255).toInt().coerceIn(0, 255) shl 24)
