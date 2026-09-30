@@ -134,6 +134,9 @@
     <string name="hap_how_primitives">The level sets the strength of each click.</string>
     <string name="hap_how_simple">A short pulse; the level sets its strength.</string>
     <string name="hap_how_simple_fixed">A short pulse of a fixed strength — this phone cannot change it.</string>
+    <string name="note_section">Note</string>
+    <string name="note_empty">Add a note — why you need the app, which account, what to set up after installing</string>
+    <string name="note_hint">For example: login via Gosuslugi; turn off notifications; the backup is in Settings → Export</string>
     <string name="glass_clarity">Glass transparency</string>
     <string name="glass_clarity_btn">Transparency…</string>
     <string name="glass_clarity_text">How much of what is behind shows through the glass: frosted and calm, or clear. This window changes as you move the slider; the whole screen updates when you close it.</string>

@@ -366,7 +366,8 @@ class MainActivity : Activity() {
         if (restoring && missingOnly && !searching) shown = shown.filter { it.pkg !in installedPkgs }
         if (query.isNotEmpty()) {
             val q = query.lowercase()
-            shown = shown.filter { q in it.label.lowercase() || q in it.pkg.lowercase() }
+            // ищем и по названию, и по пакету, и по своим заметкам
+            shown = shown.filter { q in it.label.lowercase() || q in it.pkg.lowercase() || q in LinkStore.note(this, it.pkg).lowercase() }
         }
         val items = ArrayList<Any>()
         val excl = prefs.excluded
@@ -377,7 +378,8 @@ class MainActivity : Activity() {
             val missing = restoring && a.pkg !in installedPkgs
             items += Row(a, sourceText(a), dateText(a.firstInstall), if (restoring) !missing else null,
                 excluded = !restoring && a.pkg in excl,
-                link = if (missing) LinkStore.forApp(this, a.pkg).firstOrNull()?.let { getString(Links.kind(it.first.url).title) } else null)
+                link = if (missing) LinkStore.forApp(this, a.pkg).firstOrNull()?.let { getString(Links.kind(it.first.url).title) } else null,
+                note = LinkStore.note(this, a.pkg))
         }
         if (items.isEmpty()) items += getString(
             if (restoring && missingOnly && query.isEmpty() && filter == null) R.string.all_installed else R.string.nothing_found)

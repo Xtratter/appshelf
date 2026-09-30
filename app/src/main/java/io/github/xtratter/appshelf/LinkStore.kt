@@ -45,7 +45,17 @@ object LinkStore {
 
     /** Заменить свои ссылки приложения; затем — отправить на WebDAV в фоне. */
     fun set(ctx: Context, pkg: String, links: List<Link>) {
-        synchronized(this) { save(ctx, mine(ctx) + (pkg to LinkEntry(System.currentTimeMillis(), links))) }
+        synchronized(this) { save(ctx, mine(ctx) + (pkg to LinkEntry(System.currentTimeMillis(), links, note(ctx, pkg)))) }
+        Prefs(ctx).linksDirty = true
+        syncSoon(ctx)
+    }
+
+    /** Заметка к приложению (пустая — нет). */
+    fun note(ctx: Context, pkg: String): String = mine(ctx)[pkg]?.note.orEmpty()
+
+    /** Сохранить заметку; как и ссылки, уходит на WebDAV и в сохранённые списки. */
+    fun setNote(ctx: Context, pkg: String, note: String) {
+        synchronized(this) { save(ctx, mine(ctx) + (pkg to LinkEntry(System.currentTimeMillis(), get(ctx, pkg), note.trim()))) }
         Prefs(ctx).linksDirty = true
         syncSoon(ctx)
     }

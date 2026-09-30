@@ -79,6 +79,25 @@ object DetailsDialog {
             .setNegativeButton(R.string.close, null)
             .create()
 
+        // ---------- заметка: зачем приложение, какой вход, что настроить ----------
+        val note = LinkStore.note(a, app.pkg)
+        box.addView(TextView(a).apply {
+            setText(R.string.note_section); textSize = 15f; typeface = Ui.medium; setTextColor(Ui.primary)
+            setPadding(px(4f), px(16f), 0, px(6f))
+        })
+        box.addView(TextView(a).apply {
+            text = note.ifEmpty { a.getString(R.string.note_empty) }
+            textSize = 14f; setLineSpacing(0f, 1.15f)
+            setTextColor(if (note.isEmpty()) Ui.TEXT3 else Ui.TEXT)
+            background = GlassDrawable(a, 18f)
+            foreground = Ui.ripple(a, 18f)
+            setPadding(px(16f), px(12f), px(16f), px(12f))
+            setOnClickListener {
+                dialog.dismiss()
+                NoteDialog.show(a, app.pkg, app.label) { a.refresh(); show(a, r, source) }
+            }
+        })
+
         // ---------- где скачать: свои ссылки, затем из каталога ----------
         val links = LinkStore.forApp(a, app.pkg)
         /** После правки ссылок — обновить список и открыть карточку заново. */

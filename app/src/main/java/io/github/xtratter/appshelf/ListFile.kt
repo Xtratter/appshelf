@@ -61,8 +61,9 @@ object ListFile {
             put("installedMs", a.firstInstall)
             put("updatedMs", a.lastUpdate)
             put("system", a.system)
-            s.links[a.pkg]?.takeIf { it.links.isNotEmpty() }?.let { e ->
-                put("links", Links.linksJson(e.links))
+            s.links[a.pkg]?.takeIf { it.links.isNotEmpty() || it.note.isNotBlank() }?.let { e ->
+                if (e.links.isNotEmpty()) put("links", Links.linksJson(e.links))
+                if (e.note.isNotBlank()) put("note", e.note)
                 put("linksUpdated", e.updated)
             }
         })
@@ -84,9 +85,9 @@ object ListFile {
         val links = HashMap<String, LinkEntry>()
         val apps = (0 until arr.length()).map { i ->
             val a = arr.getJSONObject(i)
-            Links.parseLinks(a.optJSONArray("links")).takeIf { it.isNotEmpty() }?.let {
-                links[a.getString("package")] = LinkEntry(a.optLong("linksUpdated"), it)
-            }
+            val ls = Links.parseLinks(a.optJSONArray("links"))
+            val note = a.optString("note")
+            if (ls.isNotEmpty() || note.isNotBlank()) links[a.getString("package")] = LinkEntry(a.optLong("linksUpdated"), ls, note)
             AppInfo(
                 label = a.optString("label"),
                 pkg = a.getString("package"),
@@ -104,13 +105,14 @@ object ListFile {
 
     // ---------- CSV ----------
 
-    private val CSV_HEAD = listOf("label", "package", "version", "source", "installer", "initiator", "installed", "system", "links")
+    private val CSV_HEAD = listOf("label", "package", "version", "source", "installer", "initiator", "installed", "system", "links", "note")
 
     private fun csv(s: Snapshot, sourceName: (Source) -> String): String = buildString {
         append(CSV_HEAD.joinToString(",")).append("\r\n")
         for (a in s.apps) {
             append(listOf(a.label, a.pkg, a.versionName, sourceName(a.source), a.installer, a.initiator,
-                date(a.firstInstall), a.system.toString(), s.links[a.pkg]?.links.orEmpty().joinToString(" ") { it.url })
+                date(a.firstInstall), a.system.toString(), s.links[a.pkg]?.links.orEmpty().joinToString(" ") { it.url },
+                s.links[a.pkg]?.note.orEmpty())
                 .joinToString(",") { cell(it) }).append("\r\n")
         }
     }
@@ -155,8 +157,9 @@ object ListFile {
         val links = HashMap<String, LinkEntry>()
         val apps = rows.drop(1).filter { it.getOrElse(iPkg) { "" }.isNotBlank() }.map { r ->
             // в CSV нет даты изменения ссылок: 0 — свои, более свежие ссылки на телефоне не перезапишутся
-            col(r, "links").split(' ').filter { Links.valid(it) }.takeIf { it.isNotEmpty() }
-                ?.let { urls -> links[r[iPkg].trim()] = LinkEntry(0, urls.map { Link(it) }) }
+            val urls = col(r, "links").split(' ').filter { Links.valid(it) }
+            val note = col(r, "note").trim()
+            if (urls.isNotEmpty() || note.isNotEmpty()) links[r[iPkg].trim()] = LinkEntry(0, urls.map { Link(it) }, note)
             AppInfo(
                 label = col(r, "label").ifBlank { r[iPkg] },
                 pkg = r[iPkg].trim(),
@@ -181,14 +184,16 @@ object ListFile {
         if (s.device.isNotEmpty()) append(s.device).append(" · ")
         append(iso().format(Date(s.created))).append("\n\n")
         val withLinks = s.links.values.any { it.links.isNotEmpty() }
-        append("| App | Package | Source | Installed |").append(if (withLinks) " Links |" else "")
-            .append("\n|---|---|---|---|").append(if (withLinks) "---|" else "").append("\n")
+        val withNotes = s.links.values.any { it.note.isNotBlank() }
+        append("| App | Package | Source | Installed |").append(if (withLinks) " Links |" else "").append(if (withNotes) " Note |" else "")
+            .append("\n|---|---|---|---|").append(if (withLinks) "---|" else "").append(if (withNotes) "---|" else "").append("\n")
         for (a in s.apps) {
             append("| ").append(md(a.label)).append(" | `").append(a.pkg).append("` | ")
                 .append(md(sourceName(a.source))).append(" | ").append(date(a.firstInstall)).append(" |")
             if (withLinks) append(" ").append(s.links[a.pkg]?.links.orEmpty().joinToString(" ") { l ->
                 "[" + md(l.label.ifBlank { Links.short(l.url) }).replace("]", "\\]") + "](" + l.url.replace(")", "%29") + ")"
             }).append(" |")
+            if (withNotes) append(" ").append(md(s.links[a.pkg]?.note.orEmpty())).append(" |")
             append("\n")
         }
     }

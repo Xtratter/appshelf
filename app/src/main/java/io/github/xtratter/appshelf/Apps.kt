@@ -69,7 +69,7 @@ object Apps {
         val excl = prefs.excluded
         val apps = all.filter { (prefs.showSystem || !it.system) && it.pkg !in excl }
         val mine = LinkStore.mine(ctx)
-        val links = apps.mapNotNull { a -> mine[a.pkg]?.takeIf { it.links.isNotEmpty() }?.let { a.pkg to it } }.toMap()
+        val links = apps.mapNotNull { a -> mine[a.pkg]?.takeIf { it.links.isNotEmpty() || it.note.isNotBlank() }?.let { a.pkg to it } }.toMap()
         return Snapshot(System.currentTimeMillis(), device(ctx), ListFile.sorted(apps), links)
     }
 

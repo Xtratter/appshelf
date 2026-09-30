@@ -19,10 +19,10 @@ enum class LinkKind(val title: Int, val obtainium: Boolean = false) {
 }
 
 /**
- * Личные ссылки одного приложения и когда их меняли. При слиянии (телефон, WebDAV, открытый список)
+ * Личные ссылки и заметка одного приложения и когда их меняли. При слиянии (телефон, WebDAV, открытый список)
  * побеждают более новые; пустой список — ссылки удалены (чтобы удаление тоже доходило до других телефонов).
  */
-data class LinkEntry(val updated: Long, val links: List<Link>)
+data class LinkEntry(val updated: Long, val links: List<Link>, val note: String = "")
 
 /** Ссылки: тип, короткая подпись, слияние, файлы. Без Android-зависимостей — проверяется unit-тестами. */
 object Links {
@@ -120,7 +120,10 @@ object Links {
         val apps = JSONObject()
         for (pkg in m.keys.sorted()) {
             val e = m.getValue(pkg)
-            apps.put(pkg, JSONObject().apply { put("updated", e.updated); put("links", linksJson(e.links)) })
+            apps.put(pkg, JSONObject().apply {
+                put("updated", e.updated); put("links", linksJson(e.links))
+                if (e.note.isNotBlank()) put("note", e.note)
+            })
         }
         return JSONObject().apply { put("format", MINE); put("version", 1); put("apps", apps) }.toString(2) + "\n"
     }
@@ -132,7 +135,7 @@ object Links {
         val apps = o.optJSONObject("apps") ?: return emptyMap()
         return apps.keys().asSequence().associateWith { pkg ->
             val e = apps.getJSONObject(pkg)
-            LinkEntry(e.optLong("updated"), parseLinks(e.optJSONArray("links")))
+            LinkEntry(e.optLong("updated"), parseLinks(e.optJSONArray("links")), e.optString("note"))
         }
     }
 

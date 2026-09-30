@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.18 — 2026-09-30
+
+- **Notes for apps**: a "Note" block in the app card — why you need the app, which account, what to set up after installing. Notes are saved inside every list (JSON, CSV, Markdown) and shared through links.json on the WebDAV server together with your links, so on a new phone they are right there. The start of the note shows in the list row, and search finds apps by their notes too
+
 ## 1.17.3 — 2026-09-30
 
 - Vibration on phones that only have the manufacturer's click effects (their strength is fixed by the phone): the level now changes what vibrates — Light: windows, success and errors; Medium: also buttons and list rows; Strong: also chips, checkboxes and the slider, and a window opens with a double click. The Vibration window explains how the level works on this phone

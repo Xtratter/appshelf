@@ -18,6 +18,8 @@ class Row(
     val excluded: Boolean = false,
     /** Режим восстановления: откуда поставить по ссылке («GitHub»); null — ссылок нет, из магазина. */
     val link: String? = null,
+    /** Своя заметка к приложению — её начало видно в строке. */
+    val note: String = "",
 )
 
 /**
@@ -109,5 +111,14 @@ class AppItemView(ctx: Context) : View(ctx) {
         c.drawCircle(x + dp(10f), r.centerY(), dp(3.5f), fill)
         pillP.color = Ui.TEXT
         c.drawText(text, x + dp(18f), r.centerY() - (pillP.ascent() + pillP.descent()) / 2, pillP)
+        // начало заметки — справа от плашки источника
+        if (rw.note.isNotEmpty()) {
+            val nx = r.right + dp(10f)
+            if (right - nx > dp(40f)) {
+                pillP.color = Ui.TEXT3
+                c.drawText(Ui.ellipsize(pillP, "✎ " + rw.note.replace('\n', ' '), right - nx), nx,
+                    r.centerY() - (pillP.ascent() + pillP.descent()) / 2, pillP)
+            }
+        }
     }
 }

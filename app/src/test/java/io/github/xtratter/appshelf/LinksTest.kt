@@ -81,4 +81,15 @@ class LinksTest {
         assertEquals(listOf(Link("https://github.com/Xtratter/droidtop")), csv[app.pkg]!!.links)
         assertTrue(ListFile.write(s, Format.MARKDOWN).contains("[GitHub](https://github.com/Xtratter/droidtop)"))
     }
+
+    @Test
+    fun notesTravelWithLinksAndLists() {
+        val m = mapOf("x" to LinkEntry(5, emptyList(), "вход через Госуслуги"))
+        assertEquals(m, Links.parseMine(Links.writeMine(m)))
+        val app = AppInfo("X", "x")
+        val s = Snapshot(1, "", listOf(app), m)
+        assertEquals("вход через Госуслуги", ListFile.read(ListFile.write(s, Format.JSON)).links["x"]!!.note)
+        assertEquals("вход через Госуслуги", ListFile.read(ListFile.write(s, Format.CSV)).links["x"]!!.note)
+        assertTrue(ListFile.write(s, Format.MARKDOWN).contains("вход через Госуслуги"))
+    }
 }
