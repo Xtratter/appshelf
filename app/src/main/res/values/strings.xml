@@ -124,10 +124,12 @@
     <string name="hap_strong">Strong</string>
     <string name="hap_hint">Short, crisp clicks when you tap buttons, open and close windows, and when something succeeds or fails. Choose a level to feel it.</string>
     <string name="hap_none">This phone has no vibration motor.</string>
-    <string name="hap_engine_primitives">This phone: crisp vibration primitives with adjustable strength.</string>
-    <string name="hap_engine_effects">This phone: the manufacturer\'s click effects, tuned for its motor.</string>
-    <string name="hap_engine_simple">This phone has neither vibration primitives nor ready-made click effects — a short pulse is used.</string>
-    <string name="hap_engine_none">No vibration.</string>
+    <string name="hap_engine">How to vibrate</string>
+    <string name="hap_eng_auto">Auto</string>
+    <string name="hap_eng_effects">Manufacturer\'s click effects (strength set by the phone)</string>
+    <string name="hap_eng_primitives">Vibration primitives (adjustable strength)</string>
+    <string name="hap_eng_simple">Simple pulse</string>
+    <string name="hap_unsupported">not supported by this phone</string>
     <string name="glass_clarity">Glass transparency</string>
     <string name="glass_clarity_btn">Transparency…</string>
     <string name="glass_clarity_text">How much of what is behind shows through the glass: frosted and calm, or clear. This window changes as you move the slider; the whole screen updates when you close it.</string>

@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.17.2 — 2026-09-30
+
+- The drop now closes into exactly the visible glass it came from: for a list row it is the card itself (without the row's transparent margins) with the card's corner radius — before it flowed into the whole row and looked bigger
+- Vibration window: "How to vibrate" — Auto, the manufacturer's click effects (a crisp tap, strength set by the phone), vibration primitives (adjustable strength) or a simple pulse; unsupported ways are marked, and choosing one plays a sample. Auto uses primitives when the phone has them (so the strength setting works), otherwise the manufacturer's effects
+
 ## 1.17.1 — 2026-09-30
 
 - The glass drop now flows back exactly into the size of the button when a window closes (and starts exactly from it when it opens): the mercury bridge only appears mid-way and is gone at both ends, so it no longer inflates the shape

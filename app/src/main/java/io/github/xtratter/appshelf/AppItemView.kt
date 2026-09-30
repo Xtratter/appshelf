@@ -27,7 +27,8 @@ class Row(
 class AppItemView(ctx: Context) : View(ctx) {
     private fun dp(v: Float) = Ui.dp(context, v)
     private val padH = dp(12f)
-    private val card = RectF()
+    /** Видимая стеклянная карточка внутри строки (у строки есть прозрачные поля). */
+    val card = RectF()
     /** Стекло строки (рисуется вручную) — чтобы нажатие могло его «продавить». */
     val glass = GlassDrawable(ctx, 22f).also { it.host = this }
 

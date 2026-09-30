@@ -188,6 +188,19 @@ object Motion {
         return bmp
     }
 
+    /** Видимое стекло вида в координатах главного окна: у строки списка — сама карточка, без полей вокруг. */
+    private fun glassRect(v: View): RectF {
+        val r = rectOf(v)
+        if (v is AppItemView && !v.card.isEmpty) r.set(r.left + v.card.left, r.top + v.card.top, r.left + v.card.right, r.top + v.card.bottom)
+        return r
+    }
+
+    /** Скругление видимого стекла вида: у строки списка — как у карточки, у кнопок — половина высоты. */
+    private fun glassRadius(v: View, r: RectF): Float {
+        val dp = v.resources.displayMetrics.density
+        return if (v is AppItemView) 22 * dp else minOf(r.height() / 2f, 28 * dp)
+    }
+
     /** Прямоугольник вида в координатах главного окна. */
     private fun rectOf(v: View): RectF {
         val at = IntArray(2)
@@ -297,8 +310,8 @@ object Motion {
         val dp = src.resources.displayMetrics.density
         decor.alpha = 0f
         w.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-        val from = rectOf(src)
-        val fromR = minOf(src.height / 2f, 28 * dp)
+        val from = glassRect(src)
+        val fromR = glassRadius(src, from)
         // место окна и его затемнение известны перед первой отрисовкой (окно могли ещё передвинуть — как меню ⋮)
         decor.viewTreeObserver.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
             override fun onPreDraw(): Boolean {
@@ -344,7 +357,7 @@ object Motion {
                 val shot = capture(decor)
                 Haptics.play(Haptics.Kind.CLOSE)
                 v.removeOnAttachStateChangeListener(this)
-                val back = if (src.isAttachedToWindow) rectOf(src) else from
+                val back = if (src.isAttachedToWindow) glassRect(src) else from
                 flow(to, toR, back, fromR, 300, content = shot, appear = false, atReveal = {
                     src.animate().alpha(1f).setDuration(100).start()
                 }) {}

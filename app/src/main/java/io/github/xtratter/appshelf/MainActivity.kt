@@ -886,9 +886,31 @@ class MainActivity : Activity() {
             }
         })
         box.addView(group)
+        // способ вибрации — с пометкой, что поддерживает этот телефон; при выборе — пример
+        if (Haptics.available()) {
+            box.addView(TextView(this).apply {
+                setText(R.string.hap_engine); textSize = 14f; setTextColor(Ui.primary); typeface = Ui.medium
+                setPadding(0, dp(12f), 0, dp(2f))
+            })
+            val engines = android.widget.RadioGroup(this)
+            for (e in Haptics.Engine.entries) engines.addView(android.widget.RadioButton(this).apply {
+                id = View.generateViewId()
+                val ok = Haptics.supports(e)
+                text = getString(e.title) + if (ok) "" else " — " + getString(R.string.hap_unsupported)
+                textSize = 15f; setTextColor(if (ok) Ui.TEXT else Ui.TEXT3); buttonTintList = tint
+                minHeight = dp(44f)
+                isEnabled = ok
+                isChecked = e == Haptics.engineChoice()
+                setOnClickListener {
+                    Haptics.setEngine(this@MainActivity, e)
+                    Haptics.play(Haptics.Kind.TAP)
+                    main.postDelayed({ Haptics.play(Haptics.Kind.OPEN) }, 220)
+                }
+            })
+            box.addView(engines)
+        }
         box.addView(TextView(this).apply {
-            text = if (Haptics.available()) getString(R.string.hap_hint) + "\n\n" + getString(Haptics.engine())
-            else getString(R.string.hap_none)
+            text = if (Haptics.available()) getString(R.string.hap_hint) else getString(R.string.hap_none)
             textSize = 13f; setTextColor(Ui.TEXT3); setLineSpacing(0f, 1.1f)
             setPadding(0, dp(6f), 0, dp(4f))
         })

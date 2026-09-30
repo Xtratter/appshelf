@@ -18,6 +18,7 @@ class Prefs(ctx: Context) {
     /** Сила отклика вибрацией ([Haptics.Level]). */
     var haptics by str("haptics", Haptics.Level.MEDIUM.name)
     fun haptics(): Haptics.Level = runCatching { Haptics.Level.valueOf(haptics) }.getOrDefault(Haptics.Level.MEDIUM)
+    var hapticsEngine by str("haptics_engine", Haptics.Engine.AUTO.name)
 
     /** «Жидкое стекло» поверх любой темы (работает на Android 13+, ниже — обычное стекло). */
     var liquidGlass by bool("liquid_glass", true)

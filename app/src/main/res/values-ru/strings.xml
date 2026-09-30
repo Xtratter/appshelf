@@ -116,10 +116,12 @@
     <string name="hap_strong">Сильная</string>
     <string name="hap_hint">Короткие чёткие щелчки при нажатии на кнопки, открытии и закрытии окон, при успехе и ошибке. Выберите силу — сразу почувствуете.</string>
     <string name="hap_none">В этом телефоне нет вибромотора.</string>
-    <string name="hap_engine_primitives">Этот телефон: чёткие примитивы вибрации с настраиваемой силой.</string>
-    <string name="hap_engine_effects">Этот телефон: готовые эффекты щелчков производителя, настроенные под его мотор.</string>
-    <string name="hap_engine_simple">Этот телефон не отдаёт ни примитивов вибрации, ни готовых эффектов щелчков — используется короткий импульс.</string>
-    <string name="hap_engine_none">Вибрации нет.</string>
+    <string name="hap_engine">Способ вибрации</string>
+    <string name="hap_eng_auto">Авто</string>
+    <string name="hap_eng_effects">Эффекты производителя (силу задаёт телефон)</string>
+    <string name="hap_eng_primitives">Примитивы вибрации (сила настраивается)</string>
+    <string name="hap_eng_simple">Простой импульс</string>
+    <string name="hap_unsupported">телефон не поддерживает</string>
     <string name="glass_clarity">Прозрачность стекла</string>
     <string name="glass_clarity_btn">Прозрачность…</string>
     <string name="glass_clarity_text">Насколько сквозь стекло видно то, что за ним: матовое и спокойное или прозрачное. Это окно меняется, пока двигаете ползунок; весь экран обновится, когда закроете его.</string>
