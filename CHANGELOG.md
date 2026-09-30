@@ -2,6 +2,12 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.17 — 2026-09-30
+
+- **The highlight follows the tilt of the phone**: the light "hangs" in the room — tilt the phone and the bright rim on every piece of glass slides round accordingly (gravity sensor, only while AppShelf is on screen with "Liquid glass" on)
+- **A mercury bridge**: when a button flows into its window, the drop does not detach at once — a glass bridge stretches between them, thins and snaps, and what is left of the button melts away; when the window closes, the bridge grows back and merges into the button
+- **Elastic press**: glass buttons, chips, list rows and window items give under the finger — they sink in slightly, the lens squeezes the background harder and the rim brightens; moving the finger drags the glass elastically after it, and on release it springs back
+
 ## 1.16 — 2026-09-30
 
 - **Haptic feedback** like a Taptic Engine — short, crisp clicks of different character: a click on buttons, window items, list rows and the top bar; a light tick on filter chips, checkboxes and the transparency slider (every 5%); a rising pulse when a button flows into its window and a falling one when it flows back; a double click on success (sent to the server, saved, installed, uninstalled) and a thud on errors. It fires when the finger lifts, not when you start scrolling

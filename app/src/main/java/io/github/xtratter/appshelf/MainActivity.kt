@@ -131,6 +131,12 @@ class MainActivity : Activity() {
         current = java.lang.ref.WeakReference(this)
         // вернулись из настроек с разрешением на установку — продолжаем отложенную установку APK
         ApkInstaller.resume(this)
+        Motion.Tilt.start(this)   // блик на стекле следует за наклоном телефона
+    }
+
+    override fun onPause() {
+        Motion.Tilt.stop()
+        super.onPause()
     }
 
     override fun onDestroy() {

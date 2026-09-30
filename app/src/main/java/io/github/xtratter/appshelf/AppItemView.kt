@@ -28,7 +28,13 @@ class AppItemView(ctx: Context) : View(ctx) {
     private fun dp(v: Float) = Ui.dp(context, v)
     private val padH = dp(12f)
     private val card = RectF()
-    private val glass = GlassDrawable(ctx, 22f).also { it.host = this }
+    /** Стекло строки (рисуется вручную) — чтобы нажатие могло его «продавить». */
+    val glass = GlassDrawable(ctx, 22f).also { it.host = this }
+
+    init {
+        // строка продавливается под пальцем и упруго тянется за ним (щелчок вибрацией — в нажатии списка)
+        if (Motion.elasticOf(this)) Motion.touch(this, null, true)
+    }
     private val titleP = Ui.textPaint(ctx, 16f, Ui.medium, Ui.TEXT)
     private val pkgP = Ui.textPaint(ctx, 12.5f, Ui.regular, Ui.TEXT2)
     private val dateP = Ui.textPaint(ctx, 12f, Ui.regular, Ui.TEXT3).apply { textAlign = Paint.Align.RIGHT }

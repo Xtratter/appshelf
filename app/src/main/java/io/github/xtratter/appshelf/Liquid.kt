@@ -38,6 +38,12 @@ uniform float4 tint;       // glass tint, a = amount
 uniform float light;       // highlight brightness
 uniform float dp;
 uniform float blur;        // frosting radius, px (0 = clear)
+uniform float4 box1;       // the glass: center.xy, half size.zw
+uniform float4 box2;       // a second shape merged with it like mercury (half size 0 = none)
+uniform float radius2;
+uniform float merge;       // smooth-min width, px (how thick the bridge between the shapes is)
+uniform float2 lightDir;   // where the light comes from (follows the tilt of the phone)
+uniform float press;       // 0..1: a finger presses the glass - the lens squeezes harder
 
 // frosted sample: the point and two rings around it, kept inside the glass (premultiplied)
 half4 frost(float2 pos) {
@@ -53,9 +59,24 @@ half4 frost(float2 pos) {
     return acc / 17.0;
 }
 
-float sdf(float2 p, float2 b, float r) {
-    float2 q = abs(p) - b + float2(r);
+float sdb(float2 p, float4 b, float r) {
+    float2 q = abs(p - b.xy) - b.zw + float2(r);
     return length(max(q, float2(0.0))) + min(max(q.x, q.y), 0.0) - r;
+}
+
+float smin(float a, float b, float k) {
+    float h = clamp(0.5 + 0.5 * (b - a) / k, 0.0, 1.0);
+    return mix(b, a, h) - k * h * (1.0 - h);
+}
+
+// distance to the edge of the glass (negative inside); two shapes flow together with a smooth minimum
+float shape(float2 p) {
+    float d = sdb(p, box1, min(radius, min(box1.z, box1.w)));
+    if (box2.z > 0.5 && box2.w > 0.5) {
+        float d2 = sdb(p, box2, min(radius2, min(box2.z, box2.w)));
+        d = merge > 0.5 ? smin(d, d2, merge) : min(d, d2);
+    }
+    return d;
 }
 
 float rimAt(float d, float w) {
@@ -63,22 +84,19 @@ float rimAt(float d, float w) {
 }
 
 half4 main(float2 xy) {
-    float2 hs = size * 0.5;
-    float2 p = xy - origin - hs;
-    float r = min(radius, min(hs.x, hs.y));
-    float d = sdf(p, hs, r);
+    float d = shape(xy);
     if (d > 1.0) return half4(0.0);
 
     // normal to the nearest edge
     float e = 0.75;
-    float2 n = float2(sdf(p + float2(e, 0.0), hs, r) - sdf(p - float2(e, 0.0), hs, r),
-                      sdf(p + float2(0.0, e), hs, r) - sdf(p - float2(0.0, e), hs, r));
+    float2 n = float2(shape(xy + float2(e, 0.0)) - shape(xy - float2(e, 0.0)),
+                      shape(xy + float2(0.0, e)) - shape(xy - float2(0.0, e)));
     n = n / max(length(n), 0.0001);
 
     // the middle stays clear; only a narrow band at the rim bends, like a thick lens:
     // content from further inside is pulled out to the edge and stretched along it
     float t = clamp(1.0 + d / bezel, 0.0, 1.0);
-    float bend = pow(t, 3.0) * strength;
+    float bend = pow(t, 3.0) * strength * (1.0 + press * 0.9);
     float2 disp = -n * bend;
     half4 base;
     if (bend < 0.3) {
@@ -98,12 +116,12 @@ half4 main(float2 xy) {
     ca = max(ca, tint.a);
 
     // light: a thin bright rim (strongest top-left, a reflection bottom-right) and a soft inner glow
-    float2 L = normalize(float2(-0.6, -0.8));
+    float2 L = normalize(lightDir);
     float k = dot(n, L);
 
     float spec = 0.25 + 0.75 * pow(max(k, 0.0), 1.5) + 0.6 * pow(max(-k, 0.0), 2.0);
     float rimW = 1.4 * dp;
-    float ra = clamp(rimAt(d, rimW) * spec * light, 0.0, 1.0);
+    float ra = clamp(rimAt(d, rimW) * spec * light * (1.0 + press * 0.4), 0.0, 1.0);
     col = mix(col, float3(1.0), ra);
     float glow = smoothstep(-9.0 * dp, 0.0, d);
     float ga = glow * glow * 0.09 * light * (0.35 + max(k, 0.0) + 0.5 * max(-k, 0.0));
@@ -124,8 +142,19 @@ half4 main(float2 xy) {
         }
     }
 
-    fun uniforms(s: RuntimeShader, x: Float, y: Float, w: Float, h: Float, radius: Float, dp: Float, tint: Int, blur: Float = 0f) {
+    /** Откуда свет (к источнику, в координатах экрана): по умолчанию сверху слева; следует за наклоном телефона. */
+    @JvmStatic var lightX = -0.6f
+    @JvmStatic var lightY = -0.8f
+
+    fun uniforms(s: RuntimeShader, x: Float, y: Float, w: Float, h: Float, radius: Float, dp: Float, tint: Int, blur: Float = 0f,
+                 press: Float = 0f) {
         s.setFloatUniform("blur", blur)
+        s.setFloatUniform("box1", x + w / 2, y + h / 2, w / 2, h / 2)
+        s.setFloatUniform("box2", 0f, 0f, 0f, 0f)
+        s.setFloatUniform("radius2", 0f)
+        s.setFloatUniform("merge", 0f)
+        s.setFloatUniform("lightDir", lightX, lightY)
+        s.setFloatUniform("press", press)
         s.setFloatUniform("origin", x, y)
         s.setFloatUniform("size", w, h)
         s.setFloatUniform("radius", radius)
@@ -136,6 +165,19 @@ half4 main(float2 xy) {
         s.setFloatUniform("tint", ((tint shr 16) and 0xFF) / 255f, ((tint shr 8) and 0xFF) / 255f,
             (tint and 0xFF) / 255f, ((tint ushr 24) and 0xFF) / 255f)
         s.setFloatUniform("light", if (Ui.light) 0.95f else 0.8f)
+    }
+
+    /**
+     * Вторая форма, слитая с первой, как ртуть ([merge] — толщина перемычки, px). [bx]…[bh] — общая рамка обеих
+     * (в ней шейдер берёт картинку фона).
+     */
+    fun second(s: RuntimeShader, x: Float, y: Float, w: Float, h: Float, r: Float, merge: Float,
+               bx: Float, by: Float, bw: Float, bh: Float) {
+        s.setFloatUniform("box2", x + w / 2, y + h / 2, w / 2, h / 2)
+        s.setFloatUniform("radius2", r)
+        s.setFloatUniform("merge", merge)
+        s.setFloatUniform("origin", bx, by)
+        s.setFloatUniform("size", bw, bh)
     }
 }
 
@@ -156,14 +198,14 @@ class LiquidCard(private val dp: Float) {
      * Стекло без того, что под ним (окна-диалоги, кнопки в них): та же кромка, блик и свечение, что у панели,
      * поверх полупрозрачной заливки [fill]. false — холст не аппаратный (копия под панелью), рисовать по-старому.
      */
-    fun drawRim(c: Canvas, r: RectF, radius: Float, fill: Int): Boolean {
+    fun drawRim(c: Canvas, r: RectF, radius: Float, fill: Int, press: Float = 0f): Boolean {
         if (!c.isHardwareAccelerated || Liquid.capturing) return false
         if (fillShader == null || fillFor != fill) {
             fillShader = android.graphics.LinearGradient(0f, 0f, 1f, 0f, fill, fill, Shader.TileMode.CLAMP)
             fillFor = fill
         }
         shader.setInputShader("content", fillShader!!)
-        Liquid.uniforms(shader, r.left, r.top, r.width(), r.height(), radius, dp, 0)
+        Liquid.uniforms(shader, r.left, r.top, r.width(), r.height(), radius, dp, 0, press = press)
         paint.shader = shader
         c.drawRect(r.left - 2, r.top - 2, r.right + 2, r.bottom + 2, paint)
         return true
@@ -176,7 +218,8 @@ class LiquidCard(private val dp: Float) {
      * Стекло в окне-диалоге: под ним — снимок главного экрана ([Ui.snapshot]), размытый и преломлённый у краёв,
      * поверх — заливка окна и самого элемента. false — снимка нет или холст не аппаратный.
      */
-    fun drawOverSnapshot(c: Canvas, host: View, r: RectF, radius: Float, fill: Int): Boolean {
+    fun drawOverSnapshot(c: Canvas, host: View, r: RectF, radius: Float, fill: Int, press: Float = 0f,
+                         merged: RectF? = null, mergedR: Float = 0f, merge: Float = 0f): Boolean {
         if (!c.isHardwareAccelerated || Liquid.capturing) return false
         val bmp = Ui.snapshot ?: return false
         if (snapFor !== bmp) { snapShader = BitmapShader(bmp, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply { filterMode = BitmapShader.FILTER_MODE_LINEAR }; snapFor = bmp }
@@ -188,14 +231,21 @@ class LiquidCard(private val dp: Float) {
         shader.setInputShader("content", bs)
         // элемент внутри окна: его заливка поверх заливки окна, как если бы он лежал на стекле окна
         val tint = if (host.rootView === host) Ui.dialogBlurColor() else Ui.over(fill, Ui.dialogBlurColor())
-        Liquid.uniforms(shader, r.left, r.top, r.width(), r.height(), radius, dp, if (host.rootView === host) fill else tint)
+        Liquid.uniforms(shader, r.left, r.top, r.width(), r.height(), radius, dp, if (host.rootView === host) fill else tint,
+            press = press)
         paint.shader = shader
-        c.drawRect(r.left - 2, r.top - 2, r.right + 2, r.bottom + 2, paint)
+        if (merged != null) {
+            // вторая форма, слитая перемычкой (капля отрывается от кнопки, как ртуть): рисуем в общей рамке
+            val bx = minOf(r.left, merged.left) - merge; val by = minOf(r.top, merged.top) - merge
+            val bw = maxOf(r.right, merged.right) + merge - bx; val bh = maxOf(r.bottom, merged.bottom) + merge - by
+            Liquid.second(shader, merged.left, merged.top, merged.width(), merged.height(), mergedR, merge, bx, by, bw, bh)
+            c.drawRect(bx - 2, by - 2, bx + bw + 2, by + bh + 2, paint)
+        } else c.drawRect(r.left - 2, r.top - 2, r.right + 2, r.bottom + 2, paint)
         return true
     }
 
     /** false — рисовать нечем (фон ещё не готов или стекло не в главном окне). */
-    fun draw(c: Canvas, host: View, r: RectF, radius: Float, tint: Int): Boolean {
+    fun draw(c: Canvas, host: View, r: RectF, radius: Float, tint: Int, press: Float = 0f): Boolean {
         if (!c.isHardwareAccelerated || Liquid.capturing) return false
         val bmp = Ui.backdrop ?: return false
         if (host.rootView !== Ui.liquidRoot || Ui.backdropW <= 0) return false
@@ -206,7 +256,7 @@ class LiquidCard(private val dp: Float) {
         m.postTranslate(-loc[0].toFloat(), -loc[1].toFloat())
         bs.setLocalMatrix(m)
         shader.setInputShader("content", bs)
-        Liquid.uniforms(shader, r.left, r.top, r.width(), r.height(), radius, dp, tint)
+        Liquid.uniforms(shader, r.left, r.top, r.width(), r.height(), radius, dp, tint, press = press)
         paint.shader = shader
         c.drawRect(r.left - 2, r.top - 2, r.right + 2, r.bottom + 2, paint)
         return true
@@ -337,6 +387,7 @@ class LiquidBackdrop(private val host: View, private val sources: List<View>, ra
             return
         }
         if (shown.isEmpty()) { shown = state(); capture() }
+        shader.setFloatUniform("lightDir", Liquid.lightX, Liquid.lightY)   // блик следует за наклоном телефона
         c.drawRect(bounds.left - 1f, bounds.top - 1f, bounds.right + 1f, bounds.bottom + 1f, paint)
     }
 

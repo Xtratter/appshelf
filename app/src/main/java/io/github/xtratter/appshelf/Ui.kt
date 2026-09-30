@@ -287,6 +287,9 @@ object Ui {
     }
 
     private val dialogs = HashSet<View>()
+    /** Открытые стеклянные окна (их корни) — чтобы перерисовать стекло, когда свет сдвинулся. */
+    fun openDialogViews(): List<View> = dialogs.toList()
+
     /** Сколько «стеклянных» диалогов сейчас открыто. */
     val openDialogs get() = dialogs.size
     /** Новый экран: диалоги старого (например, до смены темы) больше не считаем. */
@@ -379,6 +382,9 @@ class GlassDrawable(ctx: Context, radiusDp: Float, private val fill: Int = Ui.ca
     private val d = ctx.resources.displayMetrics.density
     /** Вид, на котором рисуется стекло, если это не его фон (строка списка рисует стекло сама). */
     var host: View? = null
+    /** 0..1: палец продавливает стекло — линза сжимает фон сильнее, кромка ярче. */
+    var press = 0f
+        set(v) { field = v; invalidateSelf() }
     private val liquid = if (Ui.liquid && Build.VERSION.SDK_INT >= 33) LiquidCard(d) else null
     private val fillP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = fill }
     private val hiP = Paint(Paint.ANTI_ALIAS_FLAG)
@@ -400,9 +406,9 @@ class GlassDrawable(ctx: Context, radiusDp: Float, private val fill: Int = Ui.ca
     override fun draw(c: Canvas) {
         // «жидкое стекло»: линза над фоном окна; не вышло (диалог, фон не готов) — обычное стекло
         val v = callback as? View ?: host
-        if (liquid != null && v != null && liquid.draw(c, v, r, radius, fill)) return
-        if (liquid != null && v != null && liquid.drawOverSnapshot(c, v, r, radius, fill)) return
-        if (liquid != null && liquid.drawRim(c, r, radius, fill)) return
+        if (liquid != null && v != null && liquid.draw(c, v, r, radius, fill, press)) return
+        if (liquid != null && v != null && liquid.drawOverSnapshot(c, v, r, radius, fill, press)) return
+        if (liquid != null && liquid.drawRim(c, r, radius, fill, press)) return
         c.drawRoundRect(r, radius, radius, fillP)
         c.drawRoundRect(r, radius, radius, hiP)
         c.drawRoundRect(r, radius, radius, edgeP)

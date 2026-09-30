@@ -1,12 +1,10 @@
 package io.github.xtratter.appshelf
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 
@@ -96,13 +94,9 @@ object Haptics {
      * Щелчок при нажатии на [v] — в момент, когда палец отпускает кнопку (как само нажатие);
      * если начали прокручивать, щелчка нет. Касание не перехватывается.
      */
-    @SuppressLint("ClickableViewAccessibility")
     fun onClick(v: View, kind: Kind = Kind.TAP) {
-        v.setOnTouchListener { view, e ->
-            if (e.actionMasked == MotionEvent.ACTION_UP && view.isPressed &&
-                e.x >= 0 && e.y >= 0 && e.x <= view.width && e.y <= view.height) play(kind)
-            false
-        }
+        // один обработчик касаний на вид: щелчок и упругое нажатие стекла (Motion.touch)
+        Motion.touch(v, kind, Motion.elasticOf(v))
     }
 
     /** Щелчки для всех нажимаемых элементов внутри [root] (окна): кнопки — щелчок, галочки и переключатели — тик. */

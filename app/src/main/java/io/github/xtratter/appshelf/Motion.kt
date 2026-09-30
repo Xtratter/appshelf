@@ -9,6 +9,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.RectF
 import android.os.Build
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -29,6 +30,121 @@ object Motion {
         override fun getInterpolation(t: Float): Float =
             if (t >= 1f) 1f else (1f - exp(-decay * t) * cos(2 * PI.toFloat() * cycles * t))
     }
+
+    // ---------- блик от наклона телефона ----------
+
+    /**
+     * Свет «висит» в комнате: по датчику гравитации блик на кромках стекла переезжает, когда наклоняешь телефон.
+     * Датчик работает, только пока приложение на экране и включено «жидкое стекло».
+     */
+    object Tilt : android.hardware.SensorEventListener {
+        private var sm: android.hardware.SensorManager? = null
+        private var gx = 0f
+        private var gy = 9.8f
+        private var lastDraw = 0L
+
+        fun start(ctx: Context) {
+            if (!enabled) return
+            val m = ctx.getSystemService(android.hardware.SensorManager::class.java) ?: return
+            val s = m.getDefaultSensor(android.hardware.Sensor.TYPE_GRAVITY)
+                ?: m.getDefaultSensor(android.hardware.Sensor.TYPE_ACCELEROMETER) ?: return
+            sm = m
+            m.registerListener(this, s, android.hardware.SensorManager.SENSOR_DELAY_UI)
+        }
+
+        fun stop() {
+            sm?.unregisterListener(this)
+            sm = null
+        }
+
+        override fun onAccuracyChanged(s: android.hardware.Sensor?, accuracy: Int) {}
+
+        override fun onSensorChanged(e: android.hardware.SensorEvent) {
+            // сглаживаем дрожание руки
+            gx += (e.values[0] - gx) * 0.15f
+            gy += (e.values[1] - gy) * 0.15f
+            // «вверх» в координатах экрана (ось y экрана направлена вниз); свет — сверху, чуть слева
+            val tilt = (kotlin.math.sqrt(gx * gx + gy * gy) / 9.81f).coerceIn(0f, 1f)
+            var lx = -0.6f * (1 - tilt) + (gx / 9.81f - 0.35f) * tilt
+            var ly = -0.8f * (1 - tilt) + (-gy / 9.81f) * tilt
+            val len = kotlin.math.sqrt(lx * lx + ly * ly).coerceAtLeast(0.01f)
+            lx /= len; ly /= len
+            if (kotlin.math.abs(lx - Liquid.lightX) + kotlin.math.abs(ly - Liquid.lightY) < 0.02f) return
+            val now = android.os.SystemClock.uptimeMillis()
+            if (now - lastDraw < 33) return   // не чаще ~30 раз в секунду
+            lastDraw = now
+            Liquid.lightX = lx; Liquid.lightY = ly
+            Ui.liquidRoot?.let { redrawGlass(it) }
+            Ui.openDialogViews().forEach { redrawGlass(it) }
+        }
+
+        /** Перерисовать всё стекло в дереве [v]: фоны-стёкла, панель и строки списка. */
+        private fun redrawGlass(v: View) {
+            if (v.background is GlassDrawable || v.background is LiquidBackdrop || v is AppItemView || v.rootView === v) v.invalidate()
+            if (v is ViewGroup) for (i in 0 until v.childCount) redrawGlass(v.getChildAt(i))
+        }
+    }
+
+    // ---------- упругое нажатие ----------
+
+    private fun glassOf(v: View): GlassDrawable? = v.background as? GlassDrawable ?: (v as? AppItemView)?.glass
+
+    /** Резиновый ход: чем дальше тянешь, тем туже, не больше [max]. */
+    private fun rubber(d: Float, max: Float) = kotlin.math.sign(d) * max * (1f - exp(-kotlin.math.abs(d) / (max * 2.5f)))
+
+    /**
+     * Касание стеклянного элемента: [haptic] — щелчок вибрацией при нажатии (когда палец отпускает кнопку);
+     * [elastic] — стекло под пальцем продавливается (чуть меньше, линза сжимает фон сильнее) и упруго тянется
+     * за пальцем, а отпущенное — отпружинивает. Касание не перехватывается: нажатия и прокрутка работают как обычно.
+     */
+    @SuppressLint("ClickableViewAccessibility")
+    fun touch(v: View, haptic: Haptics.Kind?, elastic: Boolean) {
+        var downX = 0f
+        var downY = 0f
+        var pressAnim: ValueAnimator? = null
+        fun pressTo(view: View, target: Float, ms: Long) {
+            val g = glassOf(view) ?: return
+            pressAnim?.cancel()
+            pressAnim = ValueAnimator.ofFloat(g.press, target).apply {
+                duration = ms
+                addUpdateListener { g.press = it.animatedValue as Float; view.invalidate() }
+                start()
+            }
+        }
+        fun release(view: View) {
+            view.animate().translationX(0f).translationY(0f).scaleX(1f).scaleY(1f)
+                .setDuration(480).setInterpolator(Spring(5f, 1.1f)).start()
+            pressTo(view, 0f, 260)
+        }
+        v.setOnTouchListener { view, e ->
+            val dp = view.resources.displayMetrics.density
+            when (e.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    downX = e.rawX; downY = e.rawY
+                    if (elastic) {
+                        val s = 1f - (6 * dp / view.width.coerceAtLeast(1)).coerceIn(0.012f, 0.045f)
+                        view.animate().scaleX(s).scaleY(s).setDuration(120).setInterpolator(android.view.animation.DecelerateInterpolator()).start()
+                        pressTo(view, 1f, 140)
+                    }
+                }
+                MotionEvent.ACTION_MOVE -> if (elastic) {
+                    val max = 7 * dp
+                    view.translationX = rubber(e.rawX - downX, max)
+                    view.translationY = rubber(e.rawY - downY, max)
+                }
+                MotionEvent.ACTION_UP -> {
+                    if (haptic != null && view.isPressed && e.x >= 0 && e.y >= 0 && e.x <= view.width && e.y <= view.height)
+                        Haptics.play(haptic)
+                    if (elastic) release(view)
+                }
+                MotionEvent.ACTION_CANCEL -> if (elastic) release(view)
+            }
+            false
+        }
+    }
+
+    /** Упругое нажатие для стеклянного элемента (если включено «жидкое стекло» и у него стеклянный фон). */
+    fun elasticOf(v: View) = enabled && glassOf(v) != null
 
     /** Откуда вытечет следующее окно (кнопка или строка главного экрана); забирается [Ui.glassDialog]. */
     private var source: View? = null
@@ -131,12 +247,24 @@ object Motion {
             return a + (b - a) * spring.getInterpolation(p)
         }
 
+        private val anchor = RectF()
+        private val dp = ctx.resources.displayMetrics.density
+
         override fun onDraw(c: Canvas) {
             cur.set(edge(from.left, to.left, dx < 0), edge(from.top, to.top, dy < 0),
                 edge(from.right, to.right, dx > 0), edge(from.bottom, to.bottom, dy > 0))
             if (cur.width() < 2 || cur.height() < 2) return
             val r = (fromR + (toR - fromR) * t.coerceIn(0f, 1f)).coerceAtMost(minOf(cur.width(), cur.height()) / 2f)
-            glass.drawOverSnapshot(c, this, cur, r, 0)
+            // перемычка, как у ртути: при открытии капля отрывается от кнопки (остаток на месте кнопки тает,
+            // перемычка истончается и рвётся), при закрытии — наоборот, нарастает у кнопки и сливается с ней
+            val home = if (appear) from else to
+            val homeR = if (appear) fromR else toR
+            val bridge = (if (appear) (1f - t / 0.6f) else ((t - 0.4f) / 0.6f)).coerceIn(0f, 1f)
+            if (bridge > 0.04f) {
+                anchor.set(home.centerX() - home.width() * bridge / 2, home.centerY() - home.height() * bridge / 2,
+                    home.centerX() + home.width() * bridge / 2, home.centerY() + home.height() * bridge / 2)
+                glass.drawOverSnapshot(c, this, cur, r, 0, merged = anchor, mergedR = homeR * bridge, merge = 26 * dp * bridge)
+            } else glass.drawOverSnapshot(c, this, cur, r, 0)
             // содержимое окна течёт вместе с каплей: растягивается по её форме, проявляется (или растворяется)
             val bmp = content ?: return
             val k = if (appear) ((t - 0.3f) / 0.6f) else (1f - t / 0.55f)
