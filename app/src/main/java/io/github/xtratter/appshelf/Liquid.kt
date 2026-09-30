@@ -37,6 +37,21 @@ uniform float strength;    // how far the rim bends the backdrop, px
 uniform float4 tint;       // glass tint, a = amount
 uniform float light;       // highlight brightness
 uniform float dp;
+uniform float blur;        // frosting radius, px (0 = clear)
+
+// frosted sample: the point and two rings around it, kept inside the glass
+half3 frost(float2 pos) {
+    pos = clamp(pos, origin + 0.5, origin + size - 0.5);
+    half3 acc = content.eval(pos).rgb;
+    if (blur < 0.5) return acc;
+    for (int i = 0; i < 8; i++) {
+        float a = float(i) * 0.785398 + 0.39;
+        float2 o = float2(cos(a), sin(a));
+        acc += content.eval(clamp(pos + o * blur, origin + 0.5, origin + size - 0.5)).rgb;
+        acc += content.eval(clamp(pos + o * blur * 0.45, origin + 0.5, origin + size - 0.5)).rgb;
+    }
+    return acc / 17.0;
+}
 
 float sdf(float2 p, float2 b, float r) {
     float2 q = abs(p) - b + float2(r);
@@ -61,9 +76,12 @@ half4 main(float2 xy) {
     float t = clamp(1.0 + d / bezel, 0.0, 1.0);
     float bend = pow(t, 3.0) * strength;
     float2 disp = -n * bend;
-    float3 col = float3(content.eval(xy + disp * 1.18).r,
-                        content.eval(xy + disp).g,
-                        content.eval(xy + disp * 0.82).b);
+    float3 col;
+    if (bend < 0.3) {
+        col = float3(frost(xy));
+    } else {
+        col = float3(frost(xy + disp * 1.18).r, frost(xy + disp).g, frost(xy + disp * 0.82).b);
+    }
 
     // livelier colors under the glass, then the tint
     float lum = dot(col, float3(0.299, 0.587, 0.114));
@@ -94,7 +112,8 @@ half4 main(float2 xy) {
         }
     }
 
-    fun uniforms(s: RuntimeShader, x: Float, y: Float, w: Float, h: Float, radius: Float, dp: Float, tint: Int) {
+    fun uniforms(s: RuntimeShader, x: Float, y: Float, w: Float, h: Float, radius: Float, dp: Float, tint: Int, blur: Float = 0f) {
+        s.setFloatUniform("blur", blur)
         s.setFloatUniform("origin", x, y)
         s.setFloatUniform("size", w, h)
         s.setFloatUniform("radius", radius)
@@ -166,11 +185,10 @@ class LiquidBackdrop(private val host: View, private val sources: List<View>, ra
     override fun onBoundsChange(b: Rect) {
         if (b.isEmpty) return
         node.setPosition(0, 0, b.width(), b.height())
-        Liquid.uniforms(shader, 0f, 0f, b.width().toFloat(), b.height().toFloat(), radius, dp, tint)
-        val blur = 2.5f * dp
-        node.setRenderEffect(RenderEffect.createChainEffect(
-            RenderEffect.createRuntimeShaderEffect(shader, "content"),
-            RenderEffect.createBlurEffect(blur, blur, Shader.TileMode.CLAMP)))
+        // лёгкое размытие считает сам шейдер: отдельный эффект размытия расширяет картинку за края,
+        // и система сдвигала бы координаты линзы на эту ширину (стекло «срезалось» сверху)
+        Liquid.uniforms(shader, 0f, 0f, b.width().toFloat(), b.height().toFloat(), radius, dp, tint, blur = 3f * dp)
+        node.setRenderEffect(RenderEffect.createRuntimeShaderEffect(shader, "content"))
         shown = ""
     }
 

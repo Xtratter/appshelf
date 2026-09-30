@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.8.2 — 2026-09-30
+
+- "Liquid glass": the top of the bar is no longer cut off — the light frosting is now done by the glass shader itself instead of a separate blur, which shifted the lens
+
 ## 1.8.1 — 2026-09-30
 
 - "Liquid glass": the top bar no longer drifts while scrolling — it is drawn as one layer and redrawn whole
