@@ -210,8 +210,13 @@ class MainActivity : Activity() {
     }
 
     private fun setupTopBar() {
-        // нажатие на название — поиск приложений (как кнопка-лупа); тема — в меню ⋮
-        findViewById<TextView>(R.id.title).setOnClickListener { showSearch(searchBox.visibility != View.VISIBLE) }
+        // вся панель, кроме кнопки ⋮, — поиск приложений: название, пустое место и лупа (тема — в меню ⋮)
+        val toggleSearch = View.OnClickListener { showSearch(searchBox.visibility != View.VISIBLE) }
+        findViewById<View>(R.id.bar).apply {
+            setOnClickListener(toggleSearch)
+            foreground = Ui.ripple(this@MainActivity, 32f)
+        }
+        findViewById<TextView>(R.id.title).setOnClickListener(toggleSearch)
         findViewById<View>(R.id.btnSearch).setOnClickListener { showSearch(searchBox.visibility != View.VISIBLE) }
         findViewById<View>(R.id.btnSearchClose).setOnClickListener { showSearch(false) }
         findViewById<View>(R.id.btnMore).setOnClickListener { Motion.from(it); showMenu(it) }

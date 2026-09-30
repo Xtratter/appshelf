@@ -12,7 +12,7 @@ which apps are missing and opens each one in the right store.
 - **Source** of every app: Google Play, F-Droid (and Droid-ify, Neo Store), Aurora Store, Obtainium, RuStore,
   GetApps, Galaxy Store, AppGallery, Amazon — or an **APK file**, including the app it was opened from ("APK · via Telegram")
 - **Install date**, version and last update in the app card
-- **Search** by name or package (the magnifier or a tap on the "AppShelf" title), **filter chips** by source, optional system apps
+- **Search** by name or package (tap anywhere on the top bar), **filter chips** by source, optional system apps
 - **Save the list** as JSON (to restore later), Markdown (to read, e.g. in Obsidian) or CSV (for spreadsheets), or share it as text
 - **Choose what goes into the list**: "Choose apps…" in the save dialog — checkboxes, search and select all / none;
   apps you leave out are not saved, shared or autosaved (you can also do it from an app's card)

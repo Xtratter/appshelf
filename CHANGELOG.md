@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.15.1 — 2026-09-30
+
+- The whole top bar except the ⋮ button opens the search — the title, the empty space and the magnifier; a tap anywhere on it shows a ripple
+
 ## 1.15 — 2026-09-30
 
 - Tapping the "AppShelf" title opens the app search (like the magnifier), no longer switches the theme; the theme is chosen in menu ⋮ → Theme
