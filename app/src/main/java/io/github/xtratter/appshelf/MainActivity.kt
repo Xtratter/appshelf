@@ -886,6 +886,16 @@ class MainActivity : Activity() {
             }
         })
         box.addView(group)
+        // как уровень работает на этом телефоне: у эффектов производителя сила одна — уровень меняет, на что откликаться
+        val how = TextView(this)
+        fun explain() {
+            how.text = if (!Haptics.available()) getString(R.string.hap_none) else getString(when (Haptics.effective()) {
+                Haptics.Engine.EFFECTS -> R.string.hap_how_effects
+                Haptics.Engine.PRIMITIVES -> R.string.hap_how_primitives
+                else -> if (Haptics.amplitude()) R.string.hap_how_simple else R.string.hap_how_simple_fixed
+            })
+        }
+        explain()
         // способ вибрации — с пометкой, что поддерживает этот телефон; при выборе — пример
         if (Haptics.available()) {
             box.addView(TextView(this).apply {
@@ -903,14 +913,14 @@ class MainActivity : Activity() {
                 isChecked = e == Haptics.engineChoice()
                 setOnClickListener {
                     Haptics.setEngine(this@MainActivity, e)
+                    explain()
                     Haptics.play(Haptics.Kind.TAP)
                     main.postDelayed({ Haptics.play(Haptics.Kind.OPEN) }, 220)
                 }
             })
             box.addView(engines)
         }
-        box.addView(TextView(this).apply {
-            text = if (Haptics.available()) getString(R.string.hap_hint) else getString(R.string.hap_none)
+        box.addView(how.apply {
             textSize = 13f; setTextColor(Ui.TEXT3); setLineSpacing(0f, 1.1f)
             setPadding(0, dp(6f), 0, dp(4f))
         })

@@ -130,6 +130,10 @@
     <string name="hap_eng_primitives">Vibration primitives (adjustable strength)</string>
     <string name="hap_eng_simple">Simple pulse</string>
     <string name="hap_unsupported">not supported by this phone</string>
+    <string name="hap_how_effects">This phone only gives the manufacturer\'s ready-made clicks — their strength is fixed by the phone. So here the level changes what vibrates: Light — windows, success and errors; Medium — also buttons and list rows; Strong — also chips, checkboxes and the slider, and a window opens with a double click.</string>
+    <string name="hap_how_primitives">The level sets the strength of each click.</string>
+    <string name="hap_how_simple">A short pulse; the level sets its strength.</string>
+    <string name="hap_how_simple_fixed">A short pulse of a fixed strength — this phone cannot change it.</string>
     <string name="glass_clarity">Glass transparency</string>
     <string name="glass_clarity_btn">Transparency…</string>
     <string name="glass_clarity_text">How much of what is behind shows through the glass: frosted and calm, or clear. This window changes as you move the slider; the whole screen updates when you close it.</string>

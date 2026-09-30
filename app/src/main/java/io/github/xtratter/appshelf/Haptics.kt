@@ -75,17 +75,41 @@ object Haptics {
     /** Есть ли в телефоне вибромотор. */
     fun available() = vibrator?.hasVibrator() == true
 
+    /** Каким способом на деле вибрирует телефон при выбранном [engine] (для «Авто» — лучший из поддерживаемых). */
+    fun effective(): Engine {
+        val v = vibrator ?: return Engine.SIMPLE
+        return when (engine) {
+            Engine.AUTO -> if (primitivesSupported(v)) Engine.PRIMITIVES else if (predefinedSupported(v)) Engine.EFFECTS else Engine.SIMPLE
+            Engine.PRIMITIVES -> if (primitivesSupported(v)) Engine.PRIMITIVES else Engine.SIMPLE
+            Engine.EFFECTS -> if (predefinedSupported(v)) Engine.EFFECTS else Engine.SIMPLE
+            Engine.SIMPLE -> Engine.SIMPLE
+        }
+    }
+
+    /** Можно ли менять силу импульса (амплитуду) — тогда у простого импульса уровень меняет силу. */
+    fun amplitude() = vibrator?.hasAmplitudeControl() == true
+
+    /**
+     * Готовые эффекты производителя звучат с одной силой, заданной прошивкой, поэтому для них уровень меняет,
+     * на что откликается вибрация: лёгкая — только окна, успех и ошибки; средняя — плюс кнопки; сильная — плюс
+     * чипы, галочки и ползунок, а открытие окна — двойным щелчком.
+     */
+    private fun effectsAllow(kind: Kind) = when (level) {
+        Level.OFF -> false
+        Level.LIGHT -> kind == Kind.OPEN || kind == Kind.CLOSE || kind == Kind.SUCCESS || kind == Kind.ERROR
+        Level.MEDIUM -> kind != Kind.TICK
+        Level.STRONG -> true
+    }
+
     fun play(kind: Kind) {
         val v = vibrator ?: return
         val s = level.scale
         if (s <= 0f || !v.hasVibrator()) return
         try {
-            v.vibrate(when (engine) {
-                // авто: сначала примитивы — у них настоящая сила; готовые эффекты — с силой, заданной прошивкой
-                Engine.AUTO -> composed(v, kind, s) ?: predefined(v, kind) ?: simple(v, kind, s)
+            v.vibrate(when (effective()) {
                 Engine.PRIMITIVES -> composed(v, kind, s) ?: simple(v, kind, s)
-                Engine.EFFECTS -> predefined(v, kind) ?: simple(v, kind, s)
-                Engine.SIMPLE -> simple(v, kind, s)
+                Engine.EFFECTS -> if (!effectsAllow(kind)) return else predefined(v, kind) ?: simple(v, kind, s)
+                else -> simple(v, kind, s)
             })
         } catch (e: Exception) {
             // вибрация — не главное: не получилось, и ладно
@@ -128,7 +152,8 @@ object Haptics {
     private fun predefined(v: Vibrator, kind: Kind): VibrationEffect? {
         if (!predefinedSupported(v)) return null
         return VibrationEffect.createPredefined(when (kind) {
-            Kind.TAP, Kind.OPEN -> VibrationEffect.EFFECT_CLICK
+            Kind.TAP -> VibrationEffect.EFFECT_CLICK
+            Kind.OPEN -> if (level == Level.STRONG) VibrationEffect.EFFECT_DOUBLE_CLICK else VibrationEffect.EFFECT_CLICK
             Kind.TICK, Kind.CLOSE -> VibrationEffect.EFFECT_TICK
             Kind.SUCCESS -> VibrationEffect.EFFECT_DOUBLE_CLICK
             Kind.ERROR -> VibrationEffect.EFFECT_DOUBLE_CLICK
