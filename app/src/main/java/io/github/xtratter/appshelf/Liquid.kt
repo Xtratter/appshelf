@@ -85,7 +85,7 @@ half4 main(float2 xy) {
         base = frost(xy);
     } else {
         half4 g = frost(xy + disp);
-        base = half4(frost(xy + disp * 1.32).r, g.g, frost(xy + disp * 0.68).b, g.a);
+        base = half4(frost(xy + disp * 1.18).r, g.g, frost(xy + disp * 0.82).b, g.a);
     }
     // the content may be translucent (a glass fill): work with plain colors and keep its opacity
     float ca = float(base.a);
@@ -101,22 +101,10 @@ half4 main(float2 xy) {
     float2 L = normalize(float2(-0.6, -0.8));
     float k = dot(n, L);
 
-    // thickness of the glass at the rim, visible even over a plain background:
-    // the side facing the light is brighter, the far side is shaded, and just inside the bright rim
-    // runs a thin dark line - the squeezed, refracted image at the very edge
-    float bev = pow(t, 2.0);
-    col = col * (1.0 - bev * 0.18 * max(-k, 0.0)) + bev * 0.10 * light * max(k, 0.0);
-    float inner = smoothstep(-7.0 * dp, -3.0 * dp, d) * (1.0 - smoothstep(-3.0 * dp, -1.6 * dp, d));
-    col *= 1.0 - inner * 0.18;
-    ca = max(ca, bev * 0.35);
     float spec = 0.25 + 0.75 * pow(max(k, 0.0), 1.5) + 0.6 * pow(max(-k, 0.0), 2.0);
-    // the rim splits light like a prism: warm on the outside, cool on the inside
     float rimW = 1.4 * dp;
-    float sh = 0.9 * dp;
-    float3 rim3 = float3(rimAt(d + sh, rimW), rimAt(d, rimW), rimAt(d - sh, rimW));
-    float3 ra3 = clamp(rim3 * spec * light, 0.0, 1.0);
-    col = col * (1.0 - ra3) + ra3;
-    float ra = max(ra3.r, max(ra3.g, ra3.b));
+    float ra = clamp(rimAt(d, rimW) * spec * light, 0.0, 1.0);
+    col = mix(col, float3(1.0), ra);
     float glow = smoothstep(-9.0 * dp, 0.0, d);
     float ga = glow * glow * 0.09 * light * (0.35 + max(k, 0.0) + 0.5 * max(-k, 0.0));
     col += ga;

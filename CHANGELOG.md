@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.8.8 — 2026-09-30
+
+- "Liquid glass": the rim is back to the 1.8.5 look — no rainbow outline and no heavy shading; windows keep refracting the screen behind them (1.8.7)
+
 ## 1.8.7 — 2026-09-30
 
 - "Liquid glass" windows refract what is behind them: when a window opens, AppShelf takes a snapshot of the main screen, and the window with every card and button in it shows it blurred and bent at its edges with color fringes — like the top bar over the list
