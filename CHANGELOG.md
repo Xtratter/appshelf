@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.8.1 — 2026-09-30
+
+- "Liquid glass": the top bar no longer drifts while scrolling — it is drawn as one layer and redrawn whole
+- Closer to iOS 26: the middle of the glass stays clear, only a narrow band at the edge bends the content like a thick lens; a thin bright rim (strongest top-left, a reflection bottom-right) with a soft inner glow; a light blur; the floating bar casts a soft shadow; no more dark arcs along the edge
+
 ## 1.8 — 2026-09-30
 
 - **"Liquid glass" theme (experimental)** in the style of iOS 26, Android 13+: the top bar is real glass — the list scrolls visibly beneath it and bends at the rounded edges like a lens, with a light blur, color fringes and bright rim highlights; cards refract the vivid background under them, and the refraction flows as you scroll. It is in the theme list and in the title-tap cycle; on older Android it looks like the regular glass

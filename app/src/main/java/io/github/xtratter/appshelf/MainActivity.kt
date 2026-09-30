@@ -90,9 +90,12 @@ class MainActivity : Activity() {
         if (Ui.liquid && Build.VERSION.SDK_INT >= 33) {
             // «жидкое стекло»: список виден сквозь панель, изгибаясь у кромки
             val bar = findViewById<View>(R.id.bar)
-            val tint = Ui.withAlpha(Ui.base, 0.28f)
+            val tint = Ui.withAlpha(Ui.base, 0.3f)
             bar.background = LiquidBackdrop(bar, listOf(list), 32f, tint)
             searchBox.background = LiquidBackdrop(searchBox, listOf(list), 26f, tint)
+            // мягкая тень: стекло «висит» над списком
+            bar.elevation = Ui.dp(this, 8f)
+            searchBox.elevation = Ui.dp(this, 8f)
         } else {
             findViewById<View>(R.id.bar).background = GlassDrawable(this, 32f, barFill)
             searchBox.background = GlassDrawable(this, 26f, barFill)
@@ -315,6 +318,7 @@ class MainActivity : Activity() {
     private fun current(): List<AppInfo>? = restore?.apps?.let { visible(it) } ?: installed?.let { visible(it) }
 
     private fun render() {
+        Liquid.version++
         renderSummary()
         val apps = current() ?: run { adapter.update(emptyList()); renderChips(emptyList()); return }
         renderChips(apps)
