@@ -108,6 +108,7 @@
     <string name="th_amoled">AMOLED (чёрная)</string>
     <string name="th_light">Светлая</string>
     <string name="th_graphite">Графит</string>
+    <string name="th_liquid">Жидкое стекло (эксперимент)</string>
     <string name="th_toast">Тема: %1$s</string>
 
 

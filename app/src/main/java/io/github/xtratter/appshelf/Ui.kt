@@ -38,6 +38,13 @@ object Ui {
     /** Цвета пятен фона и их яркость. */
     var auroraColors = intArrayOf(primary, tertiary, secondary); private set
     var auroraStrength = 1f; private set
+    /** Тема «Жидкое стекло» и она поддерживается (Android 13+: шейдеры AGSL). */
+    var liquid = false; private set
+    /** Фон окна для стеклянных карточек: картинка пятен (в 1/4 размера) и размер окна; корень главного окна. */
+    var backdrop: android.graphics.Bitmap? = null
+    var backdropW = 0f
+    var backdropH = 0f
+    var liquidRoot: View? = null
 
     var TEXT = 0xFFF2F2F6.toInt(); private set
     var TEXT2 = 0xB3F2F2F6.toInt(); private set
@@ -94,6 +101,7 @@ object Ui {
         val you = Build.VERSION.SDK_INT >= 31
         fun c(id: Int) = ctx.getColor(id)
         light = r == Theme.LIGHT
+        liquid = r == Theme.LIQUID && Liquid.works
         if (light) {
             primary = if (you) c(android.R.color.system_accent1_600) else 0xFF3B5BA9.toInt()
             secondary = if (you) c(android.R.color.system_accent2_600) else 0xFF565E71.toInt()
@@ -132,6 +140,15 @@ object Ui {
                 card = 0x0DFFFFFF
                 dialogBlur = 0xE6000000.toInt(); dialogSolid = 0xFA050505.toInt()
                 surface = 0xFF000000.toInt()
+            }
+            Theme.LIQUID -> {
+                // яркий насыщенный фон — чтобы было что преломлять; стекло почти прозрачное
+                base = if (you) mix(c(android.R.color.system_neutral1_900), 0xFF000000.toInt(), 0.55f) else 0xFF08090D.toInt()
+                aurora = true
+                auroraStrength = 1.9f
+                card = 0x0AFFFFFF
+                dialogBlur = 0x5C14161C; dialogSolid = 0xF014161C.toInt()
+                surface = 0xFF14161C.toInt()
             }
             Theme.GRAPHITE -> {
                 primary = 0xFFB0BEC5.toInt(); secondary = 0xFF90A4AE.toInt(); tertiary = 0xFFCFD8DC.toInt()
@@ -233,6 +250,9 @@ object Ui {
 class GlassDrawable(ctx: Context, radiusDp: Float, private val fill: Int = Ui.card) : Drawable() {
     private val radius = Ui.dp(ctx, radiusDp)
     private val d = ctx.resources.displayMetrics.density
+    /** Вид, на котором рисуется стекло, если это не его фон (строка списка рисует стекло сама). */
+    var host: View? = null
+    private val liquid = if (Ui.liquid && Build.VERSION.SDK_INT >= 33) LiquidCard(d) else null
     private val fillP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = fill }
     private val hiP = Paint(Paint.ANTI_ALIAS_FLAG)
     private val edgeP = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = d }
@@ -251,6 +271,9 @@ class GlassDrawable(ctx: Context, radiusDp: Float, private val fill: Int = Ui.ca
     }
 
     override fun draw(c: Canvas) {
+        // «жидкое стекло»: линза над фоном окна; не вышло (диалог, фон не готов) — обычное стекло
+        val v = callback as? View ?: host
+        if (liquid != null && v != null && liquid.draw(c, v, r, radius, fill)) return
         c.drawRoundRect(r, radius, radius, fillP)
         c.drawRoundRect(r, radius, radius, hiP)
         c.drawRoundRect(r, radius, radius, edgeP)
@@ -288,6 +311,13 @@ class AuroraDrawable : Drawable() {
         blob(w * 1.0f, h * 0.38f, w * 0.85f, c2, 0.30f * k)
         blob(w * 0.1f, h * 0.78f, w * 0.9f, c3, 0.22f * k)
         blob(w * 0.9f, h * 1.02f, w * 0.7f, c1, 0.25f * k)
+        if (Ui.liquid) {
+            // для стекла — ещё несколько чётких пятен помельче: на них видно, как кромка изгибает фон
+            blob(w * 0.72f, h * 0.16f, w * 0.26f, c2, 0.55f)
+            blob(w * 0.22f, h * 0.46f, w * 0.22f, c1, 0.5f)
+            blob(w * 0.8f, h * 0.66f, w * 0.3f, c3, 0.5f)
+            blob(w * 0.35f, h * 0.93f, w * 0.24f, c2, 0.45f)
+        }
         val out = android.graphics.Bitmap.createBitmap(w.toInt().coerceAtLeast(1), h.toInt().coerceAtLeast(1),
             android.graphics.Bitmap.Config.ARGB_8888)
         val c = Canvas(out)
@@ -297,6 +327,9 @@ class AuroraDrawable : Drawable() {
             c.drawCircle(blobs[i].first, blobs[i].second, blobs[i].third, p)
         }
         bmp = out
+        Ui.backdrop = out
+        Ui.backdropW = b.width().toFloat()
+        Ui.backdropH = b.height().toFloat()
     }
 
     override fun draw(c: Canvas) {

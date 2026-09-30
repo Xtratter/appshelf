@@ -116,6 +116,7 @@
     <string name="th_amoled">AMOLED black</string>
     <string name="th_light">Light</string>
     <string name="th_graphite">Graphite</string>
+    <string name="th_liquid">Liquid glass (experimental)</string>
     <string name="th_toast">Theme: %1$s</string>
 
 

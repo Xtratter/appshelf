@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.8 — 2026-09-30
+
+- **"Liquid glass" theme (experimental)** in the style of iOS 26, Android 13+: the top bar is real glass — the list scrolls visibly beneath it and bends at the rounded edges like a lens, with a light blur, color fringes and bright rim highlights; cards refract the vivid background under them, and the refraction flows as you scroll. It is in the theme list and in the title-tap cycle; on older Android it looks like the regular glass
+
 ## 1.7 — 2026-09-30
 
 - **Install an APK right from AppShelf**: a direct link to an .apk file is downloaded (with progress and Cancel), checked that it contains the same app, and handed to Android's installer. The first time AppShelf asks for the "Install unknown apps" permission and continues by itself when you come back

@@ -86,8 +86,17 @@ class MainActivity : Activity() {
         searchBox = findViewById(R.id.searchBox)
         searchField = findViewById(R.id.searchField)
         val barFill = Ui.withAlpha(Ui.mix(Ui.base, Ui.surface, 0.6f), 0.9f)
-        findViewById<View>(R.id.bar).background = GlassDrawable(this, 32f, barFill)
-        searchBox.background = GlassDrawable(this, 26f, barFill)
+        Ui.liquidRoot = window.decorView
+        if (Ui.liquid && Build.VERSION.SDK_INT >= 33) {
+            // «жидкое стекло»: список виден сквозь панель, изгибаясь у кромки
+            val bar = findViewById<View>(R.id.bar)
+            val tint = Ui.withAlpha(Ui.base, 0.28f)
+            bar.background = LiquidBackdrop(bar, listOf(list), 32f, tint)
+            searchBox.background = LiquidBackdrop(searchBox, listOf(list), 26f, tint)
+        } else {
+            findViewById<View>(R.id.bar).background = GlassDrawable(this, 32f, barFill)
+            searchBox.background = GlassDrawable(this, 26f, barFill)
+        }
         topScrim.background = android.graphics.drawable.GradientDrawable(
             android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM,
             intArrayOf(Ui.withAlpha(Ui.base, 0.94f), Ui.withAlpha(Ui.base, 0.7f), Ui.withAlpha(Ui.base, 0f)))
