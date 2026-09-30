@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.22 — 2026-09-30
+
+- **Updates from GitHub**: for installed apps with a GitHub link (yours or from the catalog) AppShelf checks the latest release, at most every 6 hours per repository (unchanged answers do not count against GitHub's limit). If it is newer than the installed version, the row shows "↑ 1.11" instead of the date, an "Updates · N" chip appears, and the app card offers "Update to 1.11 (GitHub)" — it downloads the APK for this phone's processor (or a universal one) from the release and installs it; if the release has no suitable APK, its page opens
+
 ## 1.21 — 2026-09-30
 
 - **APK backups** (Save & restore → APK backups): copies of the apps themselves — for apps you cannot get anywhere else. Where: the WebDAV server (folder apk/) or a folder on the phone. What: apps from APK files or all apps except system ones. One file per app with the latest version ("package__versionCode.apk"); split apps are packed into one .apks; the same version is not uploaded twice and older ones are deleted. "Back up now" shows progress and can be stopped; "Update backups every time the list is sent to WebDAV" keeps them fresh in the background

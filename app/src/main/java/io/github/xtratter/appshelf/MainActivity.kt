@@ -75,6 +75,9 @@ class MainActivity : Activity() {
     /** Строки, видимые сейчас (для «Все»). */
     private var shownApps: List<AppInfo> = emptyList()
 
+    /** Фильтр «Обновления»: приложения, для которых на GitHub есть версия новее. */
+    private var onlyUpdates = false
+
     /** Фильтр «APK без ссылки»: приложения из APK-файлов, для которых нет ни своей ссылки, ни ссылки из каталога. */
     private var noLink = false
     private var query = ""
@@ -315,6 +318,9 @@ class MainActivity : Activity() {
                 Icons.forgetMissing()
                 render()
                 autosave()
+                // обновления с GitHub (раз в 6 часов на репозиторий) — в фоне
+                val app = applicationContext
+                Thread { if (Updates.check(app, apps)) main.post { refresh() } }.start()
                 // последнее недостающее приложение установлено — предлагаем вернуться к своему списку
                 if (queueWaiting) queueReturned()
                 else if (missingBefore != null && missingBefore > 0 && missingCount() == 0) restoredDialog()
@@ -576,7 +582,7 @@ class MainActivity : Activity() {
 
     private fun closeRestore() {
         stopQueue()
-        restore = null; missingOnly = false; filter = null; noLink = false
+        restore = null; missingOnly = false; filter = null; noLink = false; onlyUpdates = false
         list.setSelection(0)
         render()
     }
@@ -617,6 +623,7 @@ class MainActivity : Activity() {
         if (!searching) {
             filter?.let { f -> shown = shown.filter { it.source == f } }
             if (!restoring && noLink) shown = shown.filter { needsLink(it) }
+            if (!restoring && onlyUpdates) shown = shown.filter { Updates.available(this, it) != null }
         }
         if (restoring && missingOnly && !searching) shown = shown.filter { it.pkg !in installedPkgs }
         if (query.isNotEmpty()) {
@@ -637,6 +644,7 @@ class MainActivity : Activity() {
             val missing = restoring && a.pkg !in installedPkgs
             items += Row(a, sourceText(a), dateText(a.firstInstall), if (restoring) !missing else null,
                 excluded = !restoring && a.pkg in excl, selected = a.pkg in selected,
+                update = if (restoring) null else Updates.available(this, a)?.let { Updates.numbers(it.tag).joinToString(".").ifEmpty { it.tag } },
                 link = if (missing) LinkStore.forApp(this, a.pkg).firstOrNull()?.let { getString(Links.kind(it.first.url).title) }
                     ?: backupFor(a.pkg)?.let { getString(R.string.bk_row) } else null,
                 note = LinkStore.note(this, a.pkg))
@@ -818,7 +826,14 @@ class MainActivity : Activity() {
             setOnClickListener { onClick() }
             Haptics.onClick(this, Haptics.Kind.TICK)
         }, LinearLayout.LayoutParams(-2, dp(36f)).apply { rightMargin = dp(8f) })
-        chip(getString(R.string.all) + " · " + apps.size, filter == null && !noLink, null) { filter = null; noLink = false; render() }
+        chip(getString(R.string.all) + " · " + apps.size, filter == null && !noLink && !onlyUpdates, null) {
+            filter = null; noLink = false; onlyUpdates = false; render()
+        }
+        // обновления с GitHub — первым делом, если есть
+        val upd = if (restore == null) apps.count { Updates.available(this, it) != null } else 0
+        if (upd > 0 || onlyUpdates) chip(getString(R.string.upd_chip) + " · " + upd, onlyUpdates, Ui.primary) {
+            onlyUpdates = !onlyUpdates; render()
+        }
         for ((src, count) in counts) {
             chip(getString(src.title) + " · " + count, filter == src, src.color) {
                 filter = if (filter == src) null else src; render()

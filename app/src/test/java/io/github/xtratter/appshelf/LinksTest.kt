@@ -101,4 +101,21 @@ class LinksTest {
         assertEquals("a.b" to 7L, ApkBackup.parse("a.b__7.apks"))
         assertEquals(null, ApkBackup.parse("AppShelf.json"))
     }
+
+    @Test
+    fun githubUpdates() {
+        assertEquals(listOf(1, 10, 2), Updates.numbers("v1.10.2-beta"))
+        assertEquals(true, Updates.newer("v1.11", "1.10"))
+        assertEquals(false, Updates.newer("v1.10", "1.10"))
+        assertEquals(false, Updates.newer("1.9.9", "1.10"))
+        assertEquals(true, Updates.newer("2.0", "1.10.3"))
+        assertEquals(null, Updates.newer("nightly", "1.0"))
+        assertEquals("app-arm64-v8a-release.apk", Updates.pickApk(listOf("app-armeabi-v7a-release.apk",
+            "app-arm64-v8a-release.apk", "app-x86_64-release.apk", "app-universal-release.apk"), "arm64-v8a"))
+        assertEquals("app-universal.apk", Updates.pickApk(listOf("app-x86.apk", "app-universal.apk"), "arm64-v8a"))
+        assertEquals("app.apk", Updates.pickApk(listOf("app.apk", "source.zip"), "arm64-v8a"))
+        assertEquals(null, Updates.pickApk(listOf("app-x86_64.apk"), "arm64-v8a"))
+        assertEquals("Xtratter/droidtop", Updates.repoOf("https://github.com/Xtratter/droidtop/releases"))
+        assertEquals(null, Updates.repoOf("https://t.me/x"))
+    }
 }

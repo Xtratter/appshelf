@@ -182,6 +182,8 @@
     <string name="bk_row">Копия</string>
     <string name="bk_install">Установить из резервной копии</string>
     <string name="bk_restoring">Восстанавливаю %s</string>
+    <string name="upd_chip">Обновления</string>
+    <string name="upd_install">Обновить до %s (GitHub)</string>
     <string name="glass_clarity">Прозрачность стекла</string>
     <string name="glass_clarity_btn">Прозрачность…</string>
     <string name="glass_clarity_text">Насколько сквозь стекло видно то, что за ним: матовое и спокойное или прозрачное. Это окно меняется, пока двигаете ползунок; весь экран обновится, когда закроете его.</string>

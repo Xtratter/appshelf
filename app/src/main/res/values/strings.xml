@@ -186,6 +186,8 @@
     <string name="bk_row">Backup</string>
     <string name="bk_install">Install from the backup</string>
     <string name="bk_restoring">Restoring %s</string>
+    <string name="upd_chip">Updates</string>
+    <string name="upd_install">Update to %s (GitHub)</string>
     <string name="glass_clarity">Glass transparency</string>
     <string name="glass_clarity_btn">Transparency…</string>
     <string name="glass_clarity_text">How much of what is behind shows through the glass: frosted and calm, or clear. This window changes as you move the slider; the whole screen updates when you close it.</string>

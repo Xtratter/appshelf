@@ -22,6 +22,8 @@ class Row(
     val note: String = "",
     /** Отмечена в режиме выбора нескольких приложений. */
     val selected: Boolean = false,
+    /** Есть обновление на GitHub: новая версия («1.11»). */
+    val update: String? = null,
 )
 
 /**
@@ -106,7 +108,8 @@ class AppItemView(ctx: Context) : View(ctx) {
         // справа сверху: дата установки или (при восстановлении) статус
         val status: String
         when (rw.installed) {
-            null -> { status = rw.date; dateP.color = Ui.TEXT3 }
+            null -> if (rw.update != null) { status = "↑ " + rw.update; dateP.color = Ui.primary }
+                else { status = rw.date; dateP.color = Ui.TEXT3 }
             true -> { status = context.getString(R.string.st_installed); dateP.color = Ui.OK }
             false -> { status = rw.link?.let { "$it ›" } ?: context.getString(R.string.st_missing); dateP.color = Ui.primary }
         }

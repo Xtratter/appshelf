@@ -170,6 +170,13 @@ object DetailsDialog {
             }
             action(a.getString(R.string.install_from, storeName(a, app, source)), main = links.isEmpty() && backup == null) { Store.open(a, app) }
         } else {
+            // на GitHub есть версия новее — обновить прямо отсюда (или открыть релиз, если подходящего APK нет)
+            Updates.available(a, app)?.let { rel ->
+                action(a.getString(R.string.upd_install, Updates.numbers(rel.tag).joinToString(".").ifEmpty { rel.tag }), main = true) {
+                    if (rel.apkUrl != null) ApkInstaller.start(a, rel.apkUrl, app.pkg, app.label)
+                    else LinkStore.open(a, Link(rel.page), app.pkg, app.label)
+                }
+            }
             if (a.packageManager.getLaunchIntentForPackage(app.pkg) != null)
                 action(a.getString(R.string.open_app), main = true) { Store.launch(a, app.pkg) }
             action(a.getString(R.string.open_store)) { Store.open(a, app) }
