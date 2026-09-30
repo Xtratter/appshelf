@@ -2,6 +2,12 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.5 — 2026-09-30
+
+- **A folder for each phone on the WebDAV server**: lists go to "AppShelf/POCO F3/AppShelf_2026-09-30_135307.json"; the folder name is set in the WebDAV settings (the phone name by default) and is created automatically
+- Opening from the server: first the phone ("POCO F3 · 10 versions · newest …"), then the version; with one phone — straight to its versions. Files from earlier versions of AppShelf in the main folder are under "Other files"
+- **A missed scheduled send still happens**: it stays pending until a send succeeds — after a reboot, without network or VPN, when the server refused or the alarm did not fire. A background check every few hours (and every app launch) sends it as soon as possible; the summary shows "the scheduled send is pending"
+
 ## 1.4 — 2026-09-30
 
 - **Save & export** — one window for every way to save the list: to a file (JSON / Markdown / CSV), share, autosave, WebDAV sync and which apps go into the list; each item shows its current state. It opens from the ⬇ button, the summary card and the menu

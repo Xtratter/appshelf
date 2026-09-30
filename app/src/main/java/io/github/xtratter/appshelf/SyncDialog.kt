@@ -80,8 +80,8 @@ object SyncDialog {
         val url = field(R.string.dav_url, p.davUrl, InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI)
         val user = field(R.string.dav_user, p.davUser, InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)
         val pass = field(R.string.dav_pass, p.davPass, InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)
-        val file = field(R.string.dav_file, p.davFile, InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)
-        file.hint = Sync.defaultFile(a)
+        val file = field(R.string.dav_file, p.davDevice, InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)
+        file.hint = Apps.shortName(a)
         server.addView(url)
         server.addView(label(a.getString(R.string.dav_url_hint), 12f, Ui.TEXT3, 4f))
         server.addView(user, gap(6f))
@@ -132,7 +132,7 @@ object SyncDialog {
             p.davUrl = u
             p.davUser = user.text.toString().trim()
             p.davPass = pass.text.toString()
-            p.davFile = file.text.toString().trim()
+            p.davDevice = file.text.toString().trim()
             p.davKeep = keep
             return true
         }
@@ -269,10 +269,10 @@ object SyncDialog {
             .create()
         box.addView(pill(a.getString(R.string.dav_open)) {
             network({ serverLists(p) }) { r ->
-                @Suppress("UNCHECKED_CAST") val files = r as List<WebDav.Entry>
-                if (files.isEmpty()) { status.setTextColor(Ui.WARN); status.setText(R.string.dav_no_files); return@network }
+                @Suppress("UNCHECKED_CAST") val groups = r as List<Group>
+                if (groups.isEmpty()) { status.setTextColor(Ui.WARN); status.setText(R.string.dav_no_files); return@network }
                 status.text = ""
-                pickFile(a, p, files, whenFmt) { dialog.dismiss() }
+                pickGroup(a, p, groups, whenFmt) { dialog.dismiss() }
             }
         }, LinearLayout.LayoutParams(-1, px(44f)).apply { topMargin = px(6f); bottomMargin = px(8f) })
 
@@ -297,10 +297,39 @@ object SyncDialog {
         }
     }
 
-    /** Списки в папке на сервере, самые свежие сверху. */
-    private fun serverLists(p: Prefs) = Sync.dav(p).list()
-        .filter { it.name.endsWith(".json", true) || it.name.endsWith(".csv", true) }
-        .sortedWith(compareByDescending<WebDav.Entry> { it.modified }.thenByDescending { it.name })
+    /** Списки одного телефона: [folder] — его папка на сервере («» — файлы прямо в основной папке). */
+    private class Group(val folder: String, val files: List<WebDav.Entry>)
+
+    private fun isList(e: WebDav.Entry) = !e.dir && (e.name.endsWith(".json", true) || e.name.endsWith(".csv", true))
+
+    private fun newestFirst(files: List<WebDav.Entry>) =
+        files.sortedWith(compareByDescending<WebDav.Entry> { it.modified }.thenByDescending { it.name })
+
+    /** Списки на сервере по телефонам (папкам), самые свежие сверху; файлы из основной папки (старые версии AppShelf) — отдельно. */
+    private fun serverLists(p: Prefs): List<Group> {
+        val dav = Sync.dav(p)
+        val root = dav.list()
+        val groups = root.filter { it.dir }.map { d -> Group(d.name, newestFirst(dav.list(d.name).filter(::isList))) }
+            .filter { it.files.isNotEmpty() }
+            .sortedByDescending { it.files.first().modified }
+        val loose = newestFirst(root.filter(::isList))
+        return if (loose.isEmpty()) groups else groups + Group("", loose)
+    }
+
+    /** Выбор телефона; если он один — сразу его списки. */
+    private fun pickGroup(a: MainActivity, p: Prefs, groups: List<Group>, fmt: SimpleDateFormat, opened: () -> Unit) {
+        if (groups.size == 1) return pickFile(a, p, groups[0], fmt, opened)
+        val items = groups.map { g ->
+            val newest = g.files.first().modified.takeIf { it > 0 }?.let { a.getString(R.string.dav_newest, fmt.format(Date(it))) }
+            listOfNotNull(g.folder.ifEmpty { a.getString(R.string.dav_root_files) },
+                a.resources.getQuantityString(R.plurals.versions, g.files.size, g.files.size), newest).joinToString(" · ")
+        }.toTypedArray()
+        AlertDialog.Builder(a)
+            .setTitle(R.string.dav_pick_device)
+            .setItems(items) { _, i -> pickFile(a, p, groups[i], fmt, opened) }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show().also { Ui.glassDialog(it) }
+    }
 
     /** Открыть список с сервера (из меню «Открыть сохранённый список»). */
     fun openFromServer(a: MainActivity) {
@@ -312,7 +341,7 @@ object SyncDialog {
                 when {
                     r is Exception -> android.widget.Toast.makeText(a, Sync.error(a, r), android.widget.Toast.LENGTH_LONG).show()
                     (r as List<*>).isEmpty() -> android.widget.Toast.makeText(a, R.string.dav_no_files, android.widget.Toast.LENGTH_LONG).show()
-                    else -> @Suppress("UNCHECKED_CAST") pickFile(a, p, r as List<WebDav.Entry>,
+                    else -> @Suppress("UNCHECKED_CAST") pickGroup(a, p, r as List<Group>,
                         SimpleDateFormat("EEE, d MMM, HH:mm", Locale.getDefault())) {}
                 }
             }
@@ -320,16 +349,17 @@ object SyncDialog {
     }
 
     /** Выбор списка с сервера — самые свежие сверху; выбранный открывается в режиме восстановления. */
-    private fun pickFile(a: MainActivity, p: Prefs, files: List<WebDav.Entry>, fmt: SimpleDateFormat, opened: () -> Unit) {
+    private fun pickFile(a: MainActivity, p: Prefs, g: Group, fmt: SimpleDateFormat, opened: () -> Unit) {
+        val files = g.files
         val items = files.map { f ->
             listOfNotNull(f.name, f.modified.takeIf { it > 0 }?.let { fmt.format(Date(it)) },
                 f.size.takeIf { it > 0 }?.let { android.text.format.Formatter.formatShortFileSize(a, it) }).joinToString(" · ")
         }.toTypedArray()
         AlertDialog.Builder(a)
-            .setTitle(R.string.dav_pick)
+            .setTitle(g.folder.ifEmpty { a.getString(R.string.dav_pick) })
             .setItems(items) { _, i ->
                 Thread {
-                    val snap = try { ListFile.read(Sync.dav(p).get(files[i].name).toString(Charsets.UTF_8)) } catch (e: Exception) { e }
+                    val snap = try { ListFile.read(Sync.dav(p).get(if (g.folder.isEmpty()) files[i].name else g.folder + "/" + files[i].name).toString(Charsets.UTF_8)) } catch (e: Exception) { e }
                     a.runOnUiThread {
                         if (snap is Snapshot && snap.apps.isNotEmpty()) { opened(); a.showSnapshot(snap) }
                         else android.widget.Toast.makeText(a, if (snap is Exception && snap !is IllegalArgumentException &&

@@ -26,15 +26,18 @@ import javax.net.ssl.SSLException
 object Sync {
     const val ACTION_RUN = "io.github.xtratter.appshelf.SYNC"
     private const val JOB_ID = 1
+    /** Периодическая проверка: не пропущена ли плановая отправка (будильник мог не сработать). */
+    const val WATCH_ID = 2
+    private const val WATCH_EVERY = 3 * 60 * 60 * 1000L
+    /** Имя списка в папке телефона; с версиями к нему добавляются дата и время. */
+    const val FILE = "AppShelf.json"
 
     class Result(val ok: Boolean, val message: String, val retry: Boolean)
 
     fun dav(p: Prefs) = WebDav(p.davUrl, p.davUser, p.davPass)
 
-    fun fileName(ctx: Context, p: Prefs) = p.davFile.trim().ifEmpty { defaultFile(ctx) }
-
-    /** «AppShelf-POCO F3.json»: у каждого телефона свой файл, новый не затрёт список старого. */
-    fun defaultFile(ctx: Context) = "AppShelf-" + Apps.shortName(ctx) + ".json"
+    /** Папка телефона на сервере: у каждого своя, новый телефон не затрёт списки старого. */
+    fun deviceFolder(ctx: Context, p: Prefs) = p.davDevice.trim().trim('/').replace('/', '_').ifEmpty { Apps.shortName(ctx) }
 
     fun enabled(p: Prefs) = p.davUrl.isNotBlank() && p.schedule().repeat != Repeat.OFF
 
@@ -45,20 +48,21 @@ object Sync {
         val r = try {
             if (p.davUrl.isBlank()) throw IllegalStateException(ctx.getString(R.string.dav_no_server))
             val snap = Apps.snapshot(ctx, Apps.load(ctx), p)
-            val base = fileName(ctx, p)
+            val device = deviceFolder(ctx, p)
             val dav = dav(p)
             val data = ListFile.write(snap, Format.JSON).toByteArray(Charsets.UTF_8)
             val keep = p.davKeep
-            val name = if (keep <= 1) base else ListFile.versionName(base, snap.created)
-            dav.put(name, data, Format.JSON.mime)
+            val name = if (keep <= 1) FILE else ListFile.versionName(FILE, snap.created)
+            dav.put("$device/$name", data, Format.JSON.mime)
             // лишние старые версии удаляем; если не вышло — не страшно, список уже отправлен
             if (keep > 1) try {
-                for (old in ListFile.oldVersions(dav.list().map { it.name }, base, keep)) dav.delete(old)
+                for (old in ListFile.oldVersions(dav.list(device).map { it.name }, FILE, keep)) dav.delete("$device/$old")
             } catch (e: Exception) {
             }
             p.lastSaved = snap.created
-            p.lastSavedName = "WebDAV · $name"
-            Result(true, name, false)
+            p.lastSavedName = "WebDAV · $device/$name"
+            p.syncPending = false
+            Result(true, "$device/$name", false)
         } catch (e: Exception) {
             // сеть и ошибки сервера — повторим позже; неверный пароль или адрес — нет смысла
             val retry = (e is IOException && e !is WebDav.HttpError && e !is SSLException) ||
@@ -99,10 +103,39 @@ object Sync {
         val am = ctx.getSystemService(AlarmManager::class.java)
         val next = if (p.davUrl.isBlank()) null else p.schedule().next(after)
         p.syncNext = next ?: 0
+        val js = ctx.getSystemService(JobScheduler::class.java)
         if (next == null) {
             am.cancel(alarm(ctx))
-            ctx.getSystemService(JobScheduler::class.java).cancel(JOB_ID)
-        } else am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next, alarm(ctx))
+            js.cancel(JOB_ID)
+            js.cancel(WATCH_ID)
+            p.syncPending = false
+            return
+        }
+        am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, next, alarm(ctx))
+        // проверку ставим один раз (иначе её отсчёт начинался бы заново) — и заново, если поменялось «только Wi-Fi»
+        val net = if (p.syncWifi) JobInfo.NETWORK_TYPE_UNMETERED else JobInfo.NETWORK_TYPE_ANY
+        @Suppress("DEPRECATION")
+        if (js.getPendingJob(WATCH_ID)?.networkType != net) js.schedule(
+            JobInfo.Builder(WATCH_ID, ComponentName(ctx, SyncJob::class.java))
+                .setPeriodic(WATCH_EVERY)
+                .setRequiredNetworkType(net)
+                .setPersisted(true)
+                .build())
+    }
+
+    /** Отправка по расписанию пропущена (время прошло, а успешной отправки не было)? Тогда она становится «должна состояться». */
+    private fun catchUp(p: Prefs): Boolean {
+        if (!enabled(p)) return false
+        if (p.syncNext in 1..System.currentTimeMillis()) p.syncPending = true
+        return p.syncPending
+    }
+
+    /** Периодическая проверка: пропущенная отправка — выполнить сейчас, будильник — поставить заново. */
+    fun watch(ctx: Context) {
+        val p = Prefs(ctx)
+        val missed = catchUp(p)
+        schedule(ctx)
+        if (missed) run(ctx)
     }
 
     /**
@@ -110,14 +143,14 @@ object Sync {
      * (телефон был выключен) — отправить при первой возможности; будильник — поставить заново.
      */
     fun ensure(ctx: Context) {
-        val p = Prefs(ctx)
-        if (enabled(p) && p.syncNext in 1..System.currentTimeMillis()) enqueue(ctx)
+        if (catchUp(Prefs(ctx))) enqueue(ctx)
         schedule(ctx)
     }
 
     /** Сработал будильник. */
     fun fromAlarm(ctx: Context) {
         val p = Prefs(ctx)
+        p.syncPending = true   // снимется только успешной отправкой
         if (p.syncWifi && !unmetered(ctx)) return enqueue(ctx)
         val r = run(ctx)
         if (!r.ok && r.retry) enqueue(ctx)
@@ -158,8 +191,13 @@ class SyncReceiver : BroadcastReceiver() {
 class SyncJob : JobService() {
     override fun onStartJob(params: JobParameters): Boolean {
         Thread {
-            val r = Sync.run(applicationContext)
-            jobFinished(params, !r.ok && r.retry)
+            if (params.jobId == Sync.WATCH_ID) {
+                Sync.watch(applicationContext)
+                jobFinished(params, false)
+            } else {
+                val r = Sync.run(applicationContext)
+                jobFinished(params, !r.ok && r.retry)
+            }
         }.start()
         return true
     }

@@ -25,33 +25,38 @@ class WebDav(folderUrl: String, private val user: String, private val pass: Stri
     /** Сервер ответил ошибкой. */
     class HttpError(val code: Int, reason: String) : IOException("HTTP $code $reason".trim())
 
-    /** Файл в папке на сервере. */
-    data class Entry(val name: String, val modified: Long, val size: Long)
+    /** Файл или вложенная папка ([dir]) на сервере. */
+    data class Entry(val name: String, val modified: Long, val size: Long, val dir: Boolean = false)
 
     private class Response(val code: Int, val reason: String, val headers: Map<String, String>, val body: ByteArray)
 
     val folder: URL = URL(encodeUrl(folderUrl.trim().trimEnd('/')) + "/")
 
-    fun fileUrl(name: String) = URL(folder, encodeSegment(name))
+    /** Путь внутри папки: «POCO F3/AppShelf.json» — каждая часть кодируется отдельно. */
+    fun fileUrl(path: String) = URL(folder, path.split('/').joinToString("/") { encodeSegment(it) })
+
+    private fun folderUrl(sub: String) = if (sub.isEmpty()) folder else URL(fileUrl(sub.trimEnd('/')).toString() + "/")
 
     /** Проверить адрес и вход: папка должна существовать. */
     fun check() {
         ok(request("PROPFIND", folder, mapOf("Depth" to "0", "Content-Type" to XML), PROPFIND.toByteArray()))
     }
 
-    /** Создать папку (одну — последнюю в адресе). */
-    fun createFolder() {
-        val r = request("MKCOL", folder)
+    /** Создать папку [sub] внутри основной (пустая строка — саму основную). */
+    fun createFolder(sub: String = "") {
+        val r = request("MKCOL", folderUrl(sub))
         if (r.code != 405) ok(r)   // 405 — папка уже есть
     }
 
-    /** Записать файл; если папки нет — создать её и записать ещё раз. */
-    fun put(name: String, data: ByteArray, type: String) {
+    /** Записать файл [path]; если папок нет — создать их и записать ещё раз. */
+    fun put(path: String, data: ByteArray, type: String) {
         val headers = mapOf("Content-Type" to "$type; charset=utf-8")
-        val r = request("PUT", fileUrl(name), headers, data)
+        val r = request("PUT", fileUrl(path), headers, data)
         if (r.code == 404 || r.code == 409) {
             createFolder()
-            ok(request("PUT", fileUrl(name), headers, data))
+            val parent = path.substringBeforeLast('/', "")
+            if (parent.isNotEmpty()) createFolder(parent)
+            ok(request("PUT", fileUrl(path), headers, data))
         } else ok(r)
     }
 
@@ -62,10 +67,11 @@ class WebDav(folderUrl: String, private val user: String, private val pass: Stri
 
     fun get(name: String): ByteArray = ok(request("GET", fileUrl(name))).body
 
-    /** Файлы в папке (без вложенных папок). */
-    fun list(): List<Entry> {
-        val r = ok(request("PROPFIND", folder, mapOf("Depth" to "1", "Content-Type" to XML), PROPFIND.toByteArray()))
-        return parseList(r.body.toString(Charsets.UTF_8))
+    /** Содержимое папки [sub] (пустая строка — основной): файлы и вложенные папки. */
+    fun list(sub: String = ""): List<Entry> {
+        val url = folderUrl(sub)
+        val r = ok(request("PROPFIND", url, mapOf("Depth" to "1", "Content-Type" to XML), PROPFIND.toByteArray()))
+        return parseList(r.body.toString(Charsets.UTF_8), url)
     }
 
     private fun ok(r: Response): Response {
@@ -215,7 +221,8 @@ class WebDav(folderUrl: String, private val user: String, private val pass: Stri
 
     // ---------- PROPFIND ----------
 
-    private fun parseList(xml: String): List<Entry> {
+    private fun parseList(xml: String, self: URL): List<Entry> {
+        val selfPath = decode(self.path).trimEnd('/')
         val p = android.util.Xml.newPullParser()
         p.setFeature(org.xmlpull.v1.XmlPullParser.FEATURE_PROCESS_NAMESPACES, true)
         p.setInput(xml.reader())
@@ -238,9 +245,11 @@ class WebDav(folderUrl: String, private val user: String, private val pass: Stri
                     "href" -> href = text.toString().trim()
                     "getlastmodified" -> modified = runCatching { rfc1123.parse(text.toString().trim())?.time }.getOrNull() ?: 0
                     "getcontentlength" -> size = text.toString().trim().toLongOrNull() ?: 0
-                    "response" -> if (!dir && href.isNotEmpty()) {
-                        val name = decode(href.trimEnd('/').substringAfterLast('/'))
-                        if (name.isNotEmpty()) out += Entry(name, modified, size)
+                    "response" -> if (href.isNotEmpty()) {
+                        // в ответе есть и сама запрошенная папка — её пропускаем
+                        val path = decode(runCatching { URL(self, href).path }.getOrDefault(href)).trimEnd('/')
+                        val name = path.substringAfterLast('/')
+                        if (name.isNotEmpty() && path != selfPath) out += Entry(name, modified, size, dir)
                     }
                 }
             }

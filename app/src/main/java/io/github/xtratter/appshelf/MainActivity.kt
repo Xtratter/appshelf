@@ -414,6 +414,7 @@ class MainActivity : Activity() {
     fun syncLine(): Pair<String, Boolean>? {
         if (prefs.syncLast > 0 && !prefs.syncOk && prefs.davUrl.isNotEmpty())
             return getString(R.string.dav_line_fail, timeFmt.format(Date(prefs.syncLast)), prefs.syncMsg) to true
+        if (prefs.syncPending && Sync.enabled(prefs)) return getString(R.string.dav_line_pending) to false
         val next = prefs.syncNext.takeIf { Sync.enabled(prefs) && it > 0 } ?: return null
         return getString(R.string.dav_line_next, nextFmt.format(Date(next))) to false
     }

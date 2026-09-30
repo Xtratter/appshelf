@@ -125,8 +125,8 @@
     <string name="dav_url_hint">Nextcloud: https://server/remote.php/dav/files/LOGIN/AppShelf · Yandex Disk: https://webdav.yandex.ru/AppShelf (with an app password)</string>
     <string name="dav_user">Login</string>
     <string name="dav_pass">Password</string>
-    <string name="dav_file_label">File name (each phone has its own, so a new phone does not overwrite the old list)</string>
-    <string name="dav_file">File name</string>
+    <string name="dav_file_label">Folder of this phone on the server — each phone has its own, so a new phone does not overwrite the old one</string>
+    <string name="dav_file">Phone folder</string>
     <string name="dav_check">Test</string>
     <string name="dav_check_ok">Connected ✓ The folder exists.</string>
     <string name="dav_send_now">Send now</string>
@@ -156,6 +156,14 @@
     <string name="dav_no_server">Enter the folder address</string>
     <string name="dav_line_next">WebDAV: next %s</string>
     <string name="dav_line_fail">WebDAV: failed %1$s — %2$s</string>
+    <string name="dav_line_pending">WebDAV: the scheduled send is pending — it will go as soon as the network allows</string>
+    <string name="dav_pick_device">Phones on the server</string>
+    <string name="dav_root_files">Other files</string>
+    <string name="dav_newest">newest %s</string>
+    <plurals name="versions">
+        <item quantity="one">%d version</item>
+        <item quantity="other">%d versions</item>
+    </plurals>
     <string name="dav_e401">wrong login or password</string>
     <string name="dav_e403">access denied</string>
     <string name="dav_e404">folder not found — check the address</string>

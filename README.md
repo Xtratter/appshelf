@@ -17,7 +17,8 @@ which apps are missing and opens each one in the right store.
 - **Choose what goes into the list**: "Choose apps…" in the save dialog — checkboxes, search and select all / none;
   apps you leave out are not saved, shared or autosaved (you can also do it from an app's card)
 - **WebDAV sync on a schedule**: Nextcloud, ownCloud, Yandex Disk, a NAS — every day, on chosen days of the week
-  or every N days at a set time, optionally only over Wi-Fi; keeps the last versions (10 by default);
+  or every N days at a set time, optionally only over Wi-Fi; a folder per phone, keeps the last versions (10 by default),
+  a missed send is made up as soon as possible;
   on a new phone open the list straight from the server
 - **Save & export** in one window: file, share, autosave, WebDAV, which apps go into the list
 - **Autosave**: pick a file once (a cloud drive, a memory card…) and the list is rewritten there every time you open the app

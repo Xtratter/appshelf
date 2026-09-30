@@ -117,8 +117,8 @@
     <string name="dav_url_hint">Nextcloud: https://сервер/remote.php/dav/files/ЛОГИН/AppShelf · Яндекс Диск: https://webdav.yandex.ru/AppShelf (с паролем приложения)</string>
     <string name="dav_user">Логин</string>
     <string name="dav_pass">Пароль</string>
-    <string name="dav_file_label">Имя файла (у каждого телефона своё — новый телефон не затрёт список старого)</string>
-    <string name="dav_file">Имя файла</string>
+    <string name="dav_file_label">Папка этого телефона на сервере — у каждого своя, новый телефон не затрёт списки старого</string>
+    <string name="dav_file">Папка телефона</string>
     <string name="dav_check">Проверить</string>
     <string name="dav_check_ok">Подключение есть ✓ Папка найдена.</string>
     <string name="dav_send_now">Отправить сейчас</string>
@@ -150,6 +150,16 @@
     <string name="dav_no_server">Укажите адрес папки</string>
     <string name="dav_line_next">WebDAV: следующая отправка %s</string>
     <string name="dav_line_fail">WebDAV: ошибка %1$s — %2$s</string>
+    <string name="dav_line_pending">WebDAV: плановая отправка отложена — выполнится, как только будет сеть</string>
+    <string name="dav_pick_device">Телефоны на сервере</string>
+    <string name="dav_root_files">Другие файлы</string>
+    <string name="dav_newest">последняя %s</string>
+    <plurals name="versions">
+        <item quantity="one">%d версия</item>
+        <item quantity="few">%d версии</item>
+        <item quantity="many">%d версий</item>
+        <item quantity="other">%d версии</item>
+    </plurals>
     <string name="dav_e401">неверный логин или пароль</string>
     <string name="dav_e403">нет доступа</string>
     <string name="dav_e404">папка не найдена — проверьте адрес</string>

@@ -34,8 +34,8 @@ class Prefs(ctx: Context) {
     var davPass: String
         get() = Secret.decrypt(sp.getString("dav_pass", null).orEmpty())
         set(v) = sp.edit().putString("dav_pass", if (v.isEmpty()) "" else Secret.encrypt(v)).apply()
-    /** Имя файла на сервере; пустое — «AppShelf-<телефон>.json». */
-    var davFile by str("dav_file", "")
+    /** Папка этого телефона на сервере; пустая — имя телефона («POCO F3»). */
+    var davDevice by str("dav_device", "")
     /** Сколько последних версий хранить на сервере; 1 — один файл, который каждый раз перезаписывается. */
     var davKeep by int("dav_keep", 10)
 
@@ -61,6 +61,8 @@ class Prefs(ctx: Context) {
     var syncLast by long("sync_last", 0L)
     var syncOk by bool("sync_ok", false)
     var syncMsg by str("sync_msg", "")
+    /** Плановая отправка ещё не состоялась (пропущена, не было сети, ошибка) — выполнить при первой возможности. */
+    var syncPending by bool("sync_pending", false)
 
     private fun bool(key: String, def: Boolean) = object : ReadWriteProperty<Any?, Boolean> {
         override fun getValue(thisRef: Any?, property: KProperty<*>) = sp.getBoolean(key, def)
