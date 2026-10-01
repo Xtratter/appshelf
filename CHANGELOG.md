@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.36.1 — 2026-10-01
+
+- F-Droid page: app icon and 7 screenshots of the current design (fastlane `images/`), also shown in the README
+
 ## 1.36 — 2026-10-01
 
 - **App versions in the list**: every row shows the installed version under the date (also in restore mode — the version from the saved list)

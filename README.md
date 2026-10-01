@@ -8,6 +8,10 @@ A list of the apps installed on your phone — **name, package, where each one c
 sorted by name. Save it to a file, and after a factory reset or on a new phone open it again: AppShelf shows
 which apps are missing and opens each one in the right store.
 
+## Screenshots
+
+<p><img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="180"> <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="180"> <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="180"> <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5.png" width="180"></p>
+
 ## Features
 
 - **All installed apps**, sorted by name like a dictionary (upper/lower case and Ё/Е don't matter), with letter headers

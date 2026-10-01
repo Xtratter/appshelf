@@ -8,6 +8,10 @@
 по алфавиту. Сохраните его в файл, а после сброса или на новом телефоне откройте снова: AppShelf покажет,
 каких приложений не хватает, и откроет каждое в нужном магазине.
 
+## Скриншоты
+
+<p><img src="fastlane/metadata/android/en-US/images/phoneScreenshots/1.png" width="180"> <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/3.png" width="180"> <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4.png" width="180"> <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5.png" width="180"></p>
+
 ## Возможности
 
 - **Все установленные приложения** по алфавиту «как в словаре» (регистр и Ё/Е не важны), с буквами-разделами
