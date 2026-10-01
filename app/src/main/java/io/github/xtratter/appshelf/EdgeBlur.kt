@@ -64,6 +64,12 @@ class EdgeBlur(ctx: Context, private val fadeTop: Int, private val fadeBottom: I
     var bottomRamp = 0
     /** Полосы всегда (главный список: размытие под шапкой и у края экрана — и до прокрутки), а не только когда есть что прокручивать. */
     var alwaysTop = false
+    /**
+     * Окна: у краёв содержимое ещё и становится прозрачным — растворяется в стекле окна, без резкой линии там,
+     * где кончается область прокрутки (например, над кнопкой «Закрыть»).
+     */
+    var dissolve = false
+    private val outP = Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN) }
     var alwaysBottom = false
 
     private val dp = ctx.resources.displayMetrics.density
@@ -118,6 +124,8 @@ class EdgeBlur(ctx: Context, private val fadeTop: Int, private val fadeBottom: I
             drawTints(c, w, h, showTop, showBottom)
             return
         }
+        // растворение: всё рисуем в слой, а в конце у краёв делаем его прозрачным
+        val layer = if (dissolve) c.saveLayer(0f, 0f, w.toFloat(), h.toFloat(), null) else -1
         // содержимое — один раз в слой; рисуем его как есть, а у краёв — размытые копии того же кадра
         node.setPosition(0, 0, w, h)
         val rc = node.beginRecording(w, h)
@@ -127,6 +135,22 @@ class EdgeBlur(ctx: Context, private val fadeTop: Int, private val fadeBottom: I
         if (showTop) band(c, node, w, 0, topBand, if (topRamp in 1 until topBand) topRamp else topBand, top = true)
         if (showBottom) band(c, node, w, h - bottomBand, h, if (bottomRamp in 1 until bottomBand) bottomRamp else bottomBand, top = false)
         drawTints(c, w, h, showTop, showBottom)
+        if (layer >= 0) {
+            dissolveEdges(c, w, h, showTop, showBottom)
+            c.restoreToCount(layer)
+        }
+    }
+
+    /** Края слоя — в прозрачность: последние 70 % полосы плавно уходят от 1 к 0. */
+    private fun dissolveEdges(c: Canvas, w: Int, h: Int, showTop: Boolean, showBottom: Boolean) {
+        if (showTop) {
+            outP.shader = LinearGradient(0f, topBand * 0.7f, 0f, 0f, -1, 0, Shader.TileMode.CLAMP)
+            c.drawRect(0f, 0f, w.toFloat(), topBand.toFloat(), outP)
+        }
+        if (showBottom) {
+            outP.shader = LinearGradient(0f, h - bottomBand * 0.7f, 0f, h.toFloat(), -1, 0, Shader.TileMode.CLAMP)
+            c.drawRect(0f, (h - bottomBand).toFloat(), w.toFloat(), h.toFloat(), outP)
+        }
     }
 
     /** Полоса [y0, y1): ступени размытия; каждая проявляется плавно и перекрывает предыдущую ближе к краю. */

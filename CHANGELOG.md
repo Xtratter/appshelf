@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.26.1 — 2026-10-01
+
+- Windows: no more hard line where the scrolling content ends (e.g. under "Leave out of the list" above "Close") — at the edges the content now blurs and dissolves into the window's glass over a longer, lower transition; the buttons stay in place
+
 ## 1.26 — 2026-10-01
 
 - The top bar now looks like what it is — a search field: the magnifier on the left, "Search apps" in grey, the ⋮ menu on the right. Tapping anywhere on it opens the search, as before

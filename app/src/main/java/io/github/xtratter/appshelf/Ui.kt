@@ -262,7 +262,8 @@ object Ui {
         w.decorView.post {
             val scroller = EdgeBlur.findScrollable(w.decorView) ?: return@post
             // сверху — почти без затемнения (иначе текст уходил в чёрное), только размытие
-            EdgeBlur.wrap(scroller, 44f, withAlpha(dialogSolid, 0.15f), withAlpha(dialogSolid, 0.45f))
+            // у краёв содержимое размывается и растворяется в стекле окна — без резкой линии над кнопками
+            EdgeBlur.wrap(scroller, 56f, 0, 0)?.dissolve = true
         }
     }
 }
