@@ -62,11 +62,13 @@ object SaveDialog {
         a.syncLine()?.takeIf { it.second }?.let { (line, _) ->
             status.addView(TextView(a).apply { text = line; textSize = 13f; setTextColor(Ui.WARN); setPadding(0, px(4f), 0, 0) })
         }
+        Help.attach(status, R.string.h_status_t, R.string.h_status)
         box.addView(status)
 
         // ---------- две большие кнопки ----------
         fun big(text: Int, filled: Boolean, action: () -> Unit) = TextView(a).apply {
-            setText(text); textSize = 16f; typeface = Ui.medium; gravity = Gravity.CENTER
+            setText(text)
+            Help.attach(this, text, if (filled) R.string.h_save else R.string.h_restore); textSize = 16f; typeface = Ui.medium; gravity = Gravity.CENTER
             setTextColor(if (filled) Ui.ON_ACCENT else Ui.primary)
             background = if (filled) Ui.pill(a, Ui.primary) else Ui.pill(a, Ui.withAlpha(Ui.primary, 0.14f), Ui.withAlpha(Ui.primary, 0.35f))
             foreground = Ui.ripple(a, 100f)
@@ -82,6 +84,12 @@ object SaveDialog {
         // ---------- сворачиваемые блоки ----------
         fun item(parent: LinearLayout, title: Int, sub: String, on: Boolean = false, warn: Boolean = false, action: () -> Unit) {
             parent.addView(LinearLayout(a).apply {
+                Help.attach(this, title, when (title) {
+                    R.string.dav_title -> R.string.h_dav
+                    R.string.autosave -> R.string.h_autosave
+                    R.string.bk_title -> R.string.h_apk
+                    else -> R.string.h_apps_in_list
+                })
                 orientation = LinearLayout.VERTICAL
                 background = GlassDrawable(a, 18f)
                 foreground = Ui.ripple(a, 18f)
