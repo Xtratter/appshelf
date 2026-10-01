@@ -40,6 +40,10 @@ object Ui {
     var auroraStrength = 1f; private set
     /** Material 3 Expressive: тональные поверхности, крупные формы (false — прежнее стекло). */
     const val EXPRESSIVE = true
+    /** ЭКСПЕРИМЕНТ (ветка experiment/expressive-translucent): тональные поверхности слегка прозрачны — сквозь них виден фон. */
+    const val TRANSLUCENT = true
+    /** Насколько плотные поверхности (1 — непрозрачные). */
+    private const val SURFACE_ALPHA = 0.8f
     /** Тональные цвета M3: контейнеры акцента и поверхности. */
     var primaryContainer = 0; private set
     var onPrimaryContainer = 0; private set
@@ -63,6 +67,13 @@ object Ui {
             primaryContainer = mix(base, primary, 0.36f); onPrimaryContainer = mix(primary, white, 0.7f)
             secondaryContainer = mix(base, secondary, 0.3f); onSecondaryContainer = mix(secondary, white, 0.7f)
             surfaceContainer = mix(base, white, 0.07f); surfaceContainerHigh = mix(base, white, 0.12f)
+        }
+        if (TRANSLUCENT) {
+            // лёгкая прозрачность: цветные пятна фона мягко просвечивают сквозь карточки, сводку и окна
+            surfaceContainer = withAlpha(surfaceContainer, SURFACE_ALPHA)
+            surfaceContainerHigh = withAlpha(surfaceContainerHigh, SURFACE_ALPHA + 0.08f)
+            primaryContainer = withAlpha(primaryContainer, SURFACE_ALPHA + 0.04f)
+            secondaryContainer = withAlpha(secondaryContainer, SURFACE_ALPHA + 0.08f)
         }
     }
 
