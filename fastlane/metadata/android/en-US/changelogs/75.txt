@@ -1,0 +1,1 @@
+Fixed: the summary card no longer hides under the top bar on start.

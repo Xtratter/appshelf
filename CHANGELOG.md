@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.33.4 — 2026-10-01
+
+- Fixed: on start the summary card ("149 apps") was partly hidden under the top bar — the list from the previous launch appeared before the bar was measured; the offset under the bar is now part of the list header
+
 ## 1.33.3 — 2026-10-01
 
 - Material 3 Expressive itself (colour scheme, themes, surfaces, windows, button squash) now comes from the shared [android-ui-kit](https://github.com/Xtratter/android-ui-kit) 1.1, the same as in DroidTop; nothing changes in how it looks

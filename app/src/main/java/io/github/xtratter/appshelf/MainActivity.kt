@@ -266,6 +266,9 @@ class MainActivity : Activity() {
         f.visibility = if (show) View.VISIBLE else View.GONE
     }
 
+    /** Шапка списка (сводка и чипы); отступ под панель — у неё, а не у самого списка. */
+    private lateinit var headerBox: LinearLayout
+
     private fun updateListPadding() {
         updateFab()
         // сверху: под панелью — полное размытие, плавный переход — сразу под ней; снизу — плавно к краю экрана
@@ -277,8 +280,12 @@ class MainActivity : Activity() {
         val bottom = insetBottom + dp(16f) + (if (::selBar.isInitialized && selBar.visibility == View.VISIBLE) selBar.height + dp(12f) else 0) +
             (if (::qBar.isInitialized && qBar.visibility == View.VISIBLE) qBar.height + dp(12f) else 0) +
             (if (fab?.visibility == View.VISIBLE) dp(80f) else 0)
-        if (list.paddingTop != top || list.paddingBottom != bottom)
-            list.post { list.setPadding(list.paddingLeft, top, list.paddingRight, bottom) }
+        // отступ под панель — внутри шапки: ListView при смене своего paddingTop держит первую строку на старом
+        // месте, и сводка уезжала под панель при запуске (список с прошлого запуска показывается раньше раскладки)
+        if (headerBox.paddingTop != top || list.paddingTop != 0 || list.paddingBottom != bottom) list.post {
+            headerBox.setPadding(headerBox.paddingLeft, top, headerBox.paddingRight, headerBox.paddingBottom)
+            list.setPadding(list.paddingLeft, 0, list.paddingRight, bottom)
+        }
     }
 
     private fun setupTopBar() {
@@ -331,6 +338,7 @@ class MainActivity : Activity() {
 
     private fun buildHeader() {
         val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        headerBox = box
         summary = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             // Expressive: сводка — «герой» в тональном контейнере акцента, с крупными скруглениями
