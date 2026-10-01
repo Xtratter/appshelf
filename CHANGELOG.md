@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.28.5 — 2026-10-01
+
+- Theme and transparency now switch truly in place: the screen and the open Theme window are recoloured on the spot instead of the screen being recreated — no more one-frame flash with a sharp background on each switch
+
 ## 1.28.4 — 2026-10-01
 
 - Smoother theme switching (checked frame by frame): the background no longer flashes sharp for a moment and the Theme window text no longer doubles — the snapshot under the new screen is blurred and dimmed like the real background behind a window, and the old window picture disappears in the same frame as the new window appears

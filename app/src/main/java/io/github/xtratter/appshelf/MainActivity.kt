@@ -33,12 +33,6 @@ import java.util.concurrent.Executors
 
 class MainActivity : Activity() {
     companion object {
-        /** Окно «Тема» нужно открыть снова после перестройки экрана (сменили тему или прозрачность). */
-        private var reopenTheme = false
-        /** Снимок до смены темы: фон за окном (размытый, затемнённый) и само окно «Тема» с его местом. */
-        private var themeSnap: android.graphics.Bitmap? = null
-        private var themeSnapDialog: android.graphics.Bitmap? = null
-        private var themeSnapAt = IntArray(2)
         /** Открытый экран — чтобы после установки APK обновить список. */
         var current: java.lang.ref.WeakReference<MainActivity>? = null
 
@@ -103,6 +97,11 @@ class MainActivity : Activity() {
         setTheme(if (Ui.light) R.style.AppTheme_Light else R.style.AppTheme)
         super.onCreate(savedInstanceState)
         Ui.forgetDialogs()
+        buildUi()
+    }
+
+    /** Весь экран заново в текущих цветах: при запуске и при смене темы (без пересоздания экрана — без вспышки). */
+    private fun buildUi() {
         setupWindow()
         setContentView(R.layout.activity_main)
 
@@ -143,42 +142,6 @@ class MainActivity : Activity() {
         }
         buildSelectionBar()
         render()
-        // тему или прозрачность переключили в окне «Тема» — после перестройки экрана окно снова на месте
-        if (reopenTheme) {
-            reopenTheme = false
-            // плавная смена: прежний экран (снимок) поверх нового растворяется — без вспышки
-            val snap = themeSnap; themeSnap = null
-            val snapDialog = themeSnapDialog; themeSnapDialog = null
-            val decor = window.decorView as ViewGroup
-            val cover = snap?.let { b ->
-                android.widget.ImageView(this).apply {
-                    setImageBitmap(b); scaleType = android.widget.ImageView.ScaleType.FIT_XY
-                }.also { decor.addView(it, ViewGroup.LayoutParams(-1, -1)) }
-            }
-            // прежнее окно — отдельной картинкой на своём месте, пока не появится новое
-            val oldDialog = snapDialog?.let { b ->
-                android.widget.ImageView(this).apply {
-                    setImageBitmap(b); translationX = themeSnapAt[0].toFloat(); translationY = themeSnapAt[1].toFloat()
-                }.also { decor.addView(it, ViewGroup.LayoutParams(b.width, b.height)) }
-            }
-            list.post {
-                val d = themeDialog(instant = true)
-                // новое окно нарисовалось — прежнее убираем сразу (иначе оно просвечивало и текст двоился),
-                // а фон плавно растворяется в новом
-                d.window?.decorView?.viewTreeObserver?.addOnDrawListener(object : android.view.ViewTreeObserver.OnDrawListener {
-                    var done = false
-                    override fun onDraw() {
-                        if (done) return
-                        done = true
-                        list.post {
-                            oldDialog?.let { decor.removeView(it) }
-                            cover?.animate()?.alpha(0f)?.setDuration(320)
-                                ?.withEndAction { (cover.parent as? ViewGroup)?.removeView(cover) }?.start()
-                        }
-                    }
-                })
-            }
-        }
     }
 
     override fun onResume() {
@@ -1218,56 +1181,46 @@ class MainActivity : Activity() {
 
     /** Тема: выбор из списка, сразу применяется. */
     /**
-     * Применить тему «на месте»: экран перестраивается в новых цветах, а окно «Тема» сразу открывается снова
-     * (без анимации) — выглядит так, будто тема сменилась прямо под открытым окном.
+     * Применить тему на месте: экран перекрашивается заново, окно «Тема» остаётся открытым и тоже перекрашивается —
+     * без пересоздания экрана, поэтому без вспышки.
      */
-    private fun applyThemeKeepingDialog(dialog: AlertDialog, change: () -> Unit) {
-        themeSnap = snapScreen(dialog)
+    private fun applyThemeInPlace(change: () -> Unit) {
         change()
         Ui.apply(this, prefs.theme())
-        reopenTheme = true
-        dialog.window?.setWindowAnimations(0)
-        dialog.dismiss()
-        recreate()
+        setTheme(if (Ui.light) R.style.AppTheme_Light else R.style.AppTheme)
+        buildUi()
+        window.decorView.requestApplyInsets()   // новые виды получают отступы под строку состояния и навигацию
     }
 
-    /**
-     * Снимок экрана как он выглядит сейчас: фон — размытый и затемнённый, как его показывает окно поверх него;
-     * само окно [dialog] — отдельной картинкой с его местом.
-     */
-    private fun snapScreen(dialog: AlertDialog): android.graphics.Bitmap? = try {
-        val root = window.decorView
-        val full = android.graphics.Bitmap.createBitmap(root.width, root.height, android.graphics.Bitmap.Config.ARGB_8888)
-        root.draw(android.graphics.Canvas(full))
-        // размытие: уменьшить и увеличить со сглаживанием (как размытие позади окна)
-        val small = android.graphics.Bitmap.createScaledBitmap(full, (root.width / 14).coerceAtLeast(1), (root.height / 14).coerceAtLeast(1), true)
-        val b = android.graphics.Bitmap.createScaledBitmap(small, root.width, root.height, true).copy(android.graphics.Bitmap.Config.ARGB_8888, true)
-        val c = android.graphics.Canvas(b)
-        c.drawColor(Ui.withAlpha(0xFF000000.toInt(), 0.35f))   // затемнение позади окна, как у настоящего
-        dialog.window?.decorView?.let { d ->
-            val a = IntArray(2); val r = IntArray(2)
-            d.getLocationOnScreen(a); root.getLocationOnScreen(r)
-            themeSnapAt = intArrayOf(a[0] - r[0], a[1] - r[1])
-            themeSnapDialog = android.graphics.Bitmap.createBitmap(d.width, d.height, android.graphics.Bitmap.Config.ARGB_8888)
-                .also { d.draw(android.graphics.Canvas(it)) }
-        }
-        b
-    } catch (e: Exception) {
-        null
-    }
-
-    private fun themeDialog(instant: Boolean = false): AlertDialog {
-        val themes = Theme.entries
-        val tint = android.content.res.ColorStateList.valueOf(Ui.primary)
+    private fun themeDialog() {
         val box = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(20f), dp(6f), dp(20f), 0)
+            setPadding(dp(20f), dp(18f), dp(20f), 0)
         }
-        val dialog = AlertDialog.Builder(this).setTitle(R.string.theme)
+        val dialog = AlertDialog.Builder(this)
             .setView(ScrollView(this).apply { addView(box) })
             .setNegativeButton(R.string.close, null)
             .create()
-        if (instant) dialog.window?.setWindowAnimations(0)
+        fillThemeBox(dialog, box)
+        dialog.show()
+        Ui.glassDialog(dialog)
+    }
+
+    /** Содержимое окна «Тема» в текущих цветах; после смены темы — перекрасить само окно и собрать заново. */
+    private fun fillThemeBox(dialog: AlertDialog, box: LinearLayout) {
+        box.removeAllViews()
+        val themes = Theme.entries
+        val tint = android.content.res.ColorStateList.valueOf(Ui.primary)
+        fun recolor() {
+            dialog.window?.setBackgroundDrawable(GlassDrawable(this, 28f, Ui.dialogBlur))
+            listOf(AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL)
+                .forEach { dialog.getButton(it)?.setTextColor(Ui.primary) }
+            fillThemeBox(dialog, box)
+        }
+        box.addView(TextView(this).apply {
+            setText(R.string.theme); textSize = 20f; typeface = Ui.medium; setTextColor(Ui.TEXT)
+            setPadding(dp(4f), 0, 0, dp(8f))
+        })
         val group = android.widget.RadioGroup(this)
         for (t in themes) group.addView(android.widget.RadioButton(this).apply {
             id = View.generateViewId()
@@ -1277,7 +1230,8 @@ class MainActivity : Activity() {
             setOnClickListener {
                 if (t == prefs.theme()) return@setOnClickListener
                 Haptics.play(Haptics.Kind.TICK)
-                applyThemeKeepingDialog(dialog) { prefs.theme = t.name }
+                applyThemeInPlace { prefs.theme = t.name }
+                recolor()
             }
         })
         box.addView(group)
@@ -1303,12 +1257,10 @@ class MainActivity : Activity() {
             setOnClickListener {
                 sw.isChecked = !sw.isChecked
                 Haptics.play(Haptics.Kind.TICK)
-                applyThemeKeepingDialog(dialog) { prefs.translucent = sw.isChecked }
+                applyThemeInPlace { prefs.translucent = sw.isChecked }
+                recolor()
             }
         }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6f) })
-        dialog.show()
-        Ui.glassDialog(dialog)
-        return dialog
     }
 
     /** Вибрация: сила отклика или «Выключена»; при выборе сразу проигрывается пример. */
