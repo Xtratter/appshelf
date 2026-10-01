@@ -30,7 +30,7 @@ which apps are missing and opens each one in the right store.
 - **Notes** in the app card — why you need the app, which account, what to set up; they travel with the list and via WebDAV to a new phone, show in the list and are searchable
 - **Where to download**: your own links for each app (GitHub, Telegram, a site…) in the app card, saved with the list
   and shared by all phones via WebDAV; plus a shared [link catalog](https://github.com/Xtratter/appshelf-sources) on GitHub;
-  GitHub / GitLab / Codeberg links can go straight to Obtainium, a direct .apk link is installed right in AppShelf. In restore mode the link comes before the store
+  a GitHub link installs the APK from the latest release right in AppShelf, as does a direct .apk link; GitHub / GitLab / Codeberg links can also go to Obtainium. In restore mode an APK backup comes first, then the link, then the store
 - **Long-press help**: hold a finger on a button or item to see what it does
 - **Save & restore** in one window: what is protected and when, two big buttons Save and Restore, plus collapsible Automation (WebDAV, autosave, APK backups) and What to save
 - **Autosave**: pick a file once (a cloud drive, a memory card…) and the list is rewritten there every time you open the app
