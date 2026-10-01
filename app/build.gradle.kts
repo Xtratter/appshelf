@@ -8,11 +8,11 @@ android {
     compileSdk = 35
     buildToolsVersion = "35.0.0"
     defaultConfig {
-        applicationId = "io.github.xtratter.appshelf.translucent"   // эксперимент: ставится рядом с обычным AppShelf
+        applicationId = "io.github.xtratter.appshelf"
         minSdk = 26
         targetSdk = 35
-        versionCode = 58
-        versionName = "1.27-translucent"
+        versionCode = 59
+        versionName = "1.28"
     }
     buildTypes {
         release {

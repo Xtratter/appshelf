@@ -40,8 +40,8 @@ object Ui {
     var auroraStrength = 1f; private set
     /** Material 3 Expressive: тональные поверхности, крупные формы (false — прежнее стекло). */
     const val EXPRESSIVE = true
-    /** ЭКСПЕРИМЕНТ (ветка experiment/expressive-translucent): тональные поверхности слегка прозрачны — сквозь них виден фон. */
-    const val TRANSLUCENT = true
+    /** Прозрачность интерфейса (настройка в окне «Тема»): тональные поверхности слегка прозрачны — сквозь них виден фон. */
+    var translucent = true; private set
     /** Насколько плотные поверхности (1 — непрозрачные). */
     private const val SURFACE_ALPHA = 0.8f
     /** Тональные цвета M3: контейнеры акцента и поверхности. */
@@ -68,7 +68,7 @@ object Ui {
             secondaryContainer = mix(base, secondary, 0.3f); onSecondaryContainer = mix(secondary, white, 0.7f)
             surfaceContainer = mix(base, white, 0.07f); surfaceContainerHigh = mix(base, white, 0.12f)
         }
-        if (TRANSLUCENT) {
+        if (translucent) {
             // лёгкая прозрачность: цветные пятна фона мягко просвечивают сквозь карточки, сводку и окна
             surfaceContainer = withAlpha(surfaceContainer, SURFACE_ALPHA)
             surfaceContainerHigh = withAlpha(surfaceContainerHigh, SURFACE_ALPHA + 0.08f)
@@ -124,7 +124,8 @@ object Ui {
     }
 
     /** Применена ли уже тема [t] (с учётом системного режима). */
-    fun isCurrent(ctx: Context, t: Theme) = theme == t && (t != Theme.SYSTEM || nightNow(ctx) == night)
+    fun isCurrent(ctx: Context, t: Theme) = theme == t && (t != Theme.SYSTEM || nightNow(ctx) == night) &&
+        translucent == Prefs(ctx).translucent
 
     private fun nightNow(ctx: Context) = resolve(ctx, Theme.SYSTEM) != Theme.LIGHT
 
@@ -135,6 +136,7 @@ object Ui {
         val you = Build.VERSION.SDK_INT >= 31
         fun c(id: Int) = ctx.getColor(id)
         light = r == Theme.LIGHT
+        translucent = Prefs(ctx).translucent
         amoled = r == Theme.AMOLED
         if (light) {
             primary = if (you) c(android.R.color.system_accent1_600) else 0xFF3B5BA9.toInt()

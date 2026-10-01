@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.28 — 2026-10-01
+
+- **Light transparency**: cards, the summary, chips, the top bar and windows are slightly translucent, so the coloured background shows through. It is on by default; the Theme window has a "Transparency" switch to turn it off for the whole interface
+- The default theme for new installs is "Follow system" — dark or light as set in Android
+
 ## 1.27 — 2026-10-01
 
 - **Material 3 Expressive design** (after Google's research on expressive design): tonal surfaces instead of glass; the summary is a hero card in the accent's tonal colour with a big heavy count; list rows of one letter form a group with large outer and small inner corners, and the letters are bigger; buttons are larger (52 dp) and squash from a pill into a rounded rectangle when pressed, springing back on release; filter chips are larger, the selected one is a tonal pill with a check; the main action "Save & restore" moved to a floating button at the bottom right, under the thumb (hidden while restoring, selecting, searching or installing one by one)

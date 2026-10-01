@@ -1195,6 +1195,34 @@ class MainActivity : Activity() {
             setOnClickListener { dialog.dismiss(); if (t != prefs.theme()) changeTheme(t) }
         })
         box.addView(group)
+        // прозрачность всего интерфейса — отдельно от цветов темы
+        box.addView(View(this).apply { setBackgroundColor(Ui.ink(0x22)) },
+            LinearLayout.LayoutParams(-1, dp(1f)).apply { topMargin = dp(8f); bottomMargin = dp(4f) })
+        box.addView(LinearLayout(this).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = dp(52f)
+            background = Ui.ripple(this@MainActivity, 16f)
+            addView(TextView(this@MainActivity).apply {
+                setText(R.string.translucency); textSize = 16f; setTextColor(Ui.TEXT)
+            }, LinearLayout.LayoutParams(0, -2, 1f))
+            val sw = android.widget.Switch(this@MainActivity).apply {
+                isChecked = prefs.translucent
+                isClickable = false
+                thumbTintList = android.content.res.ColorStateList(
+                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()), intArrayOf(Ui.primary, Ui.TEXT3))
+                trackTintList = android.content.res.ColorStateList(
+                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()), intArrayOf(Ui.withAlpha(Ui.primary, 0.5f), Ui.ink(0x33)))
+            }
+            addView(sw)
+            setOnClickListener {
+                sw.isChecked = !sw.isChecked
+                Haptics.play(Haptics.Kind.TICK)
+                prefs.translucent = sw.isChecked
+                dialog.dismiss()
+                Ui.apply(this@MainActivity, prefs.theme())
+                recreate()
+            }
+        }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6f) })
         dialog.show()
         Ui.glassDialog(dialog)
     }

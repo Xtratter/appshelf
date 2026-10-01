@@ -10,6 +10,6 @@ enum class Theme(val title: Int) {
 
     companion object {
         /** Тема по умолчанию. */
-        val DEFAULT: Theme get() = STANDARD
+        val DEFAULT: Theme get() = SYSTEM   // тёмная или светлая — как в настройках Android
     }
 }

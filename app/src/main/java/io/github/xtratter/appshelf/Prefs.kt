@@ -21,6 +21,9 @@ class Prefs(ctx: Context) {
     var apkScope by str("apk_scope", ApkBackup.Scope.APK_ONLY.name)
     var apkAuto by bool("apk_auto", false)
 
+    /** Прозрачность интерфейса (тональные поверхности слегка прозрачны). */
+    var translucent by bool("translucent", true)
+
     /** Сила отклика вибрацией ([Haptics.Level]). */
     var haptics by str("haptics", Haptics.Level.MEDIUM.name)
     fun haptics(): Haptics.Level = runCatching { Haptics.Level.valueOf(haptics) }.getOrDefault(Haptics.Level.MEDIUM)
