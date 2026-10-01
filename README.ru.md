@@ -1,5 +1,7 @@
 # 📚 AppShelf
 
+[![Build](https://github.com/Xtratter/appshelf/actions/workflows/build.yml/badge.svg)](https://github.com/Xtratter/appshelf/actions/workflows/build.yml)
+
 **Русский** · [English](README.md)
 
 Список приложений, установленных на телефоне: **название, пакет, откуда каждое и когда установлено**,
