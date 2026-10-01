@@ -178,9 +178,13 @@ object Haptics {
      * Щелчок при нажатии на [v] — в момент, когда палец отпускает кнопку (как само нажатие);
      * если начали прокручивать, щелчка нет. Касание не перехватывается.
      */
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
     fun onClick(v: View, kind: Kind = Kind.TAP) {
-        // один обработчик касаний на вид: щелчок и упругое нажатие стекла (Motion.touch)
-        Motion.touch(v, kind, Motion.elasticOf(v))
+        v.setOnTouchListener { view, e ->
+            if (e.actionMasked == android.view.MotionEvent.ACTION_UP && view.isPressed &&
+                e.x >= 0 && e.y >= 0 && e.x <= view.width && e.y <= view.height) play(kind)
+            false
+        }
     }
 
     /** Щелчки для всех нажимаемых элементов внутри [root] (окна): кнопки — щелчок, галочки и переключатели — тик. */

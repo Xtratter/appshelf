@@ -38,88 +38,8 @@ object Ui {
     /** Цвета пятен фона и их яркость. */
     var auroraColors = intArrayOf(primary, tertiary, secondary); private set
     var auroraStrength = 1f; private set
-    /** Тема «Жидкое стекло» и она поддерживается (Android 13+: шейдеры AGSL). */
-    var liquid = false; private set
     /** AMOLED: кнопки не цветные, а чёрные с окантовкой. */
     var amoled = false; private set
-    /** Фон окна для стеклянных карточек: картинка пятен (в 1/4 размера) и размер окна; корень главного окна. */
-    var backdrop: android.graphics.Bitmap? = null
-    var backdropW = 0f
-    var backdropH = 0f
-    var liquidRoot: View? = null
-    /** Прозрачность «жидкого стекла»: 0 — матовое, 1 — прозрачное. */
-    var clarity = 0.5f; private set
-    private fun lerp(a: Float, b: Float) = a + (b - a) * clarity
-    /** Насколько плотна заливка верхней панели, и насколько размыто то, что под ней и за окнами (dp). */
-    val barTintAlpha get() = lerp(0.5f, 0.1f)
-    val barBlurDp get() = lerp(4f, 0.3f)
-    val dialogBlurDp get() = lerp(12f, 1.5f)
-
-    /** Поменять прозрачность стекла на ходу (из настройки): заливка окон пересчитывается сразу. */
-    fun setClarity(v: Float) {
-        clarity = v.coerceIn(0f, 1f)
-        if (liquid) dialogBlur = withAlpha(dialogSolid, lerp(0.62f, 0.12f))
-    }
-
-    /** «Жидкое стекло» поверх темы: ровный фон (его картинку преломляют карточки) и заливка окон по прозрачности. */
-    private fun liquidOverTheme() {
-        if (!liquid) return
-        aurora = true
-        dialogBlur = withAlpha(dialogSolid, lerp(0.62f, 0.12f))
-    }
-    /** Снимок главного экрана для стеклянных окон (в 1/4 размера) и где он на экране. */
-    var snapshot: android.graphics.Bitmap? = null
-    var snapshotX = 0f
-    var snapshotY = 0f
-    var snapshotW = 0f
-    var snapshotH = 0f
-
-    /** Заливка стеклянного окна. */
-    fun dialogBlurColor() = dialogBlur
-
-    /** Цвет [top] поверх [bottom] (оба могут быть полупрозрачными). */
-    fun over(top: Int, bottom: Int): Int {
-        val ta = (top ushr 24) / 255f
-        val ba = (bottom ushr 24) / 255f
-        val a = ta + ba * (1 - ta)
-        if (a <= 0f) return 0
-        fun ch(s: Int) = ((((top shr s) and 0xFF) * ta + ((bottom shr s) and 0xFF) * ba * (1 - ta)) / a).toInt().coerceIn(0, 255)
-        return ((a * 255).toInt() shl 24) or (ch(16) shl 16) or (ch(8) shl 8) or ch(0)
-    }
-
-    private var snapshotRaw: android.graphics.Bitmap? = null
-
-    /** Копия снимка, плавно размытая под текущую прозрачность (без зерна, как системное размытие). */
-    private fun blurred(ctx: Context, raw: android.graphics.Bitmap): android.graphics.Bitmap {
-        val out = raw.copy(android.graphics.Bitmap.Config.ARGB_8888, true)
-        Blur.apply(out, (dp(ctx, dialogBlurDp) * raw.width / snapshotW.coerceAtLeast(1f)).toInt().coerceAtLeast(1))
-        return out
-    }
-
-    /** Размыть снимок заново под текущую прозрачность; в фоновом потоке. null — снимка нет. */
-    fun reblurredSnapshot(ctx: Context): android.graphics.Bitmap? = snapshotRaw?.let { blurred(ctx, it) }
-
-    /** Снять главный экран (для окон «жидкого стекла»): под окном будет видно, как за ним преломляется список. */
-    fun takeSnapshot() {
-        val root = liquidRoot ?: return
-        if (!liquid || root.width <= 0 || root.height <= 0) return
-        val q = 2
-        // всегда новая картинка: прежнюю, возможно, ещё рисует окно на экране
-        val bmp = android.graphics.Bitmap.createBitmap(root.width / q, root.height / q, android.graphics.Bitmap.Config.ARGB_8888)
-        val c = Canvas(bmp)
-        c.scale(1f / q, 1f / q)
-        Liquid.capturing = true
-        try { root.draw(c) } catch (e: Exception) { return } finally { Liquid.capturing = false }
-        // неразмытый снимок храним: при смене прозрачности размытие пересчитывается из него, без перерисовки экрана
-        snapshotRaw = bmp
-        snapshotW = root.width.toFloat(); snapshotH = root.height.toFloat()
-        val blurred = blurred(root.context, bmp)
-        val at = IntArray(2)
-        root.getLocationOnScreen(at)
-        snapshot = blurred
-        snapshotX = at[0].toFloat(); snapshotY = at[1].toFloat()
-        snapshotW = root.width.toFloat(); snapshotH = root.height.toFloat()
-    }
 
     var TEXT = 0xFFF2F2F6.toInt(); private set
     var TEXT2 = 0xB3F2F2F6.toInt(); private set
@@ -165,8 +85,7 @@ object Ui {
     }
 
     /** Применена ли уже тема [t] (с учётом системного режима). */
-    fun isCurrent(ctx: Context, t: Theme) = theme == t && (t != Theme.SYSTEM || nightNow(ctx) == night) &&
-        liquid == (Prefs(ctx).liquidGlass && Liquid.works)
+    fun isCurrent(ctx: Context, t: Theme) = theme == t && (t != Theme.SYSTEM || nightNow(ctx) == night)
 
     private fun nightNow(ctx: Context) = resolve(ctx, Theme.SYSTEM) != Theme.LIGHT
 
@@ -178,8 +97,6 @@ object Ui {
         fun c(id: Int) = ctx.getColor(id)
         light = r == Theme.LIGHT
         amoled = r == Theme.AMOLED
-        clarity = Prefs(ctx).glassClarity / 100f
-        liquid = Prefs(ctx).liquidGlass && Liquid.works
         if (light) {
             primary = if (you) c(android.R.color.system_accent1_600) else 0xFF3B5BA9.toInt()
             secondary = if (you) c(android.R.color.system_accent2_600) else 0xFF565E71.toInt()
@@ -198,7 +115,6 @@ object Ui {
             dialogBlur = 0xC8F7F8FC.toInt(); dialogSolid = 0xFAF7F8FC.toInt()
             surface = 0xFFF7F8FC.toInt()
             hintFill = 0x33FFB300; hintText = 0xFF6D4C00.toInt()
-            liquidOverTheme()
             return
         }
         // тёмные темы
@@ -237,7 +153,6 @@ object Ui {
             }
         }
         auroraColors = intArrayOf(primary, tertiary, secondary)
-        liquidOverTheme()
     }
 
     fun withAlpha(color: Int, a: Float) = (color and 0xFFFFFF) or ((a * 255).toInt().coerceIn(0, 255) shl 24)
@@ -273,13 +188,13 @@ object Ui {
             InsetDrawable(mask, insetH.toInt(), insetV.toInt(), insetH.toInt(), insetV.toInt()))
     }
 
-    /** Кнопка-«пилюля»; в теме «Жидкое стекло» — стеклянная (цветная заливка становится цветным стеклом). */
+    /** Кнопка-«пилюля». */
     fun pill(ctx: Context, fill: Int, stroke: Int = 0, radiusDp: Float = 100f): Drawable {
         // AMOLED: залитая акцентом кнопка — чёрная с окантовкой (текст на ней — светлый, см. ON_ACCENT)
         val black = amoled && fill == primary
         val f = if (black) 0xFF000000.toInt() else fill
         val s = if (black) ink(0x73) else stroke
-        return if (liquid) GlassDrawable(ctx, radiusDp, f) else GradientDrawable().apply {
+        return GradientDrawable().apply {
             cornerRadius = dp(ctx, radiusDp)
             setColor(f)
             if (s != 0) setStroke(dp(ctx, 1f).toInt().coerceAtLeast(1), s)
@@ -287,9 +202,6 @@ object Ui {
     }
 
     private val dialogs = HashSet<View>()
-    /** Открытые стеклянные окна (их корни) — чтобы перерисовать стекло, когда свет сдвинулся. */
-    fun openDialogViews(): List<View> = dialogs.toList()
-
     /** Сколько «стеклянных» диалогов сейчас открыто. */
     val openDialogs get() = dialogs.size
     /** Новый экран: диалоги старого (например, до смены темы) больше не считаем. */
@@ -297,41 +209,7 @@ object Ui {
     /** Вызывается, когда закрылся последний диалог. */
     var onDialogsClosed: (() -> Unit)? = null
 
-    /**
-     * Стеклянные карточки и кнопки в окне показывают кусок снимка экрана по своему месту на экране.
-     * При прокрутке система не перерисовывает их, а сдвигает готовые — и «фон» уезжал вместе с кнопкой.
-     * Поэтому при прокрутке перерисовываем всё стекло внутри.
-     */
-    private fun watchScroll(v: View) {
-        when (v) {
-            is android.widget.ScrollView, is android.widget.HorizontalScrollView ->
-                v.setOnScrollChangeListener { sv, _, _, _, _ -> invalidateGlass(sv) }
-            is android.widget.AbsListView -> v.setOnScrollListener(object : android.widget.AbsListView.OnScrollListener {
-                override fun onScrollStateChanged(view: android.widget.AbsListView, state: Int) {}
-                override fun onScroll(view: android.widget.AbsListView, first: Int, visible: Int, total: Int) = invalidateGlass(view)
-            })
-        }
-        if (v is android.view.ViewGroup) for (i in 0 until v.childCount) watchScroll(v.getChildAt(i))
-    }
 
-    private fun invalidateGlass(v: View) {
-        if (v.background is GlassDrawable) v.invalidate()
-        if (v is android.view.ViewGroup) for (i in 0 until v.childCount) invalidateGlass(v.getChildAt(i))
-    }
-
-    /** Окно, из которого сейчас открывают следующее (см. [chain]); открылось ли следующее стеклянное окно. */
-    private var chainFrom: AlertDialog? = null
-    private var chainOpened = false
-
-    /**
-     * Действие из пункта окна [old]: если оно откроет другое стеклянное окно, [old] закроется только когда новое уже
-     * нарисовалось и вытекает из него — без промежутка с резким фоном между окнами. Иначе [old] закрывается сразу.
-     */
-    fun chain(old: AlertDialog, action: () -> Unit) {
-        chainFrom = old; chainOpened = false
-        try { action() } finally { chainFrom = null }
-        if (!chainOpened) old.dismiss()
-    }
 
     /** Убрать фон у служебных панелей диалога и у рамок между окном и содержимым (наше содержимое не трогаем). */
     private fun clearPanels(decor: View) {
@@ -351,8 +229,6 @@ object Ui {
     /** Оформить диалог стеклом; на Android 12+ ещё и размыть то, что под ним. */
     fun glassDialog(d: AlertDialog) {
         val w = d.window ?: return
-        // первое окно поверх главного экрана — снимаем экран, чтобы стекло окна его преломляло
-        if (liquid && dialogs.isEmpty()) takeSnapshot()
         // под размытым диалогом главный экран не обновляем: каждое его изменение заставляет
         // систему заново размывать весь экран, а под стеклом всё равно ничего не разобрать
         dialogs += w.decorView
@@ -380,32 +256,17 @@ object Ui {
         clearPanels(w.decorView)
         listOf(AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL)
             .forEach { d.getButton(it)?.setTextColor(primary) }
-        // «жидкое стекло»: окно, открытое кнопкой главного экрана, вытекает из неё и стекает обратно
-        // а открытое прямо из другого окна (меню → «Тема») — перетекает из места прежнего окна
-        val from = chainFrom
-        val src = Motion.takeSource()
-        when {
-            from != null && from !== d -> { chainOpened = true; Motion.handoff(d, from) }
-            src != null -> Motion.morphIn(d, src)
-        }
-        if (liquid) watchScroll(w.decorView)
         Haptics.attachAll(w.decorView)   // щелчки при нажатии на кнопки и пункты окна
     }
 }
 
 /**
- * «Жидкое стекло»: полупрозрачная заливка, мягкий блик сверху и светлая кромка,
+ * Стекло: полупрозрачная заливка, мягкий блик сверху и светлая кромка,
  * которая ярче в верхнем левом углу — как свет на гранях стекла.
  */
 class GlassDrawable(ctx: Context, radiusDp: Float, private val fill: Int = Ui.card) : Drawable() {
     private val radius = Ui.dp(ctx, radiusDp)
     private val d = ctx.resources.displayMetrics.density
-    /** Вид, на котором рисуется стекло, если это не его фон (строка списка рисует стекло сама). */
-    var host: View? = null
-    /** 0..1: палец продавливает стекло — линза сжимает фон сильнее, кромка ярче. */
-    var press = 0f
-        set(v) { field = v; invalidateSelf() }
-    private val liquid = if (Ui.liquid && Build.VERSION.SDK_INT >= 33) LiquidCard(d) else null
     private val fillP = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = fill }
     private val hiP = Paint(Paint.ANTI_ALIAS_FLAG)
     private val edgeP = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE; strokeWidth = d }
@@ -424,11 +285,6 @@ class GlassDrawable(ctx: Context, radiusDp: Float, private val fill: Int = Ui.ca
     }
 
     override fun draw(c: Canvas) {
-        // «жидкое стекло»: линза над фоном окна; не вышло (диалог, фон не готов) — обычное стекло
-        val v = callback as? View ?: host
-        if (liquid != null && v != null && liquid.draw(c, v, r, radius, fill, press)) return
-        if (liquid != null && v != null && liquid.drawOverSnapshot(c, v, r, radius, fill, press)) return
-        if (liquid != null && liquid.drawRim(c, r, radius, fill, press)) return
         c.drawRoundRect(r, radius, radius, fillP)
         c.drawRoundRect(r, radius, radius, hiP)
         c.drawRoundRect(r, radius, radius, edgeP)
@@ -466,8 +322,6 @@ class AuroraDrawable : Drawable() {
         blob(w * 1.0f, h * 0.38f, w * 0.85f, c2, 0.30f * k)
         blob(w * 0.1f, h * 0.78f, w * 0.9f, c3, 0.22f * k)
         blob(w * 0.9f, h * 1.02f, w * 0.7f, c1, 0.25f * k)
-        // «жидкое стекло»: фон ровный, без пятен — иначе при прокрутке пятна «гуляют» внутри стеклянных карточек
-        if (Ui.liquid) { blobs.clear(); shaders.clear() }
         val out = android.graphics.Bitmap.createBitmap(w.toInt().coerceAtLeast(1), h.toInt().coerceAtLeast(1),
             android.graphics.Bitmap.Config.ARGB_8888)
         val c = Canvas(out)
@@ -477,9 +331,6 @@ class AuroraDrawable : Drawable() {
             c.drawCircle(blobs[i].first, blobs[i].second, blobs[i].third, p)
         }
         bmp = out
-        Ui.backdrop = out
-        Ui.backdropW = b.width().toFloat()
-        Ui.backdropH = b.height().toFloat()
     }
 
     override fun draw(c: Canvas) {

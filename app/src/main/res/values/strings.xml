@@ -116,7 +116,6 @@
     <string name="th_amoled">AMOLED black</string>
     <string name="th_light">Light</string>
     <string name="th_graphite">Graphite</string>
-    <string name="th_liquid">Liquid glass</string>
     <string name="haptics">Vibration</string>
     <string name="hap_off">Off</string>
     <string name="hap_light">Light</string>
@@ -205,14 +204,6 @@
     <string name="hi_only_here">Only on this phone (%d)</string>
     <string name="hi_only_there">Only on %1$s (%2$d)</string>
     <string name="hi_open_restore">Open its list to restore</string>
-    <string name="glass_clarity">Glass transparency</string>
-    <string name="glass_clarity_btn">Transparency…</string>
-    <string name="glass_clarity_text">How much of what is behind shows through the glass: frosted and calm, or clear. This window changes as you move the slider; the whole screen updates when you close it.</string>
-    <string name="glass_matte">Frosted</string>
-    <string name="glass_clear">Clear</string>
-    <string name="glass_clarity_value">Transparency: %d%%</string>
-    <string name="liquid_sub">Glass that refracts what is behind it and flows like a drop — works with any theme</string>
-    <string name="liquid_unavailable">Needs Android 13 or newer — the regular glass is used here</string>
     <string name="uninstall">Uninstall</string>
     <string name="uninstall_done">Uninstalled: %s</string>
     <string name="uninstall_failed">Could not uninstall: %s</string>

@@ -108,7 +108,6 @@
     <string name="th_amoled">AMOLED (чёрная)</string>
     <string name="th_light">Светлая</string>
     <string name="th_graphite">Графит</string>
-    <string name="th_liquid">Жидкое стекло</string>
     <string name="haptics">Вибрация</string>
     <string name="hap_off">Выключена</string>
     <string name="hap_light">Лёгкая</string>
@@ -201,14 +200,6 @@
     <string name="hi_only_here">Только на этом телефоне (%d)</string>
     <string name="hi_only_there">Только на %1$s (%2$d)</string>
     <string name="hi_open_restore">Открыть его список для восстановления</string>
-    <string name="glass_clarity">Прозрачность стекла</string>
-    <string name="glass_clarity_btn">Прозрачность…</string>
-    <string name="glass_clarity_text">Насколько сквозь стекло видно то, что за ним: матовое и спокойное или прозрачное. Это окно меняется, пока двигаете ползунок; весь экран обновится, когда закроете его.</string>
-    <string name="glass_matte">Матовое</string>
-    <string name="glass_clear">Прозрачное</string>
-    <string name="glass_clarity_value">Прозрачность: %d%%</string>
-    <string name="liquid_sub">Стекло, которое преломляет то, что за ним, и перетекает, как капля, — работает с любой темой</string>
-    <string name="liquid_unavailable">Нужен Android 13 или новее — здесь обычное стекло</string>
     <string name="uninstall">Удалить приложение</string>
     <string name="uninstall_done">Удалено: %s</string>
     <string name="uninstall_failed">Не удалось удалить: %s</string>

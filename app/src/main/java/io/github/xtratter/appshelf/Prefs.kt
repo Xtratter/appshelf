@@ -26,11 +26,7 @@ class Prefs(ctx: Context) {
     fun haptics(): Haptics.Level = runCatching { Haptics.Level.valueOf(haptics) }.getOrDefault(Haptics.Level.MEDIUM)
     var hapticsEngine by str("haptics_engine", Haptics.Engine.AUTO.name)
 
-    /** «Жидкое стекло» поверх любой темы (работает на Android 13+, ниже — обычное стекло). */
-    var liquidGlass by bool("liquid_glass", true)
 
-    /** «Жидкое стекло»: 0 — матовое, 100 — прозрачное (50 — как задумано). */
-    var glassClarity by int("glass_clarity", 50)
 
     /** Пакеты, которые не включаем в сохраняемый список (файл, «Поделиться», автосохранение). */
     var excluded: Set<String>

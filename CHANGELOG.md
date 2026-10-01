@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.24 — 2026-10-01
+
+- **"Liquid glass" removed**: the refracting glass, buttons flowing into windows, the tilt highlight, the elastic press and the glass transparency setting are gone, together with the "Liquid glass" checkbox in Theme. What stays is the themes (standard, follow system, AMOLED, light, graphite) with the calm translucent glass of cards and windows. The app is smaller (about 190 KB) and simpler
+- Vibration stays as it was
+
 ## 1.23.2 — 2026-10-01
 
 - Window to window without a flash (checked frame by frame on the second recording): a window opened from another one (menu → Theme, Save & restore → WebDAV or Save to a file, the app card → note or link) flows out of the previous window, and the previous one closes only once the new one is already on screen — the blurred background no longer flashes sharp for 150–200 ms in between

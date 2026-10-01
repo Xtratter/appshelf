@@ -104,23 +104,8 @@ class MainActivity : Activity() {
         searchBox = findViewById(R.id.searchBox)
         searchField = findViewById(R.id.searchField)
         val barFill = Ui.withAlpha(Ui.mix(Ui.base, Ui.surface, 0.6f), 0.9f)
-        Ui.liquidRoot = window.decorView
-        if (Ui.liquid && Build.VERSION.SDK_INT >= 33) {
-            // «жидкое стекло»: список виден сквозь панель, изгибаясь у кромки
-            val bar = findViewById<View>(R.id.bar)
-            val tint = Ui.withAlpha(Ui.base, Ui.barTintAlpha)
-            bar.background = LiquidBackdrop(bar, listOf(list), 32f, tint)
-            searchBox.background = LiquidBackdrop(searchBox, listOf(list), 26f, tint)
-            // мягкая тень: стекло «висит» над списком; контейнер панели не должен обрезать её по своим отступам —
-            // иначе тень видна только прямоугольником в уголках у круглых концов панели
-            bar.elevation = Ui.dp(this, 8f)
-            searchBox.elevation = Ui.dp(this, 8f)
-            (topBar as? ViewGroup)?.apply { clipToPadding = false; clipChildren = false }
-            (topBar.parent as? ViewGroup)?.clipChildren = false
-        } else {
-            findViewById<View>(R.id.bar).background = GlassDrawable(this, 32f, barFill)
-            searchBox.background = GlassDrawable(this, 26f, barFill)
-        }
+        findViewById<View>(R.id.bar).background = GlassDrawable(this, 32f, barFill)
+        searchBox.background = GlassDrawable(this, 26f, barFill)
         topScrim.background = android.graphics.drawable.GradientDrawable(
             android.graphics.drawable.GradientDrawable.Orientation.TOP_BOTTOM,
             intArrayOf(Ui.withAlpha(Ui.base, 0.94f), Ui.withAlpha(Ui.base, 0.7f), Ui.withAlpha(Ui.base, 0f)))
@@ -133,7 +118,6 @@ class MainActivity : Activity() {
         list.setOnItemClickListener { parent, view, pos, _ ->
             val r = parent.getItemAtPosition(pos) as? Row ?: return@setOnItemClickListener
             if (selecting) { toggleSelected(r.app.pkg); return@setOnItemClickListener }
-            Motion.from(view)   // карточка вытечет из строки
             Haptics.play(Haptics.Kind.TAP)
             DetailsDialog.show(this, r, sourceText(r.app))
         }
@@ -153,12 +137,7 @@ class MainActivity : Activity() {
         current = java.lang.ref.WeakReference(this)
         // вернулись из настроек с разрешением на установку — продолжаем отложенную установку APK
         ApkInstaller.resume(this)
-        Motion.Tilt.start(this)   // блик на стекле следует за наклоном телефона
-    }
 
-    override fun onPause() {
-        Motion.Tilt.stop()
-        super.onPause()
     }
 
     override fun onDestroy() {
@@ -250,7 +229,7 @@ class MainActivity : Activity() {
         findViewById<TextView>(R.id.title).setOnClickListener(toggleSearch)
         findViewById<View>(R.id.btnSearch).setOnClickListener { showSearch(searchBox.visibility != View.VISIBLE) }
         findViewById<View>(R.id.btnSearchClose).setOnClickListener { showSearch(false) }
-        findViewById<View>(R.id.btnMore).setOnClickListener { Motion.from(it); showMenu(it) }
+        findViewById<View>(R.id.btnMore).setOnClickListener { showMenu(it) }
         // щелчок вибрацией на кнопках панели
         for (id in intArrayOf(R.id.bar, R.id.title, R.id.btnSearch, R.id.btnSearchClose, R.id.btnMore))
             Haptics.onClick(findViewById(id))
@@ -263,8 +242,6 @@ class MainActivity : Activity() {
 
     private fun showSearch(show: Boolean) {
         val imm = getSystemService(InputMethodManager::class.java)
-        // строка поиска вытекает из кнопки-лупы и стекает обратно («жидкое стекло»)
-        val lens = findViewById<View>(R.id.btnSearch)
         /** Сводка и фильтры на время поиска прячутся (сам заголовок списка при этом сжимается до нуля). */
         fun layoutFor(searchOn: Boolean) {
             summary.visibility = if (searchOn) View.GONE else View.VISIBLE
@@ -273,15 +250,15 @@ class MainActivity : Activity() {
             list.setSelection(0)
         }
         if (show) {
-            Motion.openSearch(searchBox, lens) { layoutFor(true) }
+            searchBox.visibility = View.VISIBLE
+            layoutFor(true)
             searchField.requestFocus()
             imm.showSoftInput(searchField, 0)
         } else {
             imm.hideSoftInputFromWindow(searchField.windowToken, 0)
-            Motion.closeSearch(searchBox, lens) {
-                searchField.setText("")
-                layoutFor(false)
-            }
+            searchBox.visibility = View.GONE
+            searchField.setText("")
+            layoutFor(false)
         }
     }
 
@@ -617,7 +594,6 @@ class MainActivity : Activity() {
     private fun current(): List<AppInfo>? = restore?.apps?.let { visible(it) } ?: installed?.let { visible(it) }
 
     private fun render() {
-        Liquid.version++
         renderSummary()
         val apps = current() ?: run { adapter.update(emptyList()); renderChips(emptyList()); return }
         renderChips(apps)
@@ -690,7 +666,7 @@ class MainActivity : Activity() {
         background = if (filled) Ui.pill(this@MainActivity, Ui.primary)
         else Ui.pill(this@MainActivity, Ui.withAlpha(Ui.primary, 0.12f), Ui.withAlpha(Ui.primary, 0.35f))
         foreground = Ui.ripple(this@MainActivity, 100f)
-        setOnClickListener { Motion.from(it); onClick() }   // окно, которое откроет кнопка, вытечет из неё
+        setOnClickListener { onClick() }
         Haptics.onClick(this)
     }
 
@@ -1090,7 +1066,7 @@ class MainActivity : Activity() {
                     if (checked) getDrawable(android.R.drawable.checkbox_on_background) else getDrawable(android.R.drawable.checkbox_off_background), null)
                 compoundDrawableTintList = android.content.res.ColorStateList.valueOf(if (checked) Ui.primary else Ui.TEXT3)
             }
-            setOnClickListener { Ui.chain(dialog) { action() } }
+            setOnClickListener { dialog.dismiss(); action() }
         }, LinearLayout.LayoutParams(-1, -2))
         item(R.string.hi_title) { HistoryDialog.show(this) }
         item(R.string.catalog_title) { CatalogDialog.show(this) }
@@ -1113,7 +1089,7 @@ class MainActivity : Activity() {
         }
     }
 
-    /** Тема: цвета (список) и галочка «Жидкое стекло» — эффект поверх любой темы, с настройкой прозрачности. */
+    /** Тема: выбор из списка, сразу применяется. */
     private fun themeDialog() {
         val themes = Theme.entries
         val tint = android.content.res.ColorStateList.valueOf(Ui.primary)
@@ -1124,7 +1100,6 @@ class MainActivity : Activity() {
         val dialog = AlertDialog.Builder(this).setTitle(R.string.theme)
             .setView(ScrollView(this).apply { addView(box) })
             .setNegativeButton(R.string.close, null)
-            .apply { if (Ui.liquid) setNeutralButton(R.string.glass_clarity_btn) { _, _ -> clarityDialog() } }
             .create()
         val group = android.widget.RadioGroup(this)
         for (t in themes) group.addView(android.widget.RadioButton(this).apply {
@@ -1135,25 +1110,6 @@ class MainActivity : Activity() {
             setOnClickListener { dialog.dismiss(); if (t != prefs.theme()) changeTheme(t) }
         })
         box.addView(group)
-        box.addView(View(this).apply { setBackgroundColor(Ui.ink(0x22)) },
-            LinearLayout.LayoutParams(-1, dp(1f)).apply { topMargin = dp(8f); bottomMargin = dp(8f) })
-        val works = Liquid.works
-        box.addView(android.widget.CheckBox(this).apply {
-            setText(R.string.th_liquid); textSize = 16f; setTextColor(Ui.TEXT); buttonTintList = tint
-            isChecked = works && prefs.liquidGlass
-            isEnabled = works
-            setOnCheckedChangeListener { _, on ->
-                prefs.liquidGlass = on
-                dialog.dismiss()
-                Ui.apply(this@MainActivity, prefs.theme())
-                recreate()
-            }
-        })
-        box.addView(TextView(this).apply {
-            setText(if (works) R.string.liquid_sub else R.string.liquid_unavailable)
-            textSize = 13f; setTextColor(Ui.TEXT3); setLineSpacing(0f, 1.1f)
-            setPadding(dp(32f), 0, 0, dp(8f))
-        })
         dialog.show()
         Ui.glassDialog(dialog)
     }
@@ -1222,82 +1178,6 @@ class MainActivity : Activity() {
         AlertDialog.Builder(this).setTitle(R.string.haptics).setView(box)
             .setPositiveButton(R.string.done, null)
             .show().also { Ui.glassDialog(it) }
-    }
-
-    /** Прозрачность стекла: ползунок «матовое — прозрачное»; само окно меняется сразу, экран — при закрытии. */
-    private fun clarityDialog() {
-        val start = prefs.glassClarity
-        val box = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(24f), dp(8f), dp(24f), 0)
-        }
-        val value = TextView(this).apply { textSize = 14f; setTextColor(Ui.TEXT2) }
-        box.addView(TextView(this).apply {
-            setText(R.string.glass_clarity_text); textSize = 14f; setTextColor(Ui.TEXT2); setLineSpacing(0f, 1.1f)
-        })
-        val seek = android.widget.SeekBar(this).apply {
-            max = 100
-            progress = start
-            progressTintList = android.content.res.ColorStateList.valueOf(Ui.primary)
-            thumbTintList = progressTintList
-        }
-        box.addView(seek, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18f) })
-        box.addView(LinearLayout(this).apply {
-            addView(TextView(this@MainActivity).apply { setText(R.string.glass_matte); textSize = 13f; setTextColor(Ui.TEXT3) },
-                LinearLayout.LayoutParams(0, -2, 1f))
-            addView(TextView(this@MainActivity).apply { setText(R.string.glass_clear); textSize = 13f; setTextColor(Ui.TEXT3) })
-        }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(2f) })
-        value.setPadding(0, dp(10f), 0, 0)
-        box.addView(value)
-        fun showValue(p: Int) { value.text = getString(R.string.glass_clarity_value, p) }
-        showValue(start)
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(R.string.glass_clarity)
-            .setView(box)
-            .setPositiveButton(R.string.done, null)
-            .setNeutralButton(R.string.catalog_default) { _, _ -> }
-            .create()
-        /** Применить: заново размыть снимок экрана и перерисовать стекло этого окна. */
-        // размытие считается в фоне из готового снимка; пока считается — новые значения копятся, берётся последнее
-        var blurring = false
-        var blurAgain = false
-        fun reblur() {
-            if (blurring) { blurAgain = true; return }
-            blurring = true
-            val app = applicationContext
-            Thread {
-                val bmp = Ui.reblurredSnapshot(app)
-                main.post {
-                    blurring = false
-                    if (bmp != null && dialog.isShowing) {
-                        Ui.snapshot = bmp
-                        dialog.window?.decorView?.invalidate()
-                    }
-                    if (blurAgain) { blurAgain = false; reblur() }
-                }
-            }.start()
-        }
-        /** Применить сразу: заливка окна — мгновенно, размытие того, что за ним, — догоняет в фоне. */
-        fun apply(p: Int) {
-            prefs.glassClarity = p
-            Ui.setClarity(p / 100f)
-            dialog.window?.setBackgroundDrawable(GlassDrawable(this, 28f, Ui.dialogBlurColor()))
-            reblur()
-        }
-        seek.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(s: android.widget.SeekBar?, p: Int, fromUser: Boolean) {
-                showValue(p)
-                if (fromUser && p % 5 == 0) Haptics.play(Haptics.Kind.TICK)
-                if (fromUser) apply(p)
-            }
-            override fun onStartTrackingTouch(s: android.widget.SeekBar?) {}
-            override fun onStopTrackingTouch(s: android.widget.SeekBar?) {}
-        })
-        // при закрытии — пересоздать экран, чтобы панель и карточки взяли новую прозрачность
-        dialog.setOnDismissListener { if (prefs.glassClarity != start) recreate() }
-        dialog.show()
-        Ui.glassDialog(dialog)
-        dialog.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener { seek.progress = 50; apply(50) }
     }
 
     /** Пересоздаём экран с новыми цветами. */

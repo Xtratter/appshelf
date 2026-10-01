@@ -9,7 +9,7 @@ enum class Theme(val title: Int) {
     GRAPHITE(R.string.th_graphite);
 
     companion object {
-        /** Тема по умолчанию; «жидкое стекло» — отдельная галочка поверх любой темы ([Prefs.liquidGlass]). */
+        /** Тема по умолчанию. */
         val DEFAULT: Theme get() = STANDARD
     }
 }
