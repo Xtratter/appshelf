@@ -13,6 +13,38 @@ class Prefs(ctx: Context) {
      */
     private val ui = ctx.applicationContext.getSharedPreferences("ui", Context.MODE_PRIVATE)
 
+    /** Настройки для переноса (без служебных отметок и ссылок на файлы этого телефона); пароль — отдельно. */
+    fun exportMap(): Map<String, Any> {
+        val out = LinkedHashMap<String, Any>()
+        for ((k, v) in sp.all) if (k !in NOT_EXPORTED && v != null) out[k] = v
+        for ((k, v) in ui.all) if (v != null) out["ui." + k] = v
+        return out
+    }
+
+    /** Применить перенесённые настройки (типы — как в файле). */
+    fun importMap(m: Map<String, Any>) {
+        val e = sp.edit(); val u = ui.edit()
+        for ((key, v) in m) {
+            val (ed, k) = if (key.startsWith("ui.")) u to key.removePrefix("ui.") else e to key
+            if (k in NOT_EXPORTED) continue
+            when (v) {
+                is Boolean -> ed.putBoolean(k, v)
+                is Int -> ed.putInt(k, v)
+                is Long -> ed.putLong(k, v)
+                is String -> ed.putString(k, v)
+                is Set<*> -> ed.putStringSet(k, v.map { it.toString() }.toSet())
+            }
+        }
+        e.apply(); u.apply()
+    }
+
+    companion object {
+        /** Не переносятся: пароль (по отдельному выбору), файлы этого телефона, служебные отметки. */
+        val NOT_EXPORTED = setOf("dav_pass", "autosave_uri", "apk_folder_uri", "last_saved", "last_saved_name",
+            "sync_next", "sync_last", "sync_ok", "sync_msg", "sync_pending", "links_dirty", "links_synced",
+            "catalog_fetched", "catalog_fetched_url", "catalog_etag")
+    }
+
     var theme: String
         get() = ui.getString("theme", null) ?: Theme.DEFAULT.name
         set(v) = ui.edit().putString("theme", v).apply()

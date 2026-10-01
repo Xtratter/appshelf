@@ -75,6 +75,10 @@ object SaveDialog {
         val withLinks = LinkStore.mine(a).count { it.value.links.isNotEmpty() }
         item(R.string.links_export, a.resources.getQuantityString(R.plurals.links_export_sub, withLinks, withLinks)) { a.exportLinks() }
 
+        header(R.string.sec_settings)
+        item(R.string.st_save, a.getString(R.string.st_save_sub)) { SettingsDialog.save(a) }
+        item(R.string.st_restore, a.getString(R.string.st_restore_sub)) { SettingsDialog.restore(a) }
+
         header(R.string.sec_restore)
         item(R.string.open_from_file, a.getString(R.string.open_file_sub)) { a.openList() }
         if (p.davUrl.isNotEmpty()) item(R.string.open_from_server, a.getString(R.string.open_server_sub)) { SyncDialog.openFromServer(a) }

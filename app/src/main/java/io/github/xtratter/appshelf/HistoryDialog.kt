@@ -134,7 +134,7 @@ object HistoryDialog {
         val p = Prefs(a)
         val dav = Sync.dav(p)
         val folder = Sync.deviceFolder(a, p)
-        val names = dav.list(folder).filter { !it.dir && it.name.endsWith(".json", true) }.map { it.name }.sorted().takeLast(40)
+        val names = dav.list(folder).filter { !it.dir && it.name.endsWith(".json", true) && it.name != SettingsIO.DAV_FILE }.map { it.name }.sorted().takeLast(40)
         return names.mapNotNull { n -> runCatching { ListFile.read(dav.get("$folder/$n").toString(Charsets.UTF_8)) }.getOrNull() }
     }
 
@@ -147,7 +147,7 @@ object HistoryDialog {
                 val dav = Sync.dav(p)
                 val mine = Sync.deviceFolder(a, p)
                 dav.list().filter { it.dir && it.name != mine && it.name != "apk" }.mapNotNull { d ->
-                    val newest = dav.list(d.name).filter { !it.dir && it.name.endsWith(".json", true) }.maxByOrNull { it.modified }
+                    val newest = dav.list(d.name).filter { !it.dir && it.name.endsWith(".json", true) && it.name != SettingsIO.DAV_FILE }.maxByOrNull { it.modified }
                     newest?.let { d.name to it.name }
                 }
             }

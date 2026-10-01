@@ -24,6 +24,7 @@ which apps are missing and opens each one in the right store.
 - **Updates from GitHub**: for apps with a GitHub link AppShelf checks the latest release (every 6 hours) — "↑ 1.11" in the list, an "Updates" chip and "Update to …" in the app card, which downloads the APK for this phone's processor and installs it
 - **APK backups**: copies of apps you cannot get anywhere else (installed from APK files, or all apps) on the WebDAV server or in a folder; split apps are packed into one .apks; only changed versions are uploaded, optionally with every scheduled send; on a new phone "Install from the backup" (also in "Install all one by one")
 - **Select several apps** (long-press a row): uninstall them one after another, leave out of / put back into the list, share
+- **App settings backup**: save all AppShelf settings to a file or to this phone's folder on the WebDAV server (with or without the WebDAV password) and restore them — on this phone or another
 - **Notes** in the app card — why you need the app, which account, what to set up; they travel with the list and via WebDAV to a new phone, show in the list and are searchable
 - **Where to download**: your own links for each app (GitHub, Telegram, a site…) in the app card, saved with the list
   and shared by all phones via WebDAV; plus a shared [link catalog](https://github.com/Xtratter/appshelf-sources) on GitHub;

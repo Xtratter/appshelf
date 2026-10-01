@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.30 — 2026-10-01
+
+- **Save and restore the app's own settings** (Save & restore → App settings): WebDAV server and schedule, APK backups, apps left out of the list, catalog, vibration and theme — to a file on the phone or to this phone's folder on the WebDAV server (settings.json); the WebDAV password is included only if you tick it (it is then stored as plain text). Restore from a file or from the server, picking the phone; everything is applied at once and the WebDAV schedule is set up again
+
 ## 1.29.2 — 2026-10-01
 
 - The Transparency, Blur and Grain sliders are removed — the Theme window has the simple "Transparency" switch again, as in 1.28.5

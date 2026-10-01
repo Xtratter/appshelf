@@ -41,6 +41,8 @@ class MainActivity : Activity() {
         private const val REQ_OPEN = 3
         private const val REQ_LINKS = 4
         private const val REQ_APK_FOLDER = 5
+        private const val REQ_SETTINGS_SAVE = 6
+        private const val REQ_SETTINGS_OPEN = 7
     }
 
     private lateinit var prefs: Prefs
@@ -956,6 +958,40 @@ class MainActivity : Activity() {
     }
 
     /** Свои ссылки в формате каталога (sources.json) — чтобы перенести их в репозиторий каталога. */
+    // ---------- перенос настроек ----------
+
+    private var settingsWithPassword = false
+
+    /** Сохранить настройки в файл на телефоне (системный выбор места). */
+    fun saveSettingsFile(withPassword: Boolean) {
+        settingsWithPassword = withPassword
+        startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/json"
+            putExtra(Intent.EXTRA_TITLE, "AppShelf-settings-" + Apps.shortName(this@MainActivity) + ".json")
+        }, REQ_SETTINGS_SAVE)
+    }
+
+    fun openSettingsFile() {
+        startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "*/*"
+        }, REQ_SETTINGS_OPEN)
+    }
+
+    /** Применить настройки из текста: всё сразу на экране, расписание WebDAV — заново. */
+    fun importSettings(text: String) {
+        val withPass = try { SettingsIO.apply(this, text) } catch (e: Exception) {
+            Haptics.play(Haptics.Kind.ERROR)
+            Toast.makeText(this, R.string.st_bad_file, Toast.LENGTH_LONG).show(); return
+        }
+        Haptics.init(this)
+        Sync.schedule(this)
+        applyThemeInPlace {}
+        Haptics.play(Haptics.Kind.SUCCESS)
+        Toast.makeText(this, if (withPass) R.string.st_restored_pass else R.string.st_restored, Toast.LENGTH_LONG).show()
+    }
+
     fun exportLinks() {
         startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
@@ -1077,6 +1113,21 @@ class MainActivity : Activity() {
                     if (err != null) prefs.autosaveUri = ""
                     renderSummary()
                 }
+            }
+            REQ_SETTINGS_SAVE -> io.execute {
+                val err = try {
+                    contentResolver.openOutputStream(uri, "wt")!!.use { it.write(SettingsIO.write(this, settingsWithPassword).toByteArray()) }
+                    null
+                } catch (e: Exception) { e }
+                main.post {
+                    Haptics.play(if (err == null) Haptics.Kind.SUCCESS else Haptics.Kind.ERROR)
+                    Toast.makeText(this, if (err == null) getString(R.string.saved_to, fileName(uri))
+                    else getString(R.string.save_failed, err.message), Toast.LENGTH_LONG).show()
+                }
+            }
+            REQ_SETTINGS_OPEN -> io.execute {
+                val text = try { contentResolver.openInputStream(uri)!!.use { it.readBytes().toString(Charsets.UTF_8) } } catch (e: Exception) { "" }
+                main.post { importSettings(text) }
             }
             REQ_APK_FOLDER -> {
                 try {
