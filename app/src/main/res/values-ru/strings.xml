@@ -3,9 +3,6 @@
     <string name="search_apps">Поиск приложений</string>
     <string name="save_short">Сохранение</string>
     <string name="translucency">Прозрачность</string>
-    <string name="blur_level">Размытие</string>
-    <string name="grain_level">Зернистость (тест)</string>
-    <string name="off_short">выкл.</string>
     <string name="search_hint">Название или пакет</string>
     <string name="save">Сохранить список</string>
     <string name="more">Ещё</string>

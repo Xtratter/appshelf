@@ -73,7 +73,6 @@ class AppItemView(ctx: Context) : View(ctx) {
             Expressive.groupPath(groupPath, groupRect, rw.groupTop, rw.groupBottom, dp(26f), dp(6f))
             fill.color = Ui.surfaceContainer
             c.drawPath(groupPath, fill)
-            Ui.grainPaint()?.let { c.drawPath(groupPath, it) }
             if (rw.selected) { fill.color = Ui.withAlpha(Ui.primary, 0.22f); c.drawPath(groupPath, fill) }
         } else {
             glass.draw(c)

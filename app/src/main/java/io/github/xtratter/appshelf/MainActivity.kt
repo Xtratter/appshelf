@@ -1213,12 +1213,6 @@ class MainActivity : Activity() {
         val tint = android.content.res.ColorStateList.valueOf(Ui.primary)
         fun recolor() {
             dialog.window?.setBackgroundDrawable(GlassDrawable(this, 28f, Ui.dialogBlur))
-            // размытие позади окна — по новому значению
-            if (Build.VERSION.SDK_INT >= 31) dialog.window?.let { w ->
-                if (Ui.blurScale > 0f) w.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                else w.clearFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-                w.attributes = w.attributes.apply { blurBehindRadius = dp(10f * Ui.blurScale) }
-            }
             listOf(AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL)
                 .forEach { dialog.getButton(it)?.setTextColor(Ui.primary) }
             fillThemeBox(dialog, box)
@@ -1244,17 +1238,29 @@ class MainActivity : Activity() {
         // прозрачность всего интерфейса — отдельно от цветов темы
         box.addView(View(this).apply { setBackgroundColor(Ui.ink(0x22)) },
             LinearLayout.LayoutParams(-1, dp(1f)).apply { topMargin = dp(8f); bottomMargin = dp(4f) })
-        // прозрачность, размытие и зернистость — ползунками; применяется, когда отпускаешь
-        fun pct(v: Int) = if (v == 0) getString(R.string.off_short) else "$v %"
-        box.addView(Slider.row(this, getString(R.string.translucency), 60, prefs.alphaPct, ::pct) { v ->
-            applyThemeInPlace { prefs.alphaPct = v }; recolor()
-        })
-        box.addView(Slider.row(this, getString(R.string.blur_level), 100, prefs.blurPct, ::pct) { v ->
-            applyThemeInPlace { prefs.blurPct = v }; recolor()
-        })
-        box.addView(Slider.row(this, getString(R.string.grain_level), 100, prefs.grainPct, ::pct) { v ->
-            applyThemeInPlace { prefs.grainPct = v }; recolor()
-        }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(8f) })
+        box.addView(LinearLayout(this).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = dp(52f)
+            background = Ui.ripple(this@MainActivity, 16f)
+            addView(TextView(this@MainActivity).apply {
+                setText(R.string.translucency); textSize = 16f; setTextColor(Ui.TEXT)
+            }, LinearLayout.LayoutParams(0, -2, 1f))
+            val sw = android.widget.Switch(this@MainActivity).apply {
+                isChecked = prefs.translucent
+                isClickable = false
+                thumbTintList = android.content.res.ColorStateList(
+                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()), intArrayOf(Ui.primary, Ui.TEXT3))
+                trackTintList = android.content.res.ColorStateList(
+                    arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()), intArrayOf(Ui.withAlpha(Ui.primary, 0.5f), Ui.ink(0x33)))
+            }
+            addView(sw)
+            setOnClickListener {
+                sw.isChecked = !sw.isChecked
+                Haptics.play(Haptics.Kind.TICK)
+                applyThemeInPlace { prefs.translucent = sw.isChecked }
+                recolor()
+            }
+        }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6f) })
     }
 
     /** Вибрация: сила отклика или «Выключена»; при выборе сразу проигрывается пример. */

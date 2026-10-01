@@ -29,18 +29,9 @@ class Prefs(ctx: Context) {
     var apkAuto by bool("apk_auto", false)
 
     /** Прозрачность интерфейса (тональные поверхности слегка прозрачны). */
-    /** Прозрачность поверхностей, % (0 — непрозрачные); прежняя галочка «выключено» = 0. */
-    var alphaPct: Int
-        get() = ui.getInt("alpha_pct", if (ui.getBoolean("translucent", true)) 20 else 0)
-        set(v) = ui.edit().putInt("alpha_pct", v).apply()
-    /** Размытие фона за окнами и мягких краёв, % (50 — как было). */
-    var blurPct: Int
-        get() = ui.getInt("blur_pct", 50)
-        set(v) = ui.edit().putInt("blur_pct", v).apply()
-    /** Зернистость фона и поверхностей, % (тест). */
-    var grainPct: Int
-        get() = ui.getInt("grain_pct", 0)
-        set(v) = ui.edit().putInt("grain_pct", v).apply()
+    var translucent: Boolean
+        get() = ui.getBoolean("translucent", true)
+        set(v) = ui.edit().putBoolean("translucent", v).apply()
 
     /** Сила отклика вибрацией ([Haptics.Level]). */
     var haptics by str("haptics", Haptics.Level.MEDIUM.name)

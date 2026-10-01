@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.29.2 — 2026-10-01
+
+- The Transparency, Blur and Grain sliders are removed — the Theme window has the simple "Transparency" switch again, as in 1.28.5
+
 ## 1.29.1 — 2026-10-01
 
 - Fixed a crash when letting go of the Blur, Transparency or Grain slider in the Theme window
