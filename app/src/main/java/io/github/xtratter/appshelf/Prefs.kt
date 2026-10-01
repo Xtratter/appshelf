@@ -1,5 +1,6 @@
 package io.github.xtratter.appshelf
 
+import io.github.xtratter.uikit.Haptics
 import android.content.Context
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty

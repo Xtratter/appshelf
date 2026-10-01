@@ -1,5 +1,7 @@
 package io.github.xtratter.appshelf
 
+import io.github.xtratter.uikit.Haptics
+import io.github.xtratter.uikit.Help
 import android.app.AlertDialog
 import android.view.Gravity
 import android.view.View

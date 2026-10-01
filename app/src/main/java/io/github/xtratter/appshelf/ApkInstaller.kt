@@ -1,5 +1,6 @@
 package io.github.xtratter.appshelf
 
+import io.github.xtratter.uikit.Haptics
 import android.app.AlertDialog
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -269,7 +270,7 @@ class InstallReceiver : BroadcastReceiver() {
 
     override fun onReceive(ctx: Context, intent: Intent) {
         val removed = intent.getStringExtra(EXTRA_REMOVED)
-        Haptics.init(ctx)
+        Kit.init(ctx)
         when (intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
                 val confirm = if (Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)

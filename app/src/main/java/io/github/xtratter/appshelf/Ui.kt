@@ -1,5 +1,7 @@
 package io.github.xtratter.appshelf
 
+import io.github.xtratter.uikit.EdgeBlur
+import io.github.xtratter.uikit.Haptics
 import android.app.AlertDialog
 import android.content.Context
 import android.content.res.ColorStateList

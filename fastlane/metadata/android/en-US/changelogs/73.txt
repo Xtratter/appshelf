@@ -1,0 +1,1 @@
+Internal: soft edges, vibration and help moved to the shared android-ui-kit; no visible changes.

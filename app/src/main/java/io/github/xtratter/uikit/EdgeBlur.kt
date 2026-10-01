@@ -1,4 +1,5 @@
-package io.github.xtratter.appshelf
+// Copied from github.com/Xtratter/android-ui-kit (v1.0) — edit there and re-run install.sh
+package io.github.xtratter.uikit
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -18,9 +19,13 @@ import android.widget.FrameLayout
 import android.widget.ScrollView
 
 /**
- * Мягкие края, как в Telegram: содержимое прокрутки у верхнего и нижнего края плавно размывается (сильнее к краю)
- * и растворяется в фоне. Размытие рисует сам контейнер в том же кадре, что и содержимое, — поэтому при любой
- * скорости прокрутки ничего не отстаёт и не «съезжает». Android 12+; ниже — только растворение.
+ * Soft edges like in Telegram: scrolling content near the top and bottom edges is progressively blurred (stronger
+ * towards the edge) and fades into the background. The container draws the blur itself in the same frame as the
+ * content, so nothing lags behind at any scroll speed. Android 12+; below that — only the fade.
+ *
+ * Usage: `EdgeBlur.wrap(listView, bandDp = 56f, fadeTop = bgColor)` — replaces the view in its parent with a
+ * wrapper; `alwaysTop`/`alwaysBottom` keep the bands even when there is nothing to scroll, `dissolve` makes the
+ * edges transparent (for dialogs), `topBand`/`bottomBand` (px) can be changed later, e.g. from window insets.
  */
 @SuppressLint("ViewConstructor")
 class EdgeBlur(ctx: Context, private val fadeTop: Int, private val fadeBottom: Int) : FrameLayout(ctx),

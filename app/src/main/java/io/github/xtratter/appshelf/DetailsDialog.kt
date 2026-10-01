@@ -1,5 +1,6 @@
 package io.github.xtratter.appshelf
 
+import io.github.xtratter.uikit.Help
 import android.app.AlertDialog
 import android.content.ClipData
 import android.content.ClipboardManager

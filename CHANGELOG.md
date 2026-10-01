@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.33.2 — 2026-10-01
+
+- Soft edges, vibration and long-press help now come from the shared [android-ui-kit](https://github.com/Xtratter/android-ui-kit) (also used by DroidTop); nothing changes in how they work
+
 ## 1.33.1 — 2026-10-01
 
 - F-Droid metadata (fastlane): up-to-date description of all features in English and Russian

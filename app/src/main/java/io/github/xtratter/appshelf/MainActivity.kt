@@ -1,5 +1,8 @@
 package io.github.xtratter.appshelf
 
+import io.github.xtratter.uikit.EdgeBlur
+import io.github.xtratter.uikit.Haptics
+import io.github.xtratter.uikit.Help
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
@@ -93,7 +96,7 @@ class MainActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         prefs = Prefs(this)
-        Haptics.init(this)
+        Kit.init(this)
         // тема может смениться и без нас: «как в системе» при переключении тёмного режима
         if (!Ui.isCurrent(this, prefs.theme())) Ui.apply(this, prefs.theme())
         setTheme(if (Ui.light) R.style.AppTheme_Light else R.style.AppTheme)
@@ -1004,7 +1007,7 @@ class MainActivity : Activity() {
             Haptics.play(Haptics.Kind.ERROR)
             Toast.makeText(this, R.string.st_bad_file, Toast.LENGTH_LONG).show(); return
         }
-        Haptics.init(this)
+        Kit.init(this)
         Sync.schedule(this)
         applyThemeInPlace {}
         Haptics.play(Haptics.Kind.SUCCESS)
@@ -1352,7 +1355,7 @@ class MainActivity : Activity() {
             isChecked = l == Haptics.level()
             isEnabled = Haptics.available() || l == Haptics.Level.OFF
             setOnClickListener {
-                Haptics.setLevel(this@MainActivity, l)
+                Haptics.setLevel(l)
                 // пример: щелчок и «открытие окна»
                 Haptics.play(Haptics.Kind.TAP)
                 main.postDelayed({ Haptics.play(Haptics.Kind.OPEN) }, 220)
@@ -1385,7 +1388,7 @@ class MainActivity : Activity() {
                 isEnabled = ok
                 isChecked = e == Haptics.engineChoice()
                 setOnClickListener {
-                    Haptics.setEngine(this@MainActivity, e)
+                    Haptics.setEngine(e)
                     explain()
                     Haptics.play(Haptics.Kind.TAP)
                     main.postDelayed({ Haptics.play(Haptics.Kind.OPEN) }, 220)

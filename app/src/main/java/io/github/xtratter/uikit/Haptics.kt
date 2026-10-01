@@ -1,57 +1,68 @@
-package io.github.xtratter.appshelf
+// Copied from github.com/Xtratter/android-ui-kit (v1.0) — edit there and re-run install.sh
+package io.github.xtratter.uikit
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 
 /**
- * Отклик вибрацией, как Taptic Engine: короткие чёткие щелчки разного характера для разных действий.
- * Сила — в настройке (меню ⋮ → «Вибрация»), «Выключена» — никакой вибрации.
- * Сначала — готовые эффекты производителя (они настроены под мотор: у линейного мотора это чёткий «стук»),
- * иначе — «примитивы» Android 11+ с управляемой силой, иначе — короткий импульс нужной силы.
+ * Haptic feedback like a Taptic Engine: short crisp clicks of different character for different actions.
+ * Strength levels (OFF…STRONG) and the method are stored in the given SharedPreferences.
+ * Methods: Android 11+ primitives (adjustable strength), the vendor's predefined effects (tuned for the motor),
+ * or a short one-shot pulse; AUTO picks the best one the phone supports.
+ *
+ * Usage: `Haptics.init(context, prefs)` once (e.g. in onCreate), then `Haptics.play(Haptics.Kind.TAP)`,
+ * `Haptics.onClick(button)` or `Haptics.attachAll(dialogRoot)`.
  */
 object Haptics {
-    /** Уровни силы: 0 — выключено. */
-    enum class Level(val title: Int, val scale: Float) {
-        OFF(R.string.hap_off, 0f),
-        LIGHT(R.string.hap_light, 0.4f),
-        MEDIUM(R.string.hap_medium, 0.7f),
-        STRONG(R.string.hap_strong, 1f),
-    }
+    /** Strength levels; OFF — no vibration at all. */
+    enum class Level(val scale: Float) { OFF(0f), LIGHT(0.4f), MEDIUM(0.7f), STRONG(1f) }
 
     enum class Kind { TAP, TICK, OPEN, CLOSE, SUCCESS, ERROR }
 
-    /** Способ вибрации: авто — примитивы (настраиваемая сила), иначе эффекты производителя, иначе импульс. */
-    enum class Engine(val title: Int) {
-        AUTO(R.string.hap_eng_auto), EFFECTS(R.string.hap_eng_effects), PRIMITIVES(R.string.hap_eng_primitives),
-        SIMPLE(R.string.hap_eng_simple)
-    }
+    /** AUTO — primitives if supported, else predefined effects, else a pulse. */
+    enum class Engine { AUTO, EFFECTS, PRIMITIVES, SIMPLE }
 
-    private var engine = Engine.AUTO
+    /** Preference keys (strings with enum names). */
+    var levelKey = "haptics"
+    var engineKey = "haptics_engine"
+    var defaultLevel = Level.MEDIUM
 
+    /** Called on every touch of views set up by [onClick] — e.g. for a press animation. */
+    var onTouch: ((View, MotionEvent) -> Unit)? = null
+
+    private var prefs: SharedPreferences? = null
     private var vibrator: Vibrator? = null
     private var level = Level.MEDIUM
+    private var engine = Engine.AUTO
 
-    fun init(ctx: Context) {
+    fun init(ctx: Context, prefs: SharedPreferences) {
         val app = ctx.applicationContext
+        this.prefs = prefs
         vibrator = if (Build.VERSION.SDK_INT >= 31) app.getSystemService(VibratorManager::class.java)?.defaultVibrator
         else @Suppress("DEPRECATION") app.getSystemService(Vibrator::class.java)
-        level = Prefs(app).haptics()
-        engine = runCatching { Engine.valueOf(Prefs(app).hapticsEngine) }.getOrDefault(Engine.AUTO)
+        level = runCatching { Level.valueOf(prefs.getString(levelKey, null)!!) }.getOrDefault(defaultLevel)
+        engine = runCatching { Engine.valueOf(prefs.getString(engineKey, null)!!) }.getOrDefault(Engine.AUTO)
     }
 
+    fun level() = level
+    fun setLevel(l: Level) { level = l; prefs?.edit()?.putString(levelKey, l.name)?.apply() }
     fun engineChoice() = engine
+    fun setEngine(e: Engine) { engine = e; prefs?.edit()?.putString(engineKey, e.name)?.apply() }
 
-    fun setEngine(ctx: Context, e: Engine) {
-        Prefs(ctx).hapticsEngine = e.name
-        engine = e
-    }
+    /** The phone has a vibration motor. */
+    fun available() = vibrator?.hasVibrator() == true
 
-    /** Поддерживает ли телефон способ [e] (для пометок в настройке). */
+    /** Amplitude control — the level then changes the strength of a simple pulse. */
+    fun amplitude() = vibrator?.hasAmplitudeControl() == true
+
+    /** Whether the phone supports method [e]. */
     fun supports(e: Engine): Boolean {
         val v = vibrator ?: return false
         if (!v.hasVibrator()) return false
@@ -62,20 +73,7 @@ object Haptics {
         }
     }
 
-    private fun primitivesSupported(v: Vibrator) = Build.VERSION.SDK_INT >= 30 &&
-        v.areAllPrimitivesSupported(VibrationEffect.Composition.PRIMITIVE_CLICK, VibrationEffect.Composition.PRIMITIVE_TICK)
-
-    fun setLevel(ctx: Context, l: Level) {
-        Prefs(ctx).haptics = l.name
-        level = l
-    }
-
-    fun level() = level
-
-    /** Есть ли в телефоне вибромотор. */
-    fun available() = vibrator?.hasVibrator() == true
-
-    /** Каким способом на деле вибрирует телефон при выбранном [engine] (для «Авто» — лучший из поддерживаемых). */
+    /** The method actually used for the chosen [engine] (for AUTO — the best supported one). */
     fun effective(): Engine {
         val v = vibrator ?: return Engine.SIMPLE
         return when (engine) {
@@ -86,13 +84,12 @@ object Haptics {
         }
     }
 
-    /** Можно ли менять силу импульса (амплитуду) — тогда у простого импульса уровень меняет силу. */
-    fun amplitude() = vibrator?.hasAmplitudeControl() == true
+    private fun primitivesSupported(v: Vibrator) = Build.VERSION.SDK_INT >= 30 &&
+        v.areAllPrimitivesSupported(VibrationEffect.Composition.PRIMITIVE_CLICK, VibrationEffect.Composition.PRIMITIVE_TICK)
 
     /**
-     * Готовые эффекты производителя звучат с одной силой, заданной прошивкой, поэтому для них уровень меняет,
-     * на что откликается вибрация: лёгкая — только окна, успех и ошибки; средняя — плюс кнопки; сильная — плюс
-     * чипы, галочки и ползунок, а открытие окна — двойным щелчком.
+     * Predefined effects have one firmware-defined strength, so for them the level changes what vibrates:
+     * light — only windows, success and errors; medium — plus buttons; strong — plus ticks, double click on open.
      */
     private fun effectsAllow(kind: Kind) = when (level) {
         Level.OFF -> false
@@ -112,11 +109,10 @@ object Haptics {
                 else -> simple(v, kind, s)
             })
         } catch (e: Exception) {
-            // вибрация — не главное: не получилось, и ладно
+            // vibration is not essential
         }
     }
 
-    /** Чёткие примитивы (Android 11+), если телефон умеет все нужные. */
     private fun composed(v: Vibrator, kind: Kind, s: Float): VibrationEffect? {
         if (!primitivesSupported(v)) return null
         val C = VibrationEffect.Composition.PRIMITIVE_CLICK
@@ -124,7 +120,7 @@ object Haptics {
         val rise = if (Build.VERSION.SDK_INT >= 31) VibrationEffect.Composition.PRIMITIVE_QUICK_RISE else C
         val fall = if (Build.VERSION.SDK_INT >= 31) VibrationEffect.Composition.PRIMITIVE_QUICK_FALL else T
         val thud = if (Build.VERSION.SDK_INT >= 31) VibrationEffect.Composition.PRIMITIVE_THUD else C
-        val parts: List<Triple<Int, Float, Int>> = when (kind) {   // примитив, сила, пауза перед ним (мс)
+        val parts: List<Triple<Int, Float, Int>> = when (kind) {   // primitive, scale, delay before it (ms)
             Kind.TAP -> listOf(Triple(C, s, 0))
             Kind.TICK -> listOf(Triple(T, s, 0))
             Kind.OPEN -> listOf(Triple(rise, s * 0.8f, 0), Triple(C, s * 0.6f, 20))
@@ -141,27 +137,19 @@ object Haptics {
     private val PREDEFINED = intArrayOf(VibrationEffect.EFFECT_TICK, VibrationEffect.EFFECT_CLICK,
         VibrationEffect.EFFECT_HEAVY_CLICK, VibrationEffect.EFFECT_DOUBLE_CLICK)
 
-    /** Телефон умеет готовые эффекты производителя (настроены под его мотор — чёткий «стук» у линейного мотора). */
     private fun predefinedSupported(v: Vibrator) = Build.VERSION.SDK_INT >= 30 &&
         v.areAllEffectsSupported(*PREDEFINED) == Vibrator.VIBRATION_EFFECT_SUPPORT_YES
 
-    /**
-     * Готовые эффекты производителя: чёткий стук, но силу задаёт прошивка (у разных телефонов «тяжёлый» бывает
-     * даже слабее обычного) — поэтому уровень силы на них не влияет, только «Выключена».
-     */
     private fun predefined(v: Vibrator, kind: Kind): VibrationEffect? {
         if (!predefinedSupported(v)) return null
         return VibrationEffect.createPredefined(when (kind) {
             Kind.TAP -> VibrationEffect.EFFECT_CLICK
             Kind.OPEN -> if (level == Level.STRONG) VibrationEffect.EFFECT_DOUBLE_CLICK else VibrationEffect.EFFECT_CLICK
             Kind.TICK, Kind.CLOSE -> VibrationEffect.EFFECT_TICK
-            Kind.SUCCESS -> VibrationEffect.EFFECT_DOUBLE_CLICK
-            Kind.ERROR -> VibrationEffect.EFFECT_DOUBLE_CLICK
+            Kind.SUCCESS, Kind.ERROR -> VibrationEffect.EFFECT_DOUBLE_CLICK
         })
     }
 
-
-    /** Короткий импульс нужной силы (где нет ни примитивов, ни готовых эффектов). */
     private fun simple(v: Vibrator, kind: Kind, s: Float): VibrationEffect {
         val amp = if (v.hasAmplitudeControl()) (s * 255).toInt().coerceIn(1, 255) else VibrationEffect.DEFAULT_AMPLITUDE
         return when (kind) {
@@ -175,20 +163,20 @@ object Haptics {
     }
 
     /**
-     * Щелчок при нажатии на [v] — в момент, когда палец отпускает кнопку (как само нажатие);
-     * если начали прокручивать, щелчка нет. Касание не перехватывается.
+     * A click when [v] is tapped — at the moment the finger lifts inside the view; no click if a scroll started.
+     * The touch is not consumed.
      */
     @android.annotation.SuppressLint("ClickableViewAccessibility")
     fun onClick(v: View, kind: Kind = Kind.TAP) {
         v.setOnTouchListener { view, e ->
-            if (Ui.EXPRESSIVE) Expressive.morph(view, e)
-            if (e.actionMasked == android.view.MotionEvent.ACTION_UP && view.isPressed &&
+            onTouch?.invoke(view, e)
+            if (e.actionMasked == MotionEvent.ACTION_UP && view.isPressed &&
                 e.x >= 0 && e.y >= 0 && e.x <= view.width && e.y <= view.height) play(kind)
             false
         }
     }
 
-    /** Щелчки для всех нажимаемых элементов внутри [root] (окна): кнопки — щелчок, галочки и переключатели — тик. */
+    /** Clicks for every clickable view inside [root]: buttons — TAP, checkboxes and switches — TICK. */
     fun attachAll(root: View) {
         if (root.isClickable && root !is ViewGroup || (root is ViewGroup && root.isClickable && root.hasOnClickListeners()))
             onClick(root, if (root is android.widget.CompoundButton) Kind.TICK else Kind.TAP)
