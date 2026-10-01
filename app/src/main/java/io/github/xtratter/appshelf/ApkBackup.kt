@@ -112,6 +112,7 @@ object ApkBackup {
                 packed?.delete()
             }
         }
+        if (saved + skipped > 0) { p.apkLast = System.currentTimeMillis(); p.apkLastCount = saved + skipped }
         return Result(saved, skipped, failed, lastError)
     }
 

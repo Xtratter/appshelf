@@ -1,14 +1,19 @@
 package io.github.xtratter.appshelf
 
 import android.app.AlertDialog
+import android.view.Gravity
+import android.view.View
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
- * «Сохранение и восстановление» — единственная точка входа: все способы сохранить список
- * (файл, «Поделиться», автосохранение, WebDAV, выбор приложений, ссылки для каталога) и открыть сохранённый
- * (из файла или с сервера). У каждого пункта видно его состояние.
+ * «Сохранение и восстановление»: сверху — что защищено и когда, затем две большие кнопки «Сохранить» и
+ * «Восстановить» (каждая — свой выбор), ниже — сворачиваемые «Автоматика» и «Что сохранять».
  */
 object SaveDialog {
     fun show(a: MainActivity) {
@@ -16,6 +21,8 @@ object SaveDialog {
         val p = Prefs(a)
         val dp = a.resources.displayMetrics.density
         fun px(v: Float) = (v * dp).toInt()
+        val fmt = SimpleDateFormat("d MMM, HH:mm", Locale.getDefault())
+        fun whenText(ms: Long) = if (ms > 0) fmt.format(Date(ms)) else ""
 
         val box = LinearLayout(a).apply {
             orientation = LinearLayout.VERTICAL
@@ -23,20 +30,58 @@ object SaveDialog {
         }
         box.addView(TextView(a).apply {
             setText(R.string.save_restore); textSize = 20f; typeface = Ui.medium; setTextColor(Ui.TEXT)
-            setPadding(px(4f), 0, 0, px(4f))
-        })
-        fun header(text: Int) = box.addView(TextView(a).apply {
-            setText(text); textSize = 14f; typeface = Ui.medium; setTextColor(Ui.primary)
-            setPadding(px(4f), px(12f), 0, px(8f))
+            setPadding(px(4f), 0, 0, px(12f))
         })
         val dialog = AlertDialog.Builder(a)
             .setView(ScrollView(a).apply { addView(box) })
             .setNegativeButton(R.string.close, null)
             .create()
 
-        /** Пункт: название и строка состояния под ним; [on] — функция включена (галочка и цвет). */
-        fun item(title: Int, sub: String, on: Boolean = false, warn: Boolean = false, action: () -> Unit) {
-            box.addView(LinearLayout(a).apply {
+        // ---------- что защищено ----------
+        val status = LinearLayout(a).apply {
+            orientation = LinearLayout.VERTICAL
+            background = GlassDrawable(a, 22f)
+            setPadding(px(16f), px(12f), px(16f), px(12f))
+        }
+        fun statusLine(ok: Boolean, text: String) = status.addView(TextView(a).apply {
+            this.text = (if (ok) "✓  " else "○  ") + text
+            textSize = 14f; setLineSpacing(0f, 1.1f)
+            setTextColor(if (ok) Ui.TEXT else Ui.TEXT3)
+            setPadding(0, px(3f), 0, px(3f))
+        })
+        statusLine(p.lastSaved > 0, if (p.lastSaved > 0) a.getString(R.string.sv_list_ok, whenText(p.lastSaved), p.lastSavedName)
+            else a.getString(R.string.sv_list_none))
+        val apkOn = ApkBackup.dest(p) != null
+        statusLine(p.apkLast > 0, when {
+            p.apkLast > 0 -> a.getString(R.string.sv_apk_ok, p.apkLastCount, whenText(p.apkLast))
+            apkOn -> a.getString(R.string.sv_apk_never)
+            else -> a.getString(R.string.sv_apk_off)
+        })
+        statusLine(p.settingsSaved > 0, if (p.settingsSaved > 0) a.getString(R.string.sv_settings_ok, whenText(p.settingsSaved))
+            else a.getString(R.string.sv_settings_none))
+        a.syncLine()?.takeIf { it.second }?.let { (line, _) ->
+            status.addView(TextView(a).apply { text = line; textSize = 13f; setTextColor(Ui.WARN); setPadding(0, px(4f), 0, 0) })
+        }
+        box.addView(status)
+
+        // ---------- две большие кнопки ----------
+        fun big(text: Int, filled: Boolean, action: () -> Unit) = TextView(a).apply {
+            setText(text); textSize = 16f; typeface = Ui.medium; gravity = Gravity.CENTER
+            setTextColor(if (filled) Ui.ON_ACCENT else Ui.primary)
+            background = if (filled) Ui.pill(a, Ui.primary) else Ui.pill(a, Ui.withAlpha(Ui.primary, 0.14f), Ui.withAlpha(Ui.primary, 0.35f))
+            foreground = Ui.ripple(a, 100f)
+            setOnClickListener { dialog.dismiss(); action() }
+            Haptics.onClick(this)
+        }
+        val row = LinearLayout(a).apply { isBaselineAligned = false; setPadding(0, px(14f), 0, px(6f)) }
+        row.addView(big(R.string.sv_save, true) { saveMenu(a) }, LinearLayout.LayoutParams(0, px(Ui.buttonDp), 1f))
+        row.addView(big(R.string.sv_restore, false) { restoreMenu(a) },
+            LinearLayout.LayoutParams(0, px(Ui.buttonDp), 1f).apply { leftMargin = px(10f) })
+        box.addView(row)
+
+        // ---------- сворачиваемые блоки ----------
+        fun item(parent: LinearLayout, title: Int, sub: String, on: Boolean = false, warn: Boolean = false, action: () -> Unit) {
+            parent.addView(LinearLayout(a).apply {
                 orientation = LinearLayout.VERTICAL
                 background = GlassDrawable(a, 18f)
                 foreground = Ui.ripple(a, 18f)
@@ -53,38 +98,83 @@ object SaveDialog {
                 setOnClickListener { dialog.dismiss(); action() }
             }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = px(8f) })
         }
-
-        header(R.string.sec_save)
-        item(R.string.save_file, a.getString(R.string.save_file_sub)) { a.saveToFile() }
-        item(R.string.share_list, a.getString(R.string.share_sub)) { a.share() }
-        val auto = a.autosaveName()
-        item(R.string.autosave, auto?.let { a.getString(R.string.autosave_sub_on, it) } ?: a.getString(R.string.autosave_sub_off),
-            on = auto != null) { a.autosaveDialog() }
-        val sync = a.syncLine()
-        item(R.string.dav_title, when {
-            sync != null -> sync.first.removePrefix("WebDAV: ")
-            p.davUrl.isNotEmpty() -> a.getString(R.string.dav_sub_manual)
-            else -> a.getString(R.string.dav_sub_off)
-        }, on = sync != null && !sync.second, warn = sync?.second == true) { SyncDialog.show(a) }
-        item(R.string.select_title, a.getString(R.string.select_sub, included, total)) { a.selectApps { show(a) } }
-        item(R.string.bk_title, when (ApkBackup.dest(p)) {
-            ApkBackup.Dest.WEBDAV -> a.getString(R.string.bk_sub_webdav)
-            ApkBackup.Dest.FOLDER -> a.getString(R.string.bk_sub_folder)
-            null -> a.getString(R.string.bk_sub_off)
-        }, on = ApkBackup.dest(p) != null) { ApkBackupDialog.show(a) }
-        val withLinks = LinkStore.mine(a).count { it.value.links.isNotEmpty() }
-        item(R.string.links_export, a.resources.getQuantityString(R.plurals.links_export_sub, withLinks, withLinks)) { a.exportLinks() }
-
-        header(R.string.sec_settings)
-        item(R.string.st_save, a.getString(R.string.st_save_sub)) { SettingsDialog.save(a) }
-        item(R.string.st_restore, a.getString(R.string.st_restore_sub)) { SettingsDialog.restore(a) }
-
-        header(R.string.sec_restore)
-        item(R.string.open_from_file, a.getString(R.string.open_file_sub)) { a.openList() }
-        if (p.davUrl.isNotEmpty()) item(R.string.open_from_server, a.getString(R.string.open_server_sub)) { SyncDialog.openFromServer(a) }
-        else item(R.string.open_from_server, a.getString(R.string.open_server_off)) { SyncDialog.show(a) }
+        fun section(title: Int, open: Boolean, fill: (LinearLayout) -> Unit) {
+            val body = LinearLayout(a).apply { orientation = LinearLayout.VERTICAL; visibility = if (open) View.VISIBLE else View.GONE }
+            val head = TextView(a).apply {
+                textSize = 14f; typeface = Ui.medium; setTextColor(Ui.primary)
+                setPadding(px(4f), px(14f), 0, px(8f))
+                fun label() { text = (if (body.visibility == View.VISIBLE) "▾  " else "▸  ") + a.getString(title) }
+                label()
+                setOnClickListener {
+                    body.visibility = if (body.visibility == View.VISIBLE) View.GONE else View.VISIBLE
+                    label(); Haptics.play(Haptics.Kind.TICK)
+                }
+            }
+            box.addView(head); box.addView(body)
+            fill(body)
+        }
+        section(R.string.sv_auto, false) { b ->
+            val sync = a.syncLine()
+            item(b, R.string.dav_title, when {
+                sync != null -> sync.first.removePrefix("WebDAV: ")
+                p.davUrl.isNotEmpty() -> a.getString(R.string.dav_sub_manual)
+                else -> a.getString(R.string.dav_sub_off)
+            }, on = sync != null && !sync.second, warn = sync?.second == true) { SyncDialog.show(a) }
+            val auto = a.autosaveName()
+            item(b, R.string.autosave, auto?.let { a.getString(R.string.autosave_sub_on, it) } ?: a.getString(R.string.autosave_sub_off),
+                on = auto != null) { a.autosaveDialog() }
+            item(b, R.string.bk_title, when (ApkBackup.dest(p)) {
+                ApkBackup.Dest.WEBDAV -> a.getString(R.string.bk_sub_webdav)
+                ApkBackup.Dest.FOLDER -> a.getString(R.string.bk_sub_folder)
+                null -> a.getString(R.string.bk_sub_off)
+            }, on = apkOn) { ApkBackupDialog.show(a) }
+        }
+        section(R.string.sv_what, false) { b ->
+            item(b, R.string.select_title, a.getString(R.string.select_sub, included, total)) { a.selectApps { show(a) } }
+        }
 
         dialog.show()
         Ui.glassDialog(dialog)
+    }
+
+    /** «Сохранить»: что и куда — разовые действия. */
+    private fun saveMenu(a: MainActivity) {
+        val p = Prefs(a)
+        val items = ArrayList<Pair<String, () -> Unit>>()
+        items += a.getString(R.string.sv_m_file) to { a.saveToFile() }
+        items += a.getString(R.string.sv_m_share) to { a.share() }
+        if (p.davUrl.isNotEmpty()) items += a.getString(R.string.sv_m_server) to {
+            Toast.makeText(a, R.string.dav_connecting, Toast.LENGTH_SHORT).show()
+            Thread {
+                val r = Sync.run(a)
+                a.runOnUiThread {
+                    Haptics.play(if (r.ok) Haptics.Kind.SUCCESS else Haptics.Kind.ERROR)
+                    Toast.makeText(a, if (r.ok) a.getString(R.string.sv_sent, r.message) else r.message, Toast.LENGTH_LONG).show()
+                    a.refreshSummary()
+                }
+            }.start()
+        }
+        if (ApkBackup.dest(p) != null) items += a.getString(R.string.sv_m_apk) to { ApkBackupDialog.runNow(a) }
+        items += a.getString(R.string.sv_m_settings) to { SettingsDialog.save(a) }
+        val withLinks = LinkStore.mine(a).count { it.value.links.isNotEmpty() }
+        if (withLinks > 0) items += a.getString(R.string.links_export) to { a.exportLinks() }
+        menu(a, R.string.sv_save, items)
+    }
+
+    /** «Восстановить»: список или настройки — из файла или с сервера. */
+    private fun restoreMenu(a: MainActivity) {
+        val p = Prefs(a)
+        val items = ArrayList<Pair<String, () -> Unit>>()
+        items += a.getString(R.string.sv_r_list_file) to { a.openList() }
+        if (p.davUrl.isNotEmpty()) items += a.getString(R.string.sv_r_list_server) to { SyncDialog.openFromServer(a) }
+        items += a.getString(R.string.sv_r_settings) to { SettingsDialog.restore(a) }
+        menu(a, R.string.sv_restore, items)
+    }
+
+    private fun menu(a: MainActivity, title: Int, items: List<Pair<String, () -> Unit>>) {
+        AlertDialog.Builder(a).setTitle(title)
+            .setItems(items.map { it.first }.toTypedArray()) { _, i -> items[i].second() }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show().also { Ui.glassDialog(it) }
     }
 }

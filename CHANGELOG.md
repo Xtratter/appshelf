@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.31 — 2026-10-01
+
+- **Save & restore reorganized**: at the top a "what is protected" card — when and where the app list was last saved, how many APK backups there are and when, whether the app settings were saved; then two big buttons **Save** (list to a file, share, send to the server now, APK backups now, app settings, links for the catalog) and **Restore** (list from a file or the server, app settings); below, collapsible **Automation** (WebDAV, autosave, APK backups) and **What to save** (apps in the list)
+
 ## 1.30 — 2026-10-01
 
 - **Save and restore the app's own settings** (Save & restore → App settings): WebDAV server and schedule, APK backups, apps left out of the list, catalog, vibration and theme — to a file on the phone or to this phone's folder on the WebDAV server (settings.json); the WebDAV password is included only if you tick it (it is then stored as plain text). Restore from a file or from the server, picking the phone; everything is applied at once and the WebDAV schedule is set up again

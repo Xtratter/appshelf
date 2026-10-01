@@ -1120,6 +1120,7 @@ class MainActivity : Activity() {
                     null
                 } catch (e: Exception) { e }
                 main.post {
+                    if (err == null) prefs.settingsSaved = System.currentTimeMillis()
                     Haptics.play(if (err == null) Haptics.Kind.SUCCESS else Haptics.Kind.ERROR)
                     Toast.makeText(this, if (err == null) getString(R.string.saved_to, fileName(uri))
                     else getString(R.string.save_failed, err.message), Toast.LENGTH_LONG).show()

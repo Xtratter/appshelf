@@ -42,7 +42,7 @@ class Prefs(ctx: Context) {
         /** Не переносятся: пароль (по отдельному выбору), файлы этого телефона, служебные отметки. */
         val NOT_EXPORTED = setOf("dav_pass", "autosave_uri", "apk_folder_uri", "last_saved", "last_saved_name",
             "sync_next", "sync_last", "sync_ok", "sync_msg", "sync_pending", "links_dirty", "links_synced",
-            "catalog_fetched", "catalog_fetched_url", "catalog_etag")
+            "catalog_fetched", "catalog_fetched_url", "catalog_etag", "apk_last", "apk_last_count", "settings_saved")
     }
 
     var theme: String
@@ -82,6 +82,11 @@ class Prefs(ctx: Context) {
     /** Когда список последний раз сохранялся (любым способом) и куда. */
     var lastSaved by long("last_saved", 0L)
     var lastSavedName by str("last_saved_name", "")
+    /** Последние копии APK: когда и сколько приложений сохранено (вместе с уже сохранёнными ранее). */
+    var apkLast by long("apk_last", 0L)
+    var apkLastCount by int("apk_last_count", 0)
+    /** Когда последний раз сохраняли настройки приложения (в файл или на сервер). */
+    var settingsSaved by long("settings_saved", 0L)
 
     // ---------- WebDAV ----------
 

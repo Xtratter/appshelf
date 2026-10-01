@@ -60,6 +60,7 @@ object SettingsIO {
     fun upload(ctx: Context, withPassword: Boolean) {
         val p = Prefs(ctx)
         Sync.dav(p).put(Sync.deviceFolder(ctx, p) + "/" + DAV_FILE, write(ctx, withPassword).toByteArray(), "application/json")
+        p.settingsSaved = System.currentTimeMillis()
     }
 
     /** Телефоны на сервере, у которых есть сохранённые настройки. Только в фоне. */
