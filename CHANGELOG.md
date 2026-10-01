@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.26.2 — 2026-10-01
+
+- Menu ⋮: the "System apps" checkbox is now a real checkbox in the theme's colours instead of an old system picture that looked foreign in every theme; tapping it toggles at once and the menu stays open. Theme and Vibration moved up, System apps is second to last
+
 ## 1.26.1 — 2026-10-01
 
 - Windows: no more hard line where the scrolling content ends (e.g. under "Leave out of the list" above "Close") — at the edges the content now blurs and dissolves into the window's glass over a longer, lower transition; the buttons stay in place
