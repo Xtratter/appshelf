@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.25 — 2026-10-01
+
+- **Soft edges**: under the top bar and at the bottom of the screen the list no longer ends with a hard cut — it fades into a progressive blur, getting more blurred towards the edge (three steps) and dissolving into the background. The same at the top and bottom of scrolling windows (the app card, Save & restore, WebDAV, choosing apps…), only on the side where there is more to scroll. Android 12+; older versions get the fade without blur
+
 ## 1.24 — 2026-10-01
 
 - **"Liquid glass" removed**: the refracting glass, buttons flowing into windows, the tilt highlight, the elastic press and the glass transparency setting are gone, together with the "Liquid glass" checkbox in Theme. What stays is the themes (standard, follow system, AMOLED, light, graphite) with the calm translucent glass of cards and windows. The app is smaller (about 190 KB) and simpler

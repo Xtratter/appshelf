@@ -47,6 +47,9 @@ class MainActivity : Activity() {
     private lateinit var list: ListView
     private lateinit var topBar: View
     private lateinit var topScrim: View
+    /** Плавное размытие списка сверху (под панелью) и снизу (у края экрана). */
+    private lateinit var topEdge: EdgeBlur
+    private lateinit var bottomEdge: EdgeBlur
     private lateinit var searchBox: View
     private lateinit var searchField: EditText
     private lateinit var summary: LinearLayout
@@ -101,6 +104,13 @@ class MainActivity : Activity() {
         list = findViewById(R.id.list)
         topBar = findViewById(R.id.topBar)
         topScrim = findViewById(R.id.topScrim)
+        // вместо простого затемнения — прогрессивное размытие списка у верхнего и нижнего края
+        val root = findViewById<android.widget.FrameLayout>(R.id.root)
+        topEdge = EdgeBlur(this, list, true, Ui.withAlpha(Ui.base, 0.9f))
+        bottomEdge = EdgeBlur(this, list, false, Ui.withAlpha(Ui.base, 0.6f))
+        root.addView(topEdge, root.indexOfChild(topScrim) + 1, android.widget.FrameLayout.LayoutParams(-1, dp(120f), Gravity.TOP))
+        root.addView(bottomEdge, root.indexOfChild(topScrim) + 1, android.widget.FrameLayout.LayoutParams(-1, dp(72f), Gravity.BOTTOM))
+        topScrim.visibility = View.GONE
         searchBox = findViewById(R.id.searchBox)
         searchField = findViewById(R.id.searchField)
         val barFill = Ui.withAlpha(Ui.mix(Ui.base, Ui.surface, 0.6f), 0.9f)
@@ -209,8 +219,12 @@ class MainActivity : Activity() {
 
     private fun updateListPadding() {
         val scrimH = topBar.height + dp(28f)
-        if (topScrim.layoutParams.height != scrimH) topScrim.post {
-            topScrim.layoutParams = topScrim.layoutParams.apply { height = scrimH }
+        if (topEdge.layoutParams.height != scrimH) topEdge.post {
+            topEdge.layoutParams = topEdge.layoutParams.apply { height = scrimH }
+        }
+        val edgeH = insetBottom + dp(56f)
+        if (bottomEdge.layoutParams.height != edgeH) bottomEdge.post {
+            bottomEdge.layoutParams = bottomEdge.layoutParams.apply { height = edgeH }
         }
         val top = topBar.height + dp(10f)
         val bottom = insetBottom + dp(16f) + (if (::selBar.isInitialized && selBar.visibility == View.VISIBLE) selBar.height + dp(12f) else 0) +
@@ -594,6 +608,7 @@ class MainActivity : Activity() {
     private fun current(): List<AppInfo>? = restore?.apps?.let { visible(it) } ?: installed?.let { visible(it) }
 
     private fun render() {
+        EdgeBlur.version++
         renderSummary()
         val apps = current() ?: run { adapter.update(emptyList()); renderChips(emptyList()); return }
         renderChips(apps)

@@ -257,6 +257,8 @@ object Ui {
         listOf(AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL)
             .forEach { d.getButton(it)?.setTextColor(primary) }
         Haptics.attachAll(w.decorView)   // щелчки при нажатии на кнопки и пункты окна
+        // у краёв прокручиваемого содержимого окна — плавное размытие, а не резкий срез
+        EdgeBlur.findScrollable(w.decorView)?.let { EdgeBlur.wrap(it, 32f, withAlpha(dialogSolid, 0.55f)) }
     }
 }
 
