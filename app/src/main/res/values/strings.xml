@@ -4,6 +4,9 @@
     <string name="search_apps">Search apps</string>
     <string name="save_short">Save</string>
     <string name="translucency">Transparency</string>
+    <string name="blur_level">Blur</string>
+    <string name="grain_level">Grain (test)</string>
+    <string name="off_short">off</string>
     <string name="search_hint">Name or package</string>
     <string name="save">Save the list</string>
     <string name="more">More</string>

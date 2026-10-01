@@ -32,7 +32,7 @@ which apps are missing and opens each one in the right store.
 - **Autosave**: pick a file once (a cloud drive, a memory card…) and the list is rewritten there every time you open the app
 - **Restore mode**: open a saved list — see how many apps are missing, show only those, and tap to install each from its store — or **install all one by one**: AppShelf opens each missing app in turn and moves on as soon as it is installed
 - **Haptic feedback** like a Taptic Engine: crisp clicks on buttons, a double click on success, a thud on errors; strength or off in menu ⋮ → Vibration
-- **Material 3 Expressive design**: tonal surfaces, a hero summary card with a big count, list rows grouped by letter, large buttons that change shape when pressed, tonal filter chips and a floating "Save" button for the main action; the surfaces are slightly translucent (Theme → Transparency switches it off)
+- **Material 3 Expressive design**: tonal surfaces, a hero summary card with a big count, list rows grouped by letter, large buttons that change shape when pressed, tonal filter chips and a floating "Save" button for the main action; transparency, blur and grain are set with sliders in Theme
 - **Soft edges**: the list fades into a progressive blur under the top bar and at the bottom of the screen, and so do scrolling windows (Android 12+; older versions fade without blur)
 - **Themes**: follow system (default), light, dark, graphite, AMOLED black; colors follow the wallpaper (Android 12+); menu ⋮ → Theme
 

@@ -42,8 +42,28 @@ object Ui {
     const val EXPRESSIVE = true
     /** Прозрачность интерфейса (настройка в окне «Тема»): тональные поверхности слегка прозрачны — сквозь них виден фон. */
     var translucent = true; private set
+    /** Плотность поверхностей (1 — непрозрачные), сила размытия (1 — как было), зернистость 0..1. */
+    private var surfaceAlpha = 0.8f
+    var blurScale = 1f; private set
+    var grain = 0f; private set
+    private var noise: android.graphics.Bitmap? = null
+
+    /** Кисть с «зерном» — мелкий шум поверх поверхностей и фона; null — зерно выключено. */
+    fun grainPaint(): Paint? {
+        if (grain <= 0f) return null
+        val bmp = noise ?: android.graphics.Bitmap.createBitmap(160, 160, android.graphics.Bitmap.Config.ARGB_8888).also { b ->
+            val rnd = java.util.Random(7)
+            val px = IntArray(160 * 160) { val v = rnd.nextInt(256); (rnd.nextInt(256) shl 24) or (v shl 16) or (v shl 8) or v }
+            b.setPixels(px, 0, 160, 0, 0, 160, 160)
+            noise = b
+        }
+        return Paint().apply {
+            shader = android.graphics.BitmapShader(bmp, Shader.TileMode.REPEAT, Shader.TileMode.REPEAT)
+            alpha = (grain * 70).toInt().coerceIn(0, 255)
+        }
+    }
     /** Насколько плотные поверхности (1 — непрозрачные). */
-    private const val SURFACE_ALPHA = 0.8f
+
     /** Тональные цвета M3: контейнеры акцента и поверхности. */
     var primaryContainer = 0; private set
     var onPrimaryContainer = 0; private set
@@ -70,10 +90,11 @@ object Ui {
         }
         if (translucent) {
             // лёгкая прозрачность: цветные пятна фона мягко просвечивают сквозь карточки, сводку и окна
-            surfaceContainer = withAlpha(surfaceContainer, SURFACE_ALPHA)
-            surfaceContainerHigh = withAlpha(surfaceContainerHigh, SURFACE_ALPHA + 0.08f)
-            primaryContainer = withAlpha(primaryContainer, SURFACE_ALPHA + 0.04f)
-            secondaryContainer = withAlpha(secondaryContainer, SURFACE_ALPHA + 0.08f)
+            val a = surfaceAlpha
+            surfaceContainer = withAlpha(surfaceContainer, a)
+            surfaceContainerHigh = withAlpha(surfaceContainerHigh, (a + 0.08f).coerceAtMost(1f))
+            primaryContainer = withAlpha(primaryContainer, (a + 0.04f).coerceAtMost(1f))
+            secondaryContainer = withAlpha(secondaryContainer, (a + 0.08f).coerceAtMost(1f))
         }
     }
 
@@ -125,7 +146,7 @@ object Ui {
 
     /** Применена ли уже тема [t] (с учётом системного режима). */
     fun isCurrent(ctx: Context, t: Theme) = theme == t && (t != Theme.SYSTEM || nightNow(ctx) == night) &&
-        translucent == Prefs(ctx).translucent
+        Prefs(ctx).let { surfaceAlpha == 1f - it.alphaPct / 100f && blurScale == it.blurPct / 50f && grain == it.grainPct / 100f }
 
     private fun nightNow(ctx: Context) = resolve(ctx, Theme.SYSTEM) != Theme.LIGHT
 
@@ -136,7 +157,12 @@ object Ui {
         val you = Build.VERSION.SDK_INT >= 31
         fun c(id: Int) = ctx.getColor(id)
         light = r == Theme.LIGHT
-        translucent = Prefs(ctx).translucent
+        Prefs(ctx).let {
+            surfaceAlpha = 1f - it.alphaPct / 100f
+            translucent = it.alphaPct > 0
+            blurScale = it.blurPct / 50f
+            grain = it.grainPct / 100f
+        }
         amoled = r == Theme.AMOLED
         if (light) {
             primary = if (you) c(android.R.color.system_accent1_600) else 0xFF3B5BA9.toInt()
@@ -289,8 +315,10 @@ object Ui {
         if (blur && Build.VERSION.SDK_INT >= 31) {
             // размываем весь экран позади; отдельное размытие под самим окном не включаем —
             // система размывает прямоугольник, и внутри скруглённого стекла была видна «рамка»
-            w.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
-            w.attributes = w.attributes.apply { blurBehindRadius = dp(ctx, 10f).toInt() }
+            if (blurScale > 0f) {
+                w.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                w.attributes = w.attributes.apply { blurBehindRadius = dp(ctx, 10f * blurScale).toInt() }
+            }
         }
         w.setDimAmount(0.35f)
         // стекло полупрозрачное: системная тень окна просвечивала у краёв, а внутренние панели диалога
@@ -344,6 +372,7 @@ class GlassDrawable(ctx: Context, radiusDp: Float, private val fill: Int = Ui.ca
                 else -> fill
             }
             c.drawRoundRect(r, radius, radius, fillP)
+            Ui.grainPaint()?.let { c.drawRoundRect(r, radius, radius, it) }
             return
         }
         c.drawRoundRect(r, radius, radius, fillP)
@@ -397,6 +426,7 @@ class AuroraDrawable : Drawable() {
     override fun draw(c: Canvas) {
         val b = bmp
         if (b == null) c.drawColor(Ui.base) else c.drawBitmap(b, null, bounds, bmpPaint)
+        Ui.grainPaint()?.let { c.drawRect(bounds, it) }
     }
 
     override fun setAlpha(alpha: Int) {}

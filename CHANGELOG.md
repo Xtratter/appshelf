@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.29 — 2026-10-01
+
+- Theme window: Material 3 Expressive sliders instead of the transparency switch — **Transparency** (0–60 %, 0 turns it off), **Blur** (how blurred the background behind windows and the soft list edges are) and **Grain** (test: a fine frosted-glass grain on the background and surfaces). A slider has a thick track, a slim vertical handle with a gap around it and an end dot; it ticks every 5 %, and the change is applied in place when you let go
+- Theme switching checked on the recording — no flashes any more
+
 ## 1.28.5 — 2026-10-01
 
 - Theme and transparency now switch truly in place: the screen and the open Theme window are recoloured on the spot instead of the screen being recreated — no more one-frame flash with a sharp background on each switch
