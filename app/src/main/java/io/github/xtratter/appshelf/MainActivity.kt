@@ -33,6 +33,8 @@ import java.util.concurrent.Executors
 
 class MainActivity : Activity() {
     companion object {
+        /** Окно «Тема» нужно открыть снова после перестройки экрана (сменили тему или прозрачность). */
+        private var reopenTheme = false
         /** Открытый экран — чтобы после установки APK обновить список. */
         var current: java.lang.ref.WeakReference<MainActivity>? = null
 
@@ -137,6 +139,8 @@ class MainActivity : Activity() {
         }
         buildSelectionBar()
         render()
+        // тему или прозрачность переключили в окне «Тема» — после перестройки экрана окно снова на месте
+        if (reopenTheme) { reopenTheme = false; list.post { themeDialog(instant = true) } }
     }
 
     override fun onResume() {
@@ -1175,7 +1179,20 @@ class MainActivity : Activity() {
     }
 
     /** Тема: выбор из списка, сразу применяется. */
-    private fun themeDialog() {
+    /**
+     * Применить тему «на месте»: экран перестраивается в новых цветах, а окно «Тема» сразу открывается снова
+     * (без анимации) — выглядит так, будто тема сменилась прямо под открытым окном.
+     */
+    private fun applyThemeKeepingDialog(dialog: AlertDialog, change: () -> Unit) {
+        change()
+        Ui.apply(this, prefs.theme())
+        reopenTheme = true
+        dialog.window?.setWindowAnimations(0)
+        dialog.dismiss()
+        recreate()
+    }
+
+    private fun themeDialog(instant: Boolean = false) {
         val themes = Theme.entries
         val tint = android.content.res.ColorStateList.valueOf(Ui.primary)
         val box = LinearLayout(this).apply {
@@ -1186,13 +1203,18 @@ class MainActivity : Activity() {
             .setView(ScrollView(this).apply { addView(box) })
             .setNegativeButton(R.string.close, null)
             .create()
+        if (instant) dialog.window?.setWindowAnimations(0)
         val group = android.widget.RadioGroup(this)
         for (t in themes) group.addView(android.widget.RadioButton(this).apply {
             id = View.generateViewId()
             setText(t.title); textSize = 16f; setTextColor(Ui.TEXT); buttonTintList = tint
             minHeight = dp(48f)
             isChecked = t == prefs.theme()
-            setOnClickListener { dialog.dismiss(); if (t != prefs.theme()) changeTheme(t) }
+            setOnClickListener {
+                if (t == prefs.theme()) return@setOnClickListener
+                Haptics.play(Haptics.Kind.TICK)
+                applyThemeKeepingDialog(dialog) { prefs.theme = t.name }
+            }
         })
         box.addView(group)
         // прозрачность всего интерфейса — отдельно от цветов темы
@@ -1217,10 +1239,7 @@ class MainActivity : Activity() {
             setOnClickListener {
                 sw.isChecked = !sw.isChecked
                 Haptics.play(Haptics.Kind.TICK)
-                prefs.translucent = sw.isChecked
-                dialog.dismiss()
-                Ui.apply(this@MainActivity, prefs.theme())
-                recreate()
+                applyThemeKeepingDialog(dialog) { prefs.translucent = sw.isChecked }
             }
         }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6f) })
         dialog.show()
@@ -1291,13 +1310,6 @@ class MainActivity : Activity() {
         AlertDialog.Builder(this).setTitle(R.string.haptics).setView(box)
             .setPositiveButton(R.string.done, null)
             .show().also { Ui.glassDialog(it) }
-    }
-
-    /** Пересоздаём экран с новыми цветами. */
-    private fun changeTheme(t: Theme) {
-        prefs.theme = t.name
-        Ui.apply(this, t)
-        recreate()
     }
 
     private fun about() {

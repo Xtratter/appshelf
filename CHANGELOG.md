@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.28.2 — 2026-10-01
+
+- The Theme window stays open when you switch the theme or the transparency: the screen is rebuilt in the new colours right under it, so you can try themes one after another
+
 ## 1.28.1 — 2026-10-01
 
 - Theme list reordered: Follow system (default) first, then Light, Dark, Graphite and AMOLED; the former "Standard" theme is now called "Dark"
