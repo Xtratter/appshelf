@@ -1090,7 +1090,7 @@ class MainActivity : Activity() {
                     if (checked) getDrawable(android.R.drawable.checkbox_on_background) else getDrawable(android.R.drawable.checkbox_off_background), null)
                 compoundDrawableTintList = android.content.res.ColorStateList.valueOf(if (checked) Ui.primary else Ui.TEXT3)
             }
-            setOnClickListener { dialog.dismiss(); action() }
+            setOnClickListener { Ui.chain(dialog) { action() } }
         }, LinearLayout.LayoutParams(-1, -2))
         item(R.string.hi_title) { HistoryDialog.show(this) }
         item(R.string.catalog_title) { CatalogDialog.show(this) }

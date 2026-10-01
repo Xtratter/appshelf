@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.23.2 — 2026-10-01
+
+- Window to window without a flash (checked frame by frame on the second recording): a window opened from another one (menu → Theme, Save & restore → WebDAV or Save to a file, the app card → note or link) flows out of the previous window, and the previous one closes only once the new one is already on screen — the blurred background no longer flashes sharp for 150–200 ms in between
+- A row or button no longer stays blank for a moment when a window flows back into it: it reappears as soon as the drop reaches it, and the drop melts over it
+
 ## 1.23.1 — 2026-10-01
 
 - Smoother flowing glass (checked frame by frame on a screen recording): a window that flows back into its button no longer shows twice — the system fade of the window is off, the glass drop takes its place at once; at the end of closing the button reappears earlier and the drop melts over it instead of covering it with a blurred patch; a window opened straight from another one (menu → Theme) now flows out of the previous window, without the background flashing sharp in between

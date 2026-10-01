@@ -50,7 +50,7 @@ object SaveDialog {
                     setTextColor(when { warn -> Ui.WARN; on -> Ui.primary; else -> Ui.TEXT2 })
                     setPadding(0, px(2f), 0, 0)
                 })
-                setOnClickListener { dialog.dismiss(); action() }
+                setOnClickListener { Ui.chain(dialog) { action() } }
             }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = px(8f) })
         }
 

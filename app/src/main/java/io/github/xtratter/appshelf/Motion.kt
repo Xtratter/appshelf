@@ -225,7 +225,7 @@ object Motion {
             addUpdateListener {
                 blob.t = it.animatedValue as Float
                 // закрытие: в конце капля растворяется поверх уже проявившейся кнопки, а не закрывает её собой
-                if (!appear) blob.alpha = ((1f - blob.t) / 0.3f).coerceIn(0f, 1f)
+                if (!appear) blob.alpha = ((1f - blob.t) / 0.5f).coerceIn(0f, 1f)
                 blob.invalidate()
                 if (!revealed && blob.t >= revealAt) { revealed = true; atReveal() }
             }
@@ -306,44 +306,41 @@ object Motion {
      * Окно вытекает из кнопки [src]: пока капля растёт, окно невидимо, без затемнения и размытия позади
      * (иначе система размыла бы и каплю); потом окно проявляется, а при закрытии стекает обратно в кнопку.
      */
-    /** Только что закрытое «перетекающее» окно: где оно было — новое окно может вытечь прямо из него. */
-    private class Closing(val rect: RectF, val radius: Float, val at: Long)
-    private var closing: Closing? = null
+    /** Окна, которые передали эстафету новому окну: им не нужно стекать обратно в кнопку. */
+    private val handedOff = HashSet<View>()
 
     /**
-     * Окно открыли сразу из другого (тот только что закрылся): новое вытекает из места старого — окно «перетекает»
-     * в окно, размытие фона не выключается. true — эстафета принята.
+     * Окно [d] открыли из окна [old]: новое вытекает из места старого (растягивается из его прямоугольника с пружинкой),
+     * а старое закрывается, когда новое уже проявилось, — размытие фона не пропадает ни на кадр.
      */
-    fun handoff(d: Dialog): Boolean {
-        val c = closing ?: return false
-        if (!enabled || android.os.SystemClock.uptimeMillis() - c.at > 400) return false
-        closing = null
-        val w = d.window ?: return false
+    fun handoff(d: Dialog, old: Dialog) {
+        val oldDecor = old.window?.decorView
+        if (!enabled || oldDecor == null || !oldDecor.isAttachedToWindow) { old.dismiss(); return }
+        val w = d.window ?: run { old.dismiss(); return }
         w.setWindowAnimations(0)
         val decor = w.decorView
         decor.alpha = 0f
+        val oa = IntArray(2); oldDecor.getLocationOnScreen(oa)
+        val ow = oldDecor.width.toFloat(); val oh = oldDecor.height.toFloat()
         decor.viewTreeObserver.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
             override fun onPreDraw(): Boolean {
                 decor.viewTreeObserver.removeOnPreDrawListener(this)
-                val at = IntArray(2); val base = IntArray(2)
-                decor.getLocationOnScreen(at)
-                Ui.liquidRoot?.getLocationOnScreen(base)
-                val x = (at[0] - base[0]).toFloat(); val y = (at[1] - base[1]).toFloat()
-                if (decor.width <= 0 || decor.height <= 0) { decor.alpha = 1f; return true }
-                // окно растягивается из прямоугольника прежнего окна в свой, с пружинкой
+                fun closeOld() { handedOff += oldDecor; old.dismiss() }
+                if (decor.width <= 0 || decor.height <= 0) { decor.alpha = 1f; closeOld(); return true }
+                val at = IntArray(2); decor.getLocationOnScreen(at)
                 decor.pivotX = 0f; decor.pivotY = 0f
-                decor.translationX = c.rect.left - x
-                decor.translationY = c.rect.top - y
-                decor.scaleX = c.rect.width() / decor.width
-                decor.scaleY = c.rect.height() / decor.height
-                decor.animate().alpha(1f).setDuration(120).start()
+                decor.translationX = (oa[0] - at[0]).toFloat()
+                decor.translationY = (oa[1] - at[1]).toFloat()
+                decor.scaleX = ow / decor.width
+                decor.scaleY = oh / decor.height
+                Haptics.play(Haptics.Kind.TICK)
                 decor.animate().translationX(0f).translationY(0f).scaleX(1f).scaleY(1f)
                     .setDuration(420).setInterpolator(Spring()).start()
-                Haptics.play(Haptics.Kind.TICK)
+                // старое окно уходит, когда новое уже проявилось над ним
+                decor.animate().alpha(1f).setDuration(110).withEndAction { closeOld() }.start()
                 return true
             }
         })
-        return true
     }
 
     fun morphIn(d: Dialog, src: View) {
@@ -400,19 +397,15 @@ object Motion {
             override fun onViewAttachedToWindow(v: View) {}
             override fun onViewDetachedFromWindow(v: View) {
                 v.removeOnAttachStateChangeListener(this)
+                // из окна открыли другое (например, «Тема» из меню) — оно перетекло в новое окно, не в кнопку
+                if (handedOff.remove(v)) { src.alpha = 1f; return }
                 val shot = capture(decor)
-                // из окна сразу открыли другое (например, «Тема» из меню) — окно перетекает в него, а не в кнопку
-                closing = Closing(to, toR, android.os.SystemClock.uptimeMillis())
-                val mine = closing
-                v.post {
-                    if (closing !== mine) { src.alpha = 1f; return@post }   // эстафету приняло новое окно
-                    closing = null
-                    Haptics.play(Haptics.Kind.CLOSE)
-                    val back = if (src.isAttachedToWindow) glassRect(src) else from
-                    flow(to, toR, back, fromR, 300, content = shot, appear = false, revealAt = 0.55f, atReveal = {
-                        src.animate().alpha(1f).setDuration(120).start()
-                    }) {}
-                }
+                Haptics.play(Haptics.Kind.CLOSE)
+                val back = if (src.isAttachedToWindow) glassRect(src) else from
+                // кнопка проявляется, как только капля к ней подлетела, — капля растворяется поверх неё
+                flow(to, toR, back, fromR, 300, content = shot, appear = false, revealAt = 0.4f, atReveal = {
+                    src.alpha = 1f
+                }) {}
             }
         })
     }

@@ -319,6 +319,20 @@ object Ui {
         if (v is android.view.ViewGroup) for (i in 0 until v.childCount) invalidateGlass(v.getChildAt(i))
     }
 
+    /** Окно, из которого сейчас открывают следующее (см. [chain]); открылось ли следующее стеклянное окно. */
+    private var chainFrom: AlertDialog? = null
+    private var chainOpened = false
+
+    /**
+     * Действие из пункта окна [old]: если оно откроет другое стеклянное окно, [old] закроется только когда новое уже
+     * нарисовалось и вытекает из него — без промежутка с резким фоном между окнами. Иначе [old] закрывается сразу.
+     */
+    fun chain(old: AlertDialog, action: () -> Unit) {
+        chainFrom = old; chainOpened = false
+        try { action() } finally { chainFrom = null }
+        if (!chainOpened) old.dismiss()
+    }
+
     /** Убрать фон у служебных панелей диалога и у рамок между окном и содержимым (наше содержимое не трогаем). */
     private fun clearPanels(decor: View) {
         val res = decor.resources
@@ -368,8 +382,12 @@ object Ui {
             .forEach { d.getButton(it)?.setTextColor(primary) }
         // «жидкое стекло»: окно, открытое кнопкой главного экрана, вытекает из неё и стекает обратно
         // а открытое прямо из другого окна (меню → «Тема») — перетекает из места прежнего окна
+        val from = chainFrom
         val src = Motion.takeSource()
-        if (src != null) Motion.morphIn(d, src) else Motion.handoff(d)
+        when {
+            from != null && from !== d -> { chainOpened = true; Motion.handoff(d, from) }
+            src != null -> Motion.morphIn(d, src)
+        }
         if (liquid) watchScroll(w.decorView)
         Haptics.attachAll(w.decorView)   // щелчки при нажатии на кнопки и пункты окна
     }

@@ -93,8 +93,7 @@ object DetailsDialog {
             foreground = Ui.ripple(a, 18f)
             setPadding(px(16f), px(12f), px(16f), px(12f))
             setOnClickListener {
-                dialog.dismiss()
-                NoteDialog.show(a, app.pkg, app.label) { a.refresh(); show(a, r, source) }
+                Ui.chain(dialog) { NoteDialog.show(a, app.pkg, app.label) { a.refresh(); show(a, r, source) } }
             }
         })
 
@@ -128,7 +127,7 @@ object DetailsDialog {
             linkRow(l.label.ifBlank { a.getString(kind.title) } + " ›",
                 Links.short(l.url) + if (fromCatalog) " · " + a.getString(R.string.lk_from_catalog) else "",
                 Ui.TEXT2, { LinkStore.open(a, l, app.pkg, app.label) },
-                if (fromCatalog) null else ({ dialog.dismiss(); LinkEditDialog.show(a, app.pkg, app.label, l, reopen) }))
+                if (fromCatalog) null else ({ Ui.chain(dialog) { LinkEditDialog.show(a, app.pkg, app.label, l, reopen) } }))
         }
         if (links.isEmpty()) linksBox.addView(TextView(a).apply {
             setText(R.string.lk_empty); textSize = 13f; setTextColor(Ui.TEXT3); setLineSpacing(0f, 1.1f)
@@ -138,7 +137,7 @@ object DetailsDialog {
             setText(R.string.lk_long_press); textSize = 11.5f; setTextColor(Ui.TEXT3); setPadding(px(10f), px(2f), px(10f), px(2f))
         })
         linkRow("+ " + a.getString(R.string.lk_add), "", Ui.TEXT2,
-            { dialog.dismiss(); LinkEditDialog.show(a, app.pkg, app.label, null, reopen) }, null)
+            { Ui.chain(dialog) { LinkEditDialog.show(a, app.pkg, app.label, null, reopen) } }, null)
         (linksBox.getChildAt(linksBox.childCount - 1) as LinearLayout).getChildAt(0).let { (it as TextView).setTextColor(Ui.primary) }
         box.addView(linksBox)
 
@@ -154,7 +153,7 @@ object DetailsDialog {
                 else if (danger) Ui.pill(a, Ui.withAlpha(Ui.HOT, 0.12f), Ui.withAlpha(Ui.HOT, 0.35f))
                 else Ui.pill(a, Ui.withAlpha(Ui.primary, 0.12f), Ui.withAlpha(Ui.primary, 0.3f))
                 foreground = Ui.ripple(a, 100f)
-                setOnClickListener { dialog.dismiss(); block() }
+                setOnClickListener { Ui.chain(dialog) { block() } }
             }, LinearLayout.LayoutParams(-1, px(48f)).apply { topMargin = px(8f) })
         }
         box.addView(android.view.View(a), LinearLayout.LayoutParams(1, px(6f)))
