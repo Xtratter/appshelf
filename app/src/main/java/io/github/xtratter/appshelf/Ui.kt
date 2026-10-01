@@ -259,7 +259,7 @@ object Ui {
         Haptics.attachAll(w.decorView)   // щелчки при нажатии на кнопки и пункты окна
         // у краёв прокручиваемого содержимого окна — плавное размытие, а не резкий срез
         // (после раскладки окна — до неё размеры неизвестны и скрытые области не отличить)
-        w.decorView.post { EdgeBlur.findScrollable(w.decorView)?.let { EdgeBlur.wrap(it, 40f, withAlpha(dialogSolid, 0.6f)) } }
+        w.decorView.post { EdgeBlur.findScrollable(w.decorView)?.let { EdgeBlur.wrap(it, 44f, withAlpha(dialogSolid, 0.5f)) } }
     }
 }
 

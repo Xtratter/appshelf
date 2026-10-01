@@ -71,7 +71,7 @@ class AppItemView(ctx: Context) : View(ctx) {
         // значок или буква на цветном кружке (для приложений, которых на телефоне нет)
         val left = card.left + dp(14f)
         val top = card.centerY() - iconSize / 2f
-        val icon = if (rw.installed == false) null else Icons.get(context, a.pkg, iconSize) { EdgeBlur.version++; invalidate() }
+        val icon = if (rw.installed == false) null else Icons.get(context, a.pkg, iconSize) { invalidate() }
         if (icon != null) {
             dst.set(left.toInt(), top.toInt(), left.toInt() + iconSize, top.toInt() + iconSize)
             c.drawBitmap(icon, null, dst, bmpP)

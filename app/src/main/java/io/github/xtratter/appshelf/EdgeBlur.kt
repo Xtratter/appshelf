@@ -13,41 +13,31 @@ import android.graphics.Shader
 import android.os.Build
 import android.view.View
 import android.view.ViewGroup
-import android.view.ViewTreeObserver
 import android.widget.AbsListView
 import android.widget.FrameLayout
 import android.widget.ScrollView
 
 /**
- * Прогрессивное размытие у края прокручиваемого списка: полоса, в которой то, что под ней, нарисовано ещё раз —
- * размытым тем сильнее, чем ближе к краю (несколько ступеней), и плавно уходит в цвет фона.
- * На Android 12+; ниже — только плавное растворение в фоне.
+ * Мягкие края, как в Telegram: содержимое прокрутки у верхнего и нижнего края плавно размывается (сильнее к краю)
+ * и растворяется в фоне. Размытие рисует сам контейнер в том же кадре, что и содержимое, — поэтому при любой
+ * скорости прокрутки ничего не отстаёт и не «съезжает». Android 12+; ниже — только растворение.
  */
 @SuppressLint("ViewConstructor")
-class EdgeBlur(ctx: Context, private val target: View, private val top: Boolean, private val fadeTo: Int,
-               /** Высота плавного перехода от внутренней границы (px); дальше к краю — уже полное размытие. 0 — вся полоса. */
-               var ramp: Int = 0) :
-    View(ctx), ViewTreeObserver.OnPreDrawListener {
+class EdgeBlur(ctx: Context, private val fadeTop: Int, private val fadeBottom: Int) : FrameLayout(ctx) {
 
     companion object {
-        /** Содержимое списка поменялось без прокрутки (новые строки, загрузились значки) — перерисовать полосы. */
-        @JvmStatic var version = 0
-
-        /**
-         * Полосы сверху и снизу у прокручиваемого [target] внутри окна: [target] переносится в FrameLayout
-         * вместе с двумя полосами высотой [heightDp]. Полоса видна, только когда в её сторону есть что прокручивать.
-         */
-        fun wrap(target: View, heightDp: Float, fadeTo: Int) {
-            val parent = target.parent as? ViewGroup ?: return
+        /** Обернуть прокручиваемый [target] в контейнер с мягкими краями высотой [bandDp]. */
+        fun wrap(target: View, bandDp: Float, fadeTop: Int, fadeBottom: Int = fadeTop): EdgeBlur? {
+            val parent = target.parent as? ViewGroup ?: return null
             val index = parent.indexOfChild(target)
             val lp = target.layoutParams
             parent.removeView(target)
-            val box = FrameLayout(target.context)
-            box.addView(target, FrameLayout.LayoutParams(-1, -1))
-            val h = (heightDp * target.resources.displayMetrics.density).toInt()
-            box.addView(EdgeBlur(target.context, target, true, fadeTo), FrameLayout.LayoutParams(-1, h, android.view.Gravity.TOP))
-            box.addView(EdgeBlur(target.context, target, false, fadeTo), FrameLayout.LayoutParams(-1, h, android.view.Gravity.BOTTOM))
+            val box = EdgeBlur(target.context, fadeTop, fadeBottom)
+            val px = (bandDp * target.resources.displayMetrics.density).toInt()
+            box.topBand = px; box.bottomBand = px
+            box.addView(target, LayoutParams(-1, -1))
             parent.addView(box, index, lp)
+            return box
         }
 
         /**
@@ -66,95 +56,90 @@ class EdgeBlur(ctx: Context, private val target: View, private val top: Boolean,
         }
     }
 
+    /** Высота полос (px): сверху — [topBand], из них нижние [topRamp] — плавный переход (0 — вся полоса); снизу так же. */
+    var topBand = 0
+    var topRamp = 0
+    var bottomBand = 0
+    var bottomRamp = 0
+
     private val dp = ctx.resources.displayMetrics.density
     private val blurOk = Build.VERSION.SDK_INT >= 31
-    /** Ступени размытия (dp): у внутренней границы полосы — слабое, у края — сильное. */
-    private val radii = floatArrayOf(3f, 8f, 18f)
-    private val base = if (blurOk) RenderNode("edge") else null
-    private val levels = if (blurOk) radii.map { r ->
-        RenderNode("edge-$r").apply {
-            // DECAL: за краем полосы — пусто, а не растянутый крайний ряд пикселей (иначе значки у края «тянулись»)
-            setRenderEffect(RenderEffect.createBlurEffect(r * dp, r * dp, Shader.TileMode.DECAL))
-        }
-    } else emptyList()
+    /** Ступени размытия (dp), плавно перекрывающие друг друга. */
+    private val radii = floatArrayOf(2f, 5f, 9f, 15f)
+    private val content = if (blurOk) RenderNode("edge-content") else null
+    private val levels = if (blurOk) radii.map { RenderNode("edge-$it") to RenderNode("edge-$it-b") } else emptyList()
     private val maskP = Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN) }
     private val tintP = Paint()
-    private val masks = ArrayList<Shader>()
-    private val me = IntArray(2)
-    private val them = IntArray(2)
-    private var shown = ""
 
     init {
-        isClickable = false
-        importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_NO
-        addOnAttachStateChangeListener(object : OnAttachStateChangeListener {
-            override fun onViewAttachedToWindow(v: View) = v.viewTreeObserver.addOnPreDrawListener(this@EdgeBlur)
-            override fun onViewDetachedFromWindow(v: View) = v.viewTreeObserver.removeOnPreDrawListener(this@EdgeBlur)
-        })
+        setWillNotDraw(false)
+        if (blurOk) levels.forEachIndexed { i, (a, b) ->
+            val r = radii[i] * dp
+            a.setRenderEffect(RenderEffect.createBlurEffect(r, r, Shader.TileMode.CLAMP))
+            b.setRenderEffect(RenderEffect.createBlurEffect(r, r, Shader.TileMode.CLAMP))
+        }
     }
 
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        if (w <= 0 || h <= 0) return
-        base?.setPosition(0, 0, w, h)
-        levels.forEach { it.setPosition(0, 0, w, h) }
-        // маски ступеней: каждая следующая (сильнее размытая) начинается ближе к краю
-        masks.clear()
+    override fun dispatchDraw(c: Canvas) {
+        val w = width; val h = height
+        val target = if (childCount > 0) getChildAt(0) else null
+        if (w <= 0 || h <= 0 || target == null) return super.dispatchDraw(c)
+        val showTop = topBand > 0 && target.canScrollVertically(-1)
+        val showBottom = bottomBand > 0 && target.canScrollVertically(1)
+        val node = content
+        if (node == null || !c.isHardwareAccelerated || (!showTop && !showBottom)) {
+            super.dispatchDraw(c)
+            drawTints(c, w, h, showTop, showBottom)
+            return
+        }
+        // содержимое — один раз в слой; рисуем его как есть, а у краёв — размытые копии того же кадра
+        node.setPosition(0, 0, w, h)
+        val rc = node.beginRecording(w, h)
+        super.dispatchDraw(rc)
+        node.endRecording()
+        c.drawRenderNode(node)
+        if (showTop) band(c, node, w, 0, topBand, if (topRamp in 1 until topBand) topRamp else topBand, top = true)
+        if (showBottom) band(c, node, w, h - bottomBand, h, if (bottomRamp in 1 until bottomBand) bottomRamp else bottomBand, top = false)
+        drawTints(c, w, h, showTop, showBottom)
+    }
+
+    /** Полоса [y0, y1): ступени размытия; каждая проявляется плавно и перекрывает предыдущую ближе к краю. */
+    private fun band(c: Canvas, content: RenderNode, w: Int, y0: Int, y1: Int, ramp: Int, top: Boolean) {
         val n = radii.size
-        val len = (if (ramp in 1 until h) ramp else h).toFloat()
-        for (i in 0 until n) {
-            val from = len * i / (n + 1f)
-            val to = len * (i + 1) / (n + 1f)
-            masks += if (top) LinearGradient(0f, h - from, 0f, h - to, 0, -1, Shader.TileMode.CLAMP)
-            else LinearGradient(0f, from, 0f, to, 0, -1, Shader.TileMode.CLAMP)
+        for ((i, pair) in levels.withIndex()) {
+            val node = if (top) pair.first else pair.second
+            val margin = (radii[i] * dp * 3).toInt()
+            // слой ступени шире полосы — края размытия (где CLAMP тянет пиксели) остаются за её пределами
+            val ny0 = (y0 - margin).coerceAtLeast(0)
+            val ny1 = (y1 + margin).coerceAtMost(height)
+            node.setPosition(0, ny0, w, ny1)
+            val nc = node.beginRecording(w, ny1 - ny0)
+            nc.translate(0f, -ny0.toFloat())
+            nc.drawRenderNode(content)
+            node.endRecording()
+            // где ступень проявляется: от внутренней границы перехода к краю, с перекрытием соседних
+            val inner = if (top) y1.toFloat() else y0.toFloat()
+            val start = ramp * (i / (n + 0.5f))
+            val end = ramp * ((i + 1.5f) / (n + 0.5f))
+            val a0 = if (top) inner - start else inner + start
+            val a1 = if (top) inner - end else inner + end
+            val save = c.saveLayer(0f, y0.toFloat(), w.toFloat(), y1.toFloat(), null)
+            c.drawRenderNode(node)
+            maskP.shader = LinearGradient(0f, a0, 0f, a1, 0, -1, Shader.TileMode.CLAMP)
+            c.drawRect(0f, y0.toFloat(), w.toFloat(), y1.toFloat(), maskP)
+            c.restoreToCount(save)
         }
-        // и в самом конце — растворение в цвете фона ([fadeTo] — цвет у самого края, вместе с прозрачностью)
-        val clear = fadeTo and 0xFFFFFF
-        tintP.shader = if (top) LinearGradient(0f, h.toFloat(), 0f, h - len, clear, fadeTo, Shader.TileMode.CLAMP)
-        else LinearGradient(0f, 0f, 0f, len, clear, fadeTo, Shader.TileMode.CLAMP)
-        shown = ""
     }
 
-    /** Есть ли что прокручивать в сторону этой полосы. */
-    private fun active() = target.canScrollVertically(if (top) -1 else 1)
-
-    /** Что сейчас под полосой: если ничего не сдвинулось — не перерисовываем. */
-    private fun state(): String {
-        val sb = StringBuilder().append(version).append(',').append(target.scrollY).append(',').append(active())
-        if (target is AbsListView) sb.append(',').append(target.firstVisiblePosition).append(',')
-            .append(target.getChildAt(0)?.top ?: 0).append(',').append(target.childCount)
-        return sb.toString()
-    }
-
-    override fun onPreDraw(): Boolean {
-        if (width <= 0) return true
-        val now = state()
-        if (now != shown) {
-            shown = now
-            visibility = if (active()) VISIBLE else INVISIBLE
-            invalidate()
+    /** Лёгкое растворение в цвете фона у самого края. */
+    private fun drawTints(c: Canvas, w: Int, h: Int, showTop: Boolean, showBottom: Boolean) {
+        if (showTop) {
+            tintP.shader = LinearGradient(0f, topBand.toFloat(), 0f, 0f, fadeTop and 0xFFFFFF, fadeTop, Shader.TileMode.CLAMP)
+            c.drawRect(0f, 0f, w.toFloat(), topBand.toFloat(), tintP)
         }
-        return true
-    }
-
-    override fun onDraw(c: Canvas) {
-        if (width <= 0 || height <= 0) return
-        val w = width.toFloat(); val h = height.toFloat()
-        if (base != null && c.isHardwareAccelerated) {
-            // то, что под полосой, — в отдельный слой (с учётом прокрутки самого списка)
-            getLocationInWindow(me); target.getLocationInWindow(them)
-            val rc = base.beginRecording()
-            rc.translate((them[0] - me[0] - target.scrollX).toFloat(), (them[1] - me[1] - target.scrollY).toFloat())
-            target.draw(rc)
-            base.endRecording()
-            for ((i, node) in levels.withIndex()) {
-                if (!node.hasDisplayList()) { val lc = node.beginRecording(); lc.drawRenderNode(base); node.endRecording() }
-                val save = c.saveLayer(0f, 0f, w, h, null)
-                c.drawRenderNode(node)
-                maskP.shader = masks.getOrNull(i)
-                c.drawRect(0f, 0f, w, h, maskP)
-                c.restoreToCount(save)
-            }
+        if (showBottom) {
+            tintP.shader = LinearGradient(0f, (h - bottomBand).toFloat(), 0f, h.toFloat(), fadeBottom and 0xFFFFFF, fadeBottom, Shader.TileMode.CLAMP)
+            c.drawRect(0f, (h - bottomBand).toFloat(), w.toFloat(), h.toFloat(), tintP)
         }
-        c.drawRect(0f, 0f, w, h, tintP)
     }
 }

@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.25.2 — 2026-10-01
+
+- Soft edges redone in the Telegram manner (from the recording with voice comments): the blur is now drawn by the list's own container in the same frame as the list, so nothing lags or slides even on a hard fling, and no dark patches appear at the top; four overlapping blur steps instead of three distinct ones — no visible line in the transition; a lighter fade at the top. The same in windows (What changed, the app card, Save & restore…)
+
 ## 1.25.1 — 2026-10-01
 
 - Soft edges fixed (from the screen recording with voice comments): the bottom of the list no longer smears icons into vertical streaks that changed while scrolling; the blur at the top is now visible — the gradual part sits right under the top bar instead of hiding behind it, and the blur is stronger; scrolling windows (the app card, Save & restore…) now really get the blurred edges — before, AppShelf picked the dialog's hidden message area instead of its list
