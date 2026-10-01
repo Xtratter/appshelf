@@ -86,6 +86,12 @@ object Ui {
         M3.apply(ctx, mode(t), Prefs(ctx).translucent)
     }
 
+    /** Версия для строки списка: «1.12.1», длинные хвосты («-beta (123)», хеши) обрезаются до 14 знаков. */
+    fun versionShort(v: String): String {
+        val t = v.trim().removePrefix("v")
+        return if (t.length <= 14) t else t.take(13) + "…"
+    }
+
     fun withAlpha(color: Int, a: Float) = M3.withAlpha(color, a)
     fun mix(a: Int, b: Int, t: Float) = M3.mix(a, b, t)
     fun dp(ctx: Context, v: Float) = M3.dp(ctx, v)

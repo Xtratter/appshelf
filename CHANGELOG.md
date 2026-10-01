@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.36 — 2026-10-01
+
+- **App versions in the list**: every row shows the installed version under the date (also in restore mode — the version from the saved list)
+- **Updates show "from → to"**: a row with a GitHub update shows e.g. "1.11 → 1.12.1"; "Update all" first lists every app with its current and new version, and the progress window says "2 of 5: DroidTop 1.11 → 1.12.1"
+
 ## 1.35 — 2026-10-01
 
 - **"AppShelf" is a source of its own**: apps that AppShelf installed itself (from an APK backup, a link or a GitHub release) are grouped as "AppShelf" with their own colour and chip instead of "Other"

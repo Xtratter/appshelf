@@ -117,7 +117,8 @@ class AppItemView(ctx: Context) : View(ctx) {
         // справа сверху: дата установки или (при восстановлении) статус
         val status: String
         when (rw.installed) {
-            null -> if (rw.update != null) { status = "↑ " + rw.update; dateP.color = Ui.primary }
+            // есть обновление на GitHub — «с какой версии → на какую»
+            null -> if (rw.update != null) { status = Ui.versionShort(a.versionName) + " → " + rw.update; dateP.color = Ui.primary }
                 else { status = rw.date; dateP.color = Ui.TEXT3 }
             true -> { status = context.getString(R.string.st_installed); dateP.color = Ui.OK }
             false -> { status = rw.link?.let { "$it ›" } ?: context.getString(R.string.st_missing); dateP.color = Ui.primary }
@@ -128,7 +129,11 @@ class AppItemView(ctx: Context) : View(ctx) {
 
         titleP.color = if (rw.installed == false) Ui.TEXT2 else Ui.TEXT
         c.drawText(Ui.ellipsize(titleP, a.label, right - x - statusW), x, y1, titleP)
-        c.drawText(Ui.ellipsize(pkgP, a.pkg, right - x), x, y1 + dp(19f), pkgP)
+        // под датой справа — версия приложения (если она не показана выше в «→»), слева — пакет
+        val ver = if (rw.update == null || rw.installed != null) Ui.versionShort(a.versionName) else ""
+        val verW = if (ver.isEmpty()) 0f else dateP.measureText(ver) + dp(10f)
+        if (ver.isNotEmpty()) { dateP.color = Ui.TEXT3; c.drawText(ver, right, y1 + dp(19f), dateP) }
+        c.drawText(Ui.ellipsize(pkgP, a.pkg, right - x - verW), x, y1 + dp(19f), pkgP)
 
         // плашка источника: цветная точка и название
         val pillTop = y1 + dp(28f)

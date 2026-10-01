@@ -61,3 +61,6 @@ enum class Source(val title: Int, val color: Int, val stores: List<String> = emp
         }
     }
 }
+
+/** Обновление с GitHub для «Обновить все»: что, откуда скачать, с какой версии на какую. */
+data class UpdateItem(val pkg: String, val label: String, val url: String, val from: String, val to: String)

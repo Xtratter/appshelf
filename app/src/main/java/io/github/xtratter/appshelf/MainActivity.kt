@@ -730,8 +730,34 @@ class MainActivity : Activity() {
     }
 
     /** Установленные приложения, для которых на GitHub есть версия новее с APK: пакет, название, ссылка. */
-    private fun updatable(): List<Triple<String, String, String>> = (installed ?: emptyList()).mapNotNull { a ->
-        Updates.available(this, a)?.apkUrl?.let { Triple(a.pkg, a.label, it) }
+    private fun updatable(): List<UpdateItem> = ListFile.sorted(installed ?: emptyList()).mapNotNull { a ->
+        Updates.available(this, a)?.let { rel ->
+            rel.apkUrl?.let { UpdateItem(a.pkg, a.label, it, Ui.versionShort(a.versionName),
+                Updates.numbers(rel.tag).joinToString(".").ifEmpty { rel.tag.removePrefix("v") }) }
+        }
+    }
+
+    /** Перед «Обновить все» — что и до какой версии обновится. */
+    private fun confirmUpdates(items: List<UpdateItem>) {
+        val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(dp(24f), dp(4f), dp(24f), 0) }
+        for (u in items) box.addView(LinearLayout(this).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = dp(40f)
+            addView(TextView(this@MainActivity).apply {
+                text = u.label; textSize = 15f; setTextColor(Ui.TEXT); maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+            }, LinearLayout.LayoutParams(0, -2, 1f))
+            addView(TextView(this@MainActivity).apply {
+                text = u.from + " → " + u.to; textSize = 14f; typeface = Ui.medium; setTextColor(Ui.primary)
+                setPadding(dp(12f), 0, 0, 0)
+            })
+        })
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.upd_all_confirm, items.size))
+            .setView(android.widget.ScrollView(this).apply { addView(box) })
+            .setPositiveButton(R.string.upd_all_go) { _, _ -> ApkInstaller.updateAll(this, items) }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show().also { Ui.glassDialog(it) }
     }
 
     /** Источник словами: «Google Play», «APK · через Telegram», название чужого установщика. */
@@ -815,7 +841,7 @@ class MainActivity : Activity() {
             // обновления с GitHub, для которых есть APK, — одной кнопкой
             val upd = updatable()
             if (upd.isNotEmpty()) summary.addView(button(getString(R.string.upd_all, upd.size), true) {
-                ApkInstaller.updateAll(this, upd)
+                confirmUpdates(upd)
             }, LinearLayout.LayoutParams(-1, dp(Ui.buttonDp)).apply { bottomMargin = dp(14f) })
             syncLine()?.let { (line, bad) ->
                 summary.addView(text(13.5f, if (bad) Ui.WARN else Ui.TEXT3).apply {

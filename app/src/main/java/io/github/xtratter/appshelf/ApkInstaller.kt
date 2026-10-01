@@ -208,7 +208,7 @@ object ApkInstaller {
     // ---------- «Обновить все» ----------
 
     /** Очередь обновлений: пакет, название, ссылка на APK. */
-    private val updates = ArrayDeque<Triple<String, String, String>>()
+    private val updates = ArrayDeque<UpdateItem>()
     private var upDialog: AlertDialog? = null
     private var upTitle: TextView? = null
     private var upBar: ProgressBar? = null
@@ -222,7 +222,7 @@ object ApkInstaller {
      * Обновить приложения одно за другим: скачать APK релиза и поставить. Приложения, которые когда-то поставил сам
      * AppShelf, на Android 12+ обновляются без окна подтверждения; остальные Android попросит подтвердить.
      */
-    fun updateAll(a: MainActivity, items: List<Triple<String, String, String>>) {
+    fun updateAll(a: MainActivity, items: List<UpdateItem>) {
         if (items.isEmpty()) return
         if (needPermission(a) { updateAll(a, items) }) return
         val dp = a.resources.displayMetrics.density
@@ -269,10 +269,10 @@ object ApkInstaller {
             a.onInstalled()
             return
         }
-        val (pkg, label, url) = item
+        val pkg = item.pkg; val label = item.label; val url = item.url
         upCurrent = label
         val n = upTotal - updates.size
-        upTitle?.text = a.getString(R.string.upd_all_progress, n, upTotal, label)
+        upTitle?.text = a.getString(R.string.upd_all_progress, n, upTotal, label, item.from, item.to)
         upBar?.apply { isIndeterminate = true }
         val dir = File(a.cacheDir, "apk").apply { mkdirs(); listFiles()?.forEach { it.delete() } }
         val file = File(dir, "update.apk")

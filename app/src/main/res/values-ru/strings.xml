@@ -73,8 +73,10 @@
     <string name="src_appshelf">AppShelf</string>
     <string name="upd_all">Обновить все (%d)</string>
     <string name="upd_all_title">Обновление приложений</string>
-    <string name="upd_all_progress">%1$d из %2$d: %3$s</string>
+    <string name="upd_all_progress">%1$d из %2$d: %3$s %4$s → %5$s</string>
     <string name="upd_all_done">Обновлено %1$d из %2$d</string>
+    <string name="upd_all_confirm">Обновить приложений: %d</string>
+    <string name="upd_all_go">Обновить</string>
     <string name="search_hint">Название или пакет</string>
     <string name="save">Сохранить список</string>
     <string name="more">Ещё</string>
