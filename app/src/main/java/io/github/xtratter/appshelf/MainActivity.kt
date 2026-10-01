@@ -107,6 +107,7 @@ class MainActivity : Activity() {
         // вместо простого затемнения — прогрессивное размытие списка у верхнего и нижнего края
         val root = findViewById<android.widget.FrameLayout>(R.id.root)
         topEdge = EdgeBlur(this, list, true, Ui.withAlpha(Ui.base, 0.9f))
+        topEdge.ramp = dp(56f)   // плавный переход — сразу под панелью
         bottomEdge = EdgeBlur(this, list, false, Ui.withAlpha(Ui.base, 0.6f))
         root.addView(topEdge, root.indexOfChild(topScrim) + 1, android.widget.FrameLayout.LayoutParams(-1, dp(120f), Gravity.TOP))
         root.addView(bottomEdge, root.indexOfChild(topScrim) + 1, android.widget.FrameLayout.LayoutParams(-1, dp(72f), Gravity.BOTTOM))
@@ -218,7 +219,8 @@ class MainActivity : Activity() {
     }
 
     private fun updateListPadding() {
-        val scrimH = topBar.height + dp(28f)
+        // плавный переход — в полосе сразу под панелью (над ней и под ней — уже полное размытие)
+        val scrimH = topBar.height + dp(44f)
         if (topEdge.layoutParams.height != scrimH) topEdge.post {
             topEdge.layoutParams = topEdge.layoutParams.apply { height = scrimH }
         }

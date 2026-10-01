@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.25.1 — 2026-10-01
+
+- Soft edges fixed (from the screen recording with voice comments): the bottom of the list no longer smears icons into vertical streaks that changed while scrolling; the blur at the top is now visible — the gradual part sits right under the top bar instead of hiding behind it, and the blur is stronger; scrolling windows (the app card, Save & restore…) now really get the blurred edges — before, AppShelf picked the dialog's hidden message area instead of its list
+
 ## 1.25 — 2026-10-01
 
 - **Soft edges**: under the top bar and at the bottom of the screen the list no longer ends with a hard cut — it fades into a progressive blur, getting more blurred towards the edge (three steps) and dissolving into the background. The same at the top and bottom of scrolling windows (the app card, Save & restore, WebDAV, choosing apps…), only on the side where there is more to scroll. Android 12+; older versions get the fade without blur

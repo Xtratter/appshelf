@@ -24,7 +24,9 @@ import android.widget.ScrollView
  * На Android 12+; ниже — только плавное растворение в фоне.
  */
 @SuppressLint("ViewConstructor")
-class EdgeBlur(ctx: Context, private val target: View, private val top: Boolean, private val fadeTo: Int) :
+class EdgeBlur(ctx: Context, private val target: View, private val top: Boolean, private val fadeTo: Int,
+               /** Высота плавного перехода от внутренней границы (px); дальше к краю — уже полное размытие. 0 — вся полоса. */
+               var ramp: Int = 0) :
     View(ctx), ViewTreeObserver.OnPreDrawListener {
 
     companion object {
@@ -48,22 +50,31 @@ class EdgeBlur(ctx: Context, private val target: View, private val top: Boolean,
             parent.addView(box, index, lp)
         }
 
-        /** Первый прокручиваемый список или ScrollView в дереве [v]. */
+        /**
+         * Прокручиваемый список или ScrollView окна — видимый и самый большой (у AlertDialog есть свой скрытый
+         * ScrollView для текста сообщения — его пропускаем).
+         */
         fun findScrollable(v: View): View? {
-            if (v is ScrollView || v is AbsListView) return v
-            if (v is ViewGroup) for (i in 0 until v.childCount) findScrollable(v.getChildAt(i))?.let { return it }
-            return null
+            var best: View? = null
+            fun walk(x: View) {
+                if (x.visibility != VISIBLE) return
+                if ((x is ScrollView || x is AbsListView) && (best == null || x.height > best!!.height)) best = x
+                if (x is ViewGroup) for (i in 0 until x.childCount) walk(x.getChildAt(i))
+            }
+            walk(v)
+            return best?.takeIf { it.height > 0 }
         }
     }
 
     private val dp = ctx.resources.displayMetrics.density
     private val blurOk = Build.VERSION.SDK_INT >= 31
     /** Ступени размытия (dp): у внутренней границы полосы — слабое, у края — сильное. */
-    private val radii = floatArrayOf(2f, 6f, 14f)
+    private val radii = floatArrayOf(3f, 8f, 18f)
     private val base = if (blurOk) RenderNode("edge") else null
     private val levels = if (blurOk) radii.map { r ->
         RenderNode("edge-$r").apply {
-            setRenderEffect(RenderEffect.createBlurEffect(r * dp, r * dp, Shader.TileMode.CLAMP))
+            // DECAL: за краем полосы — пусто, а не растянутый крайний ряд пикселей (иначе значки у края «тянулись»)
+            setRenderEffect(RenderEffect.createBlurEffect(r * dp, r * dp, Shader.TileMode.DECAL))
         }
     } else emptyList()
     private val maskP = Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN) }
@@ -89,16 +100,17 @@ class EdgeBlur(ctx: Context, private val target: View, private val top: Boolean,
         // маски ступеней: каждая следующая (сильнее размытая) начинается ближе к краю
         masks.clear()
         val n = radii.size
+        val len = (if (ramp in 1 until h) ramp else h).toFloat()
         for (i in 0 until n) {
-            val from = h * i / (n + 1f)
-            val to = h * (i + 1) / (n + 1f)
+            val from = len * i / (n + 1f)
+            val to = len * (i + 1) / (n + 1f)
             masks += if (top) LinearGradient(0f, h - from, 0f, h - to, 0, -1, Shader.TileMode.CLAMP)
             else LinearGradient(0f, from, 0f, to, 0, -1, Shader.TileMode.CLAMP)
         }
         // и в самом конце — растворение в цвете фона ([fadeTo] — цвет у самого края, вместе с прозрачностью)
         val clear = fadeTo and 0xFFFFFF
-        tintP.shader = if (top) LinearGradient(0f, h.toFloat(), 0f, 0f, clear, fadeTo, Shader.TileMode.CLAMP)
-        else LinearGradient(0f, 0f, 0f, h.toFloat(), clear, fadeTo, Shader.TileMode.CLAMP)
+        tintP.shader = if (top) LinearGradient(0f, h.toFloat(), 0f, h - len, clear, fadeTo, Shader.TileMode.CLAMP)
+        else LinearGradient(0f, 0f, 0f, len, clear, fadeTo, Shader.TileMode.CLAMP)
         shown = ""
     }
 
