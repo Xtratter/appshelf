@@ -349,8 +349,19 @@ class MainActivity : Activity() {
     // ---------- данные ----------
 
     private fun reload() {
+        // первый показ — сразу список с прошлого запуска (сохранять и записывать журнал будем только по свежему)
+        if (installed == null) Thread {
+            val old = Apps.cached(this) ?: return@Thread
+            main.post {
+                if (isDestroyed || installed != null) return@post
+                installed = old
+                installedPkgs = old.mapTo(HashSet()) { it.pkg }
+                render()
+            }
+        }.start()
         io.execute {
             val apps = Apps.load(this)
+            Apps.saveCache(this, apps)
             History.record(this, apps)   // журнал «Что изменилось»: новые и пропавшие приложения
             main.post {
                 if (isDestroyed) return@post

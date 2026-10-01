@@ -74,8 +74,8 @@ class EdgeBlur(ctx: Context, private val fadeTop: Int, private val fadeBottom: I
 
     private val dp = ctx.resources.displayMetrics.density
     private val blurOk = Build.VERSION.SDK_INT >= 31
-    /** Ступени размытия (dp), плавно перекрывающие друг друга. */
-    private val radii = floatArrayOf(2f, 5f, 9f, 15f)
+    /** Ступени размытия (dp), плавно перекрывающие друг друга; две — вдвое меньше работы в каждом кадре прокрутки. */
+    private val radii = floatArrayOf(4f, 13f)
     private val content = if (blurOk) RenderNode("edge-content") else null
     private val levels = if (blurOk) radii.map { RenderNode("edge-$it") to RenderNode("edge-$it-b") } else emptyList()
     private val maskP = Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN) }

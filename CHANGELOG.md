@@ -2,6 +2,12 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.33 — 2026-10-01
+
+- **Faster start**: the list from the previous launch appears at once, and the fresh one is gathered in the background (asking the system about several apps in parallel) and quietly replaces it
+- **Smoother scrolling**: the soft blurred edges use 2 blur steps instead of 4 — half the work in every frame
+- **Smaller APK**: Kotlin reflection metadata is no longer packed in (212 → 206 KB)
+
 ## 1.32 — 2026-10-01
 
 - **Long-press help**: hold a finger on a button or item and a bubble shows its name and what it does — the search bar, the ⋮ menu and its items, the Save button, filter chips, the summary, the app card buttons and the Save & restore window. It hides on a tap elsewhere or after 5 seconds (list rows keep long-press for selecting several apps)

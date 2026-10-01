@@ -11,8 +11,12 @@ android {
         applicationId = "io.github.xtratter.appshelf"
         minSdk = 26
         targetSdk = 35
-        versionCode = 70
-        versionName = "1.32"
+        versionCode = 71
+        versionName = "1.33"
+    }
+    // служебные описания Kotlin для рефлексии — приложению не нужны
+    packaging {
+        resources.excludes += listOf("kotlin/**", "META-INF/*.kotlin_module", "META-INF/*.version", "DebugProbesKt.bin")
     }
     buildTypes {
         release {

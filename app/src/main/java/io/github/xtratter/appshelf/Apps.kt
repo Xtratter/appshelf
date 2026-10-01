@@ -13,7 +13,33 @@ object Apps {
         val pm = ctx.packageManager
         val list = if (Build.VERSION.SDK_INT >= 33) pm.getInstalledPackages(PackageManager.PackageInfoFlags.of(0))
         else @Suppress("DEPRECATION") pm.getInstalledPackages(0)
-        return list.mapNotNull { info(pm, it) }
+        // название и источник — отдельный запрос к системе на каждое приложение; опрашиваем в несколько потоков
+        val threads = Runtime.getRuntime().availableProcessors().coerceIn(2, 6)
+        val pool = java.util.concurrent.Executors.newFixedThreadPool(threads)
+        try {
+            return list.map { p -> pool.submit<AppInfo?> { info(pm, p) } }.mapNotNull { it.get() }
+        } finally {
+            pool.shutdown()
+        }
+    }
+
+    private fun cacheFile(ctx: Context) = java.io.File(ctx.cacheDir, "apps.json")
+
+    /** Список с прошлого запуска — чтобы показать его сразу, пока свежий собирается в фоне. */
+    fun cached(ctx: Context): List<AppInfo>? = runCatching {
+        val a = org.json.JSONArray(cacheFile(ctx).readText())
+        (0 until a.length()).map { i ->
+            val o = a.getJSONArray(i)
+            AppInfo(o.getString(0), o.getString(1), o.getString(2), o.getLong(3), o.getString(4), o.getString(5),
+                o.getLong(6), o.getLong(7), o.getBoolean(8))
+        }
+    }.getOrNull()
+
+    fun saveCache(ctx: Context, apps: List<AppInfo>) {
+        val a = org.json.JSONArray()
+        for (x in apps) a.put(org.json.JSONArray().put(x.label).put(x.pkg).put(x.versionName).put(x.versionCode)
+            .put(x.installer).put(x.initiator).put(x.firstInstall).put(x.lastUpdate).put(x.system))
+        runCatching { cacheFile(ctx).writeText(a.toString()) }
     }
 
     fun isInstalled(ctx: Context, pkg: String): Boolean = try {
