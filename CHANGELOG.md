@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.28.4 — 2026-10-01
+
+- Smoother theme switching (checked frame by frame): the background no longer flashes sharp for a moment and the Theme window text no longer doubles — the snapshot under the new screen is blurred and dimmed like the real background behind a window, and the old window picture disappears in the same frame as the new window appears
+
 ## 1.28.3 — 2026-10-01
 
 - A fresh install now really starts with "Follow system": the theme and the transparency are no longer part of Android's backup, which used to bring the old theme back after reinstalling (all other settings are still backed up). After this update the theme is "Follow system" once more
