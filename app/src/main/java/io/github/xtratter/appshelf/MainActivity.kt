@@ -439,7 +439,7 @@ class MainActivity : Activity() {
         openCurrent()
     }
 
-    /** Открыть, откуда ставить текущее: своя ссылка или из каталога, иначе магазин. */
+    /** Открыть, откуда ставить текущее: резервная копия, своя ссылка или из каталога, иначе магазин. */
     private fun openCurrent() {
         val a = queue.getOrNull(qIndex) ?: return finishQueue()
         if (a.pkg in installedPkgs) { qIndex++; return openCurrent() }   // уже поставили вручную
@@ -447,10 +447,10 @@ class MainActivity : Activity() {
         queueWaiting = true
         val link = LinkStore.forApp(this, a.pkg).firstOrNull()?.first
         val backup = backupFor(a.pkg)
-        // своя ссылка или из каталога → резервная копия → магазин
+        // резервная копия (та самая версия, без сети) → своя ссылка или из каталога → магазин
         when {
-            link != null -> LinkStore.open(this, link, a.pkg, a.label)
             backup != null -> ApkInstaller.fromBackup(this, a.pkg, a.label, backup)
+            link != null -> LinkStore.open(this, link, a.pkg, a.label)
             else -> Store.open(this, a)
         }
     }

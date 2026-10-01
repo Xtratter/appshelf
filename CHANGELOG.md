@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.34 — 2026-10-01
+
+- **GitHub links install the app directly**: "Install: GitHub" (and the install-all queue) finds the APK in the repository's latest release, downloads and installs it — no browser; links in the catalog stay valid for every new version. If the release has no APK, the releases page opens as before; with Obtainium installed you choose between the APK, the page and Obtainium
+- **Install all in a row starts with the APK backup** when there is one (exactly the version you had, no network), then your link or the catalog, then the store
+
 ## 1.33.4 — 2026-10-01
 
 - Fixed: on start the summary card ("149 apps") was partly hidden under the top bar — the list from the previous launch appeared before the bar was measured; the offset under the bar is now part of the list header

@@ -1,0 +1,1 @@
+GitHub links install the APK from the latest release directly; install-all uses the APK backup first.

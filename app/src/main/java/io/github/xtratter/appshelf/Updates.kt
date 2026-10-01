@@ -104,40 +104,62 @@ object Updates {
         for (repo in repos) {
             val old = cache(ctx)[repo]
             if (!force && old != null && System.currentTimeMillis() - old.optLong("checked") < EVERY) continue
-            try {
-                val c = URL("https://api.github.com/repos/$repo/releases/latest").openConnection() as HttpURLConnection
-                c.connectTimeout = 10_000; c.readTimeout = 20_000
-                c.setRequestProperty("Accept", "application/vnd.github+json")
-                c.setRequestProperty("User-Agent", "AppShelf")
-                old?.optString("etag")?.takeIf { it.isNotEmpty() }?.let { c.setRequestProperty("If-None-Match", it) }
-                try {
-                    when (c.responseCode) {
-                        304 -> old?.put("checked", System.currentTimeMillis())
-                        200 -> {
-                            val r = JSONObject(c.inputStream.use { it.readBytes().toString(Charsets.UTF_8) })
-                            val assets = r.optJSONArray("assets") ?: JSONArray()
-                            val byName = (0 until assets.length()).associate {
-                                assets.getJSONObject(it).optString("name") to assets.getJSONObject(it).optString("browser_download_url")
-                            }
-                            val apk = pickApk(byName.keys.toList(), abi)?.let { byName[it] }.orEmpty()
-                            val entry = JSONObject().apply {
-                                put("tag", r.optString("tag_name")); put("apk", apk); put("page", r.optString("html_url"))
-                                put("etag", c.getHeaderField("ETag").orEmpty()); put("checked", System.currentTimeMillis())
-                            }
-                            if (old?.optString("tag") != entry.optString("tag") || old.optString("apk") != apk) changed = true
-                            synchronized(this) { cache(ctx)[repo] = entry }
-                        }
-                        404 -> synchronized(this) { cache(ctx)[repo] = JSONObject().put("checked", System.currentTimeMillis()) }   // релизов нет
-                        else -> {}   // лимит или сбой — попробуем в следующий раз
-                    }
-                } finally {
-                    c.disconnect()
-                }
-            } catch (e: Exception) {
-                // нет сети — не страшно
-            }
+            if (fetch(ctx, repo, abi, old)) changed = true
         }
         save(ctx)
         return changed
+    }
+
+    /** Запросить последний релиз [repo] на GitHub и запомнить его; true — что-то поменялось. Только в фоне. */
+    private fun fetch(ctx: Context, repo: String, abi: String, old: JSONObject?): Boolean {
+        var changed = false
+        try {
+            val c = URL("https://api.github.com/repos/$repo/releases/latest").openConnection() as HttpURLConnection
+            c.connectTimeout = 10_000; c.readTimeout = 20_000
+            c.setRequestProperty("Accept", "application/vnd.github+json")
+            c.setRequestProperty("User-Agent", "AppShelf")
+            old?.optString("etag")?.takeIf { it.isNotEmpty() }?.let { c.setRequestProperty("If-None-Match", it) }
+            try {
+                when (c.responseCode) {
+                    304 -> old?.put("checked", System.currentTimeMillis())
+                    200 -> {
+                        val r = JSONObject(c.inputStream.use { it.readBytes().toString(Charsets.UTF_8) })
+                        val assets = r.optJSONArray("assets") ?: JSONArray()
+                        val byName = (0 until assets.length()).associate {
+                            assets.getJSONObject(it).optString("name") to assets.getJSONObject(it).optString("browser_download_url")
+                        }
+                        val apk = pickApk(byName.keys.toList(), abi)?.let { byName[it] }.orEmpty()
+                        val entry = JSONObject().apply {
+                            put("tag", r.optString("tag_name")); put("apk", apk); put("page", r.optString("html_url"))
+                            put("etag", c.getHeaderField("ETag").orEmpty()); put("checked", System.currentTimeMillis())
+                        }
+                        if (old?.optString("tag") != entry.optString("tag") || old.optString("apk") != apk) changed = true
+                        synchronized(this) { cache(ctx)[repo] = entry }
+                    }
+                    404 -> synchronized(this) { cache(ctx)[repo] = JSONObject().put("checked", System.currentTimeMillis()) }   // релизов нет
+                    else -> {}   // лимит или сбой — попробуем в следующий раз
+                }
+            } finally {
+                c.disconnect()
+            }
+        } catch (e: Exception) {
+            // нет сети — не страшно
+        }
+        return changed
+    }
+
+    /**
+     * Прямая ссылка на APK из последнего релиза GitHub для ссылки [url] на репозиторий (или его релизы);
+     * null — это не GitHub, релизов нет или в релизе нет APK. Только в фоне.
+     */
+    fun latestApk(ctx: Context, url: String): String? {
+        val repo = repoOf(url) ?: return null
+        val abi = android.os.Build.SUPPORTED_ABIS.firstOrNull().orEmpty()
+        val old = cache(ctx)[repo]
+        if (old == null || old.optString("apk").isEmpty() || System.currentTimeMillis() - old.optLong("checked") >= EVERY) {
+            fetch(ctx, repo, abi, old)
+            save(ctx)
+        }
+        return cache(ctx)[repo]?.optString("apk")?.ifEmpty { null }
     }
 }

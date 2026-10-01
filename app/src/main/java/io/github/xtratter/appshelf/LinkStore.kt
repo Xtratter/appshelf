@@ -159,6 +159,24 @@ object LinkStore {
         val kind = Links.kind(link.url)
         if (kind == LinkKind.APK && ctx is MainActivity) return ApkInstaller.start(ctx, link.url, pkg, label.ifEmpty { Links.short(link.url) })
         val obt = if (kind.obtainium) obtainium(ctx) else null
+        // GitHub: скачать и поставить APK из последнего релиза прямо здесь (ссылка в каталоге не устаревает с версиями)
+        val github = ctx is MainActivity && Updates.repoOf(link.url) != null
+        if (github && obt == null) return githubApk(ctx as MainActivity, link, pkg, label)
+        if (github) {
+            AlertDialog.Builder(ctx)
+                .setTitle(link.label.ifBlank { ctx.getString(kind.title) } + " · " + Links.short(link.url))
+                .setItems(arrayOf(ctx.getString(R.string.lk_github_apk), ctx.getString(R.string.lk_open, ctx.getString(kind.title)),
+                    ctx.getString(R.string.lk_obtainium))) { _, i ->
+                    when (i) {
+                        0 -> githubApk(ctx as MainActivity, link, pkg, label)
+                        1 -> view(ctx, Links.installUrl(link.url))
+                        else -> view(ctx, "obtainium://add/" + link.url.trim(), obt)
+                    }
+                }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show().also { Ui.glassDialog(it) }
+            return
+        }
         if (obt == null) return view(ctx, Links.installUrl(link.url))
         AlertDialog.Builder(ctx)
             .setTitle(link.label.ifBlank { ctx.getString(kind.title) } + " · " + Links.short(link.url))
@@ -168,6 +186,23 @@ object LinkStore {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show().also { Ui.glassDialog(it) }
+    }
+
+    /** Найти APK в последнем релизе GitHub и поставить его; нет APK или сети — открыть страницу релизов. */
+    private fun githubApk(a: MainActivity, link: Link, pkg: String?, label: String) {
+        Toast.makeText(a, R.string.lk_github_looking, Toast.LENGTH_SHORT).show()
+        val app = a.applicationContext
+        Thread {
+            val apk = runCatching { Updates.latestApk(app, link.url) }.getOrNull()
+            a.runOnUiThread {
+                if (a.isDestroyed) return@runOnUiThread
+                if (apk != null) ApkInstaller.start(a, apk, pkg, label.ifEmpty { Links.short(link.url) })
+                else {
+                    Toast.makeText(a, R.string.lk_github_no_apk, Toast.LENGTH_LONG).show()
+                    view(a, Links.installUrl(link.url))
+                }
+            }
+        }.start()
     }
 
     private fun view(ctx: Context, url: String, pkg: String? = null) {
