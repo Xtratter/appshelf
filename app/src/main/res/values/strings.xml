@@ -114,8 +114,8 @@
     <string name="src_other">Other installer</string>
     <string name="src_unknown">Unknown</string>
 
-    <string name="th_standard">Standard</string>
-    <string name="th_system">Follow system (standard / light)</string>
+    <string name="th_standard">Dark</string>
+    <string name="th_system">Follow system (dark / light)</string>
     <string name="th_amoled">AMOLED black</string>
     <string name="th_light">Light</string>
     <string name="th_graphite">Graphite</string>

@@ -34,7 +34,7 @@ which apps are missing and opens each one in the right store.
 - **Haptic feedback** like a Taptic Engine: crisp clicks on buttons, a double click on success, a thud on errors; strength or off in menu ⋮ → Vibration
 - **Material 3 Expressive design**: tonal surfaces, a hero summary card with a big count, list rows grouped by letter, large buttons that change shape when pressed, tonal filter chips and a floating "Save" button for the main action; the surfaces are slightly translucent (Theme → Transparency switches it off)
 - **Soft edges**: the list fades into a progressive blur under the top bar and at the bottom of the screen, and so do scrolling windows (Android 12+; older versions fade without blur)
-- **Themes**: standard, follow system, AMOLED black, light, graphite; colors follow the wallpaper (Android 12+); menu ⋮ → Theme
+- **Themes**: follow system (default), light, dark, graphite, AMOLED black; colors follow the wallpaper (Android 12+); menu ⋮ → Theme
 
 ## Download
 

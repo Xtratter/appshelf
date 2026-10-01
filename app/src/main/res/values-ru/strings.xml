@@ -106,8 +106,8 @@
     <string name="src_other">Другой установщик</string>
     <string name="src_unknown">Неизвестно</string>
 
-    <string name="th_standard">Стандартная</string>
-    <string name="th_system">Как в системе (стандартная / светлая)</string>
+    <string name="th_standard">Тёмная</string>
+    <string name="th_system">Как в системе (тёмная / светлая)</string>
     <string name="th_amoled">AMOLED (чёрная)</string>
     <string name="th_light">Светлая</string>
     <string name="th_graphite">Графит</string>

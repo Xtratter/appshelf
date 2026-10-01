@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.28.1 — 2026-10-01
+
+- Theme list reordered: Follow system (default) first, then Light, Dark, Graphite and AMOLED; the former "Standard" theme is now called "Dark"
+
 ## 1.28 — 2026-10-01
 
 - **Light transparency**: cards, the summary, chips, the top bar and windows are slightly translucent, so the coloured background shows through. It is on by default; the Theme window has a "Transparency" switch to turn it off for the whole interface
