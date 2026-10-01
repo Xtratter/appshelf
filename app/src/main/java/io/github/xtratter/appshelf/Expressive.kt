@@ -13,7 +13,7 @@ import android.view.animation.DecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 
 /**
- * ЭКСПЕРИМЕНТ: Material 3 Expressive (design.google/library/expressive-material-design-google-research) —
+ * Material 3 Expressive (design.google/library/expressive-material-design-google-research) —
  * форма как выразительное средство: кнопки при нажатии пружинисто «сплющиваются» из капсулы в скруглённый
  * прямоугольник, строки списка собираются в группы с крупными внешними и мелкими внутренними углами.
  */

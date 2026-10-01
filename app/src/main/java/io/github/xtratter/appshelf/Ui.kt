@@ -38,7 +38,7 @@ object Ui {
     /** Цвета пятен фона и их яркость. */
     var auroraColors = intArrayOf(primary, tertiary, secondary); private set
     var auroraStrength = 1f; private set
-    /** ЭКСПЕРИМЕНТ (ветка experiment/m3-expressive): Material 3 Expressive — тональные поверхности, крупные формы. */
+    /** Material 3 Expressive: тональные поверхности, крупные формы (false — прежнее стекло). */
     const val EXPRESSIVE = true
     /** Тональные цвета M3: контейнеры акцента и поверхности. */
     var primaryContainer = 0; private set
