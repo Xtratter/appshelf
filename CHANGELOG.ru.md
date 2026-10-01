@@ -2,6 +2,10 @@
 
 **Русский** · [English](CHANGELOG.md)
 
+## 1.33.3 — 2026-10-01
+
+- Сам Material 3 Expressive (схема цветов, темы, поверхности, окна, «сплющивание» кнопок) теперь берётся из общего набора [android-ui-kit](https://github.com/Xtratter/android-ui-kit) 1.1, как и в DroidTop; внешне ничего не меняется
+
 ## 1.33.2 — 2026-10-01
 
 - Мягкие края, вибрация и справка по удержанию теперь берутся из общего набора [android-ui-kit](https://github.com/Xtratter/android-ui-kit) (его использует и DroidTop); работают так же, как раньше

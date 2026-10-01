@@ -1,5 +1,6 @@
 package io.github.xtratter.appshelf
 
+import io.github.xtratter.uikit.Expressive
 import android.content.Context
 import io.github.xtratter.uikit.Haptics
 import io.github.xtratter.uikit.Help

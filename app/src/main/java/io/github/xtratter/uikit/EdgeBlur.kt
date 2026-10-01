@@ -1,4 +1,4 @@
-// Copied from github.com/Xtratter/android-ui-kit (v1.0) — edit there and re-run install.sh
+// Copied from github.com/Xtratter/android-ui-kit (v1.1) — edit there and re-run install.sh
 package io.github.xtratter.uikit
 
 import android.annotation.SuppressLint
