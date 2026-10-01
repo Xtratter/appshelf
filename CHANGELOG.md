@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.25.4 — 2026-10-01
+
+- Main list: the blur under the top bar and at the bottom edge is always there, also before you start scrolling
+- Windows: the buttons ("Close" and others) are back in their place — the content no longer runs under them (in some windows the buttons ended up over the last items with an empty strip below); the content blurs softly above them when there is more to scroll
+
 ## 1.25.3 — 2026-10-01
 
 - Soft edges follow scrolling right away (from the recording with voice comments): the top blur appears as soon as the list moves away from its start and the bottom one stays until its end — before, they got stuck in their old state until a hard fling

@@ -27,25 +27,6 @@ class EdgeBlur(ctx: Context, private val fadeTop: Int, private val fadeBottom: I
     android.view.ViewTreeObserver.OnPreDrawListener {
 
     companion object {
-        /**
-         * Окно: содержимое прокручивается под панелью кнопок («Закрыть» и др.), как сообщения под строкой ввода
-         * в Telegram, — под кнопками всегда размытие; последний пункт при этом доезжает до кнопок.
-         */
-        fun underButtons(decor: View, scroller: View, box: EdgeBlur) {
-            val buttons = decor.findViewById<View>(decor.resources.getIdentifier("buttonPanel", "id", "android")) ?: return
-            val panel = decor.findViewById<View>(decor.resources.getIdentifier("customPanel", "id", "android"))
-                ?.takeIf { it.visibility == VISIBLE } ?: return
-            val h = buttons.height
-            if (h <= 0 || buttons.visibility != VISIBLE) return
-            (panel.layoutParams as? ViewGroup.MarginLayoutParams)?.let { it.bottomMargin = -h; panel.layoutParams = it }
-            (panel.parent as? ViewGroup)?.clipChildren = false
-            if (scroller is ViewGroup) scroller.clipToPadding = false
-            scroller.setPadding(scroller.paddingLeft, scroller.paddingTop, scroller.paddingRight, scroller.paddingBottom + h)
-            box.bottomBand += h
-            box.bottomRamp = box.bottomBand - h / 2
-            box.alwaysBottom = true
-        }
-
         /** Обернуть прокручиваемый [target] в контейнер с мягкими краями высотой [bandDp]. */
         fun wrap(target: View, bandDp: Float, fadeTop: Int, fadeBottom: Int = fadeTop): EdgeBlur? {
             val parent = target.parent as? ViewGroup ?: return null
@@ -81,7 +62,8 @@ class EdgeBlur(ctx: Context, private val fadeTop: Int, private val fadeBottom: I
     var topRamp = 0
     var bottomBand = 0
     var bottomRamp = 0
-    /** Нижняя полоса всегда (под ней лежат кнопки окна — содержимое уходит под них), а не только когда есть что прокручивать. */
+    /** Полосы всегда (главный список: размытие под шапкой и у края экрана — и до прокрутки), а не только когда есть что прокручивать. */
+    var alwaysTop = false
     var alwaysBottom = false
 
     private val dp = ctx.resources.displayMetrics.density
@@ -109,7 +91,7 @@ class EdgeBlur(ctx: Context, private val fadeTop: Int, private val fadeBottom: I
     /** Какие полосы нужны сейчас: верхняя — если есть что прокручивать вверх, нижняя — вниз (или всегда). */
     private fun want(): Int {
         val t = if (childCount > 0) getChildAt(0) else return 0
-        return (if (topBand > 0 && t.canScrollVertically(-1)) 1 else 0) or
+        return (if (topBand > 0 && (alwaysTop || t.canScrollVertically(-1))) 1 else 0) or
             (if (bottomBand > 0 && (alwaysBottom || t.canScrollVertically(1))) 2 else 0)
     }
     private var drawn = -1

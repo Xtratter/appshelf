@@ -105,6 +105,7 @@ class MainActivity : Activity() {
         topScrim = findViewById(R.id.topScrim)
         // вместо простого затемнения — мягкие края: список сам размывается у верхнего и нижнего края
         edges = EdgeBlur.wrap(list, 0f, Ui.withAlpha(Ui.base, 0.55f), Ui.withAlpha(Ui.base, 0.35f))!!
+        edges.alwaysTop = true; edges.alwaysBottom = true   // размытие под шапкой и у края — всегда, и до прокрутки
         topScrim.visibility = View.GONE
         searchBox = findViewById(R.id.searchBox)
         searchField = findViewById(R.id.searchField)
