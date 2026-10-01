@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.25.3 — 2026-10-01
+
+- Soft edges follow scrolling right away (from the recording with voice comments): the top blur appears as soon as the list moves away from its start and the bottom one stays until its end — before, they got stuck in their old state until a hard fling
+- Windows: at the top only a light blur remains, without the darkening into which titles like "2GIS" disappeared; the content scrolls under the window's buttons ("Close" and others) like messages under the input field in Telegram, with a constant blur beneath them — the last item still scrolls up to the buttons
+
 ## 1.25.2 — 2026-10-01
 
 - Soft edges redone in the Telegram manner (from the recording with voice comments): the blur is now drawn by the list's own container in the same frame as the list, so nothing lags or slides even on a hard fling, and no dark patches appear at the top; four overlapping blur steps instead of three distinct ones — no visible line in the transition; a lighter fade at the top. The same in windows (What changed, the app card, Save & restore…)

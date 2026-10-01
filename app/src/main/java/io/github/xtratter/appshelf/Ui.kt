@@ -259,7 +259,12 @@ object Ui {
         Haptics.attachAll(w.decorView)   // щелчки при нажатии на кнопки и пункты окна
         // у краёв прокручиваемого содержимого окна — плавное размытие, а не резкий срез
         // (после раскладки окна — до неё размеры неизвестны и скрытые области не отличить)
-        w.decorView.post { EdgeBlur.findScrollable(w.decorView)?.let { EdgeBlur.wrap(it, 44f, withAlpha(dialogSolid, 0.5f)) } }
+        w.decorView.post {
+            val scroller = EdgeBlur.findScrollable(w.decorView) ?: return@post
+            // сверху — почти без затемнения (иначе текст уходил в чёрное), только размытие
+            val box = EdgeBlur.wrap(scroller, 44f, withAlpha(dialogSolid, 0.15f), withAlpha(dialogSolid, 0.45f)) ?: return@post
+            EdgeBlur.underButtons(w.decorView, scroller, box)
+        }
     }
 }
 

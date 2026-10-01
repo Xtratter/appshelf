@@ -23,9 +23,29 @@ import android.widget.ScrollView
  * скорости прокрутки ничего не отстаёт и не «съезжает». Android 12+; ниже — только растворение.
  */
 @SuppressLint("ViewConstructor")
-class EdgeBlur(ctx: Context, private val fadeTop: Int, private val fadeBottom: Int) : FrameLayout(ctx) {
+class EdgeBlur(ctx: Context, private val fadeTop: Int, private val fadeBottom: Int) : FrameLayout(ctx),
+    android.view.ViewTreeObserver.OnPreDrawListener {
 
     companion object {
+        /**
+         * Окно: содержимое прокручивается под панелью кнопок («Закрыть» и др.), как сообщения под строкой ввода
+         * в Telegram, — под кнопками всегда размытие; последний пункт при этом доезжает до кнопок.
+         */
+        fun underButtons(decor: View, scroller: View, box: EdgeBlur) {
+            val buttons = decor.findViewById<View>(decor.resources.getIdentifier("buttonPanel", "id", "android")) ?: return
+            val panel = decor.findViewById<View>(decor.resources.getIdentifier("customPanel", "id", "android"))
+                ?.takeIf { it.visibility == VISIBLE } ?: return
+            val h = buttons.height
+            if (h <= 0 || buttons.visibility != VISIBLE) return
+            (panel.layoutParams as? ViewGroup.MarginLayoutParams)?.let { it.bottomMargin = -h; panel.layoutParams = it }
+            (panel.parent as? ViewGroup)?.clipChildren = false
+            if (scroller is ViewGroup) scroller.clipToPadding = false
+            scroller.setPadding(scroller.paddingLeft, scroller.paddingTop, scroller.paddingRight, scroller.paddingBottom + h)
+            box.bottomBand += h
+            box.bottomRamp = box.bottomBand - h / 2
+            box.alwaysBottom = true
+        }
+
         /** Обернуть прокручиваемый [target] в контейнер с мягкими краями высотой [bandDp]. */
         fun wrap(target: View, bandDp: Float, fadeTop: Int, fadeBottom: Int = fadeTop): EdgeBlur? {
             val parent = target.parent as? ViewGroup ?: return null
@@ -61,6 +81,8 @@ class EdgeBlur(ctx: Context, private val fadeTop: Int, private val fadeBottom: I
     var topRamp = 0
     var bottomBand = 0
     var bottomRamp = 0
+    /** Нижняя полоса всегда (под ней лежат кнопки окна — содержимое уходит под них), а не только когда есть что прокручивать. */
+    var alwaysBottom = false
 
     private val dp = ctx.resources.displayMetrics.density
     private val blurOk = Build.VERSION.SDK_INT >= 31
@@ -73,6 +95,10 @@ class EdgeBlur(ctx: Context, private val fadeTop: Int, private val fadeBottom: I
 
     init {
         setWillNotDraw(false)
+        addOnAttachStateChangeListener(object : OnAttachStateChangeListener {
+            override fun onViewAttachedToWindow(v: View) = v.viewTreeObserver.addOnPreDrawListener(this@EdgeBlur)
+            override fun onViewDetachedFromWindow(v: View) = v.viewTreeObserver.removeOnPreDrawListener(this@EdgeBlur)
+        })
         if (blurOk) levels.forEachIndexed { i, (a, b) ->
             val r = radii[i] * dp
             a.setRenderEffect(RenderEffect.createBlurEffect(r, r, Shader.TileMode.CLAMP))
@@ -80,12 +106,30 @@ class EdgeBlur(ctx: Context, private val fadeTop: Int, private val fadeBottom: I
         }
     }
 
+    /** Какие полосы нужны сейчас: верхняя — если есть что прокручивать вверх, нижняя — вниз (или всегда). */
+    private fun want(): Int {
+        val t = if (childCount > 0) getChildAt(0) else return 0
+        return (if (topBand > 0 && t.canScrollVertically(-1)) 1 else 0) or
+            (if (bottomBand > 0 && (alwaysBottom || t.canScrollVertically(1))) 2 else 0)
+    }
+    private var drawn = -1
+
+    /**
+     * При прокрутке перерисовывается только список внутри, а не этот контейнер, — без этой проверки решение
+     * «показывать ли полосу» застревало в прежнем состоянии (сверху не появлялось, снизу пропадало).
+     */
+    override fun onPreDraw(): Boolean {
+        if (want() != drawn) invalidate()
+        return true
+    }
+
     override fun dispatchDraw(c: Canvas) {
+        drawn = want()
         val w = width; val h = height
         val target = if (childCount > 0) getChildAt(0) else null
         if (w <= 0 || h <= 0 || target == null) return super.dispatchDraw(c)
-        val showTop = topBand > 0 && target.canScrollVertically(-1)
-        val showBottom = bottomBand > 0 && target.canScrollVertically(1)
+        val showTop = drawn and 1 != 0
+        val showBottom = drawn and 2 != 0
         val node = content
         if (node == null || !c.isHardwareAccelerated || (!showTop && !showBottom)) {
             super.dispatchDraw(c)
