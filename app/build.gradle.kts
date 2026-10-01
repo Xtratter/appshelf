@@ -8,11 +8,11 @@ android {
     compileSdk = 35
     buildToolsVersion = "35.0.0"
     defaultConfig {
-        applicationId = "io.github.xtratter.appshelf"
+        applicationId = "io.github.xtratter.appshelf.expressive"   // эксперимент: ставится рядом с обычным AppShelf
         minSdk = 26
         targetSdk = 35
         versionCode = 57
-        versionName = "1.26.2"
+        versionName = "1.26.2-expressive"
     }
     buildTypes {
         release {

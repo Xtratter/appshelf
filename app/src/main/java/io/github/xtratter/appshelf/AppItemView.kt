@@ -24,7 +24,11 @@ class Row(
     val selected: Boolean = false,
     /** Есть обновление на GitHub: новая версия («1.11»). */
     val update: String? = null,
-)
+) {
+    /** Expressive: первая и последняя строка своей буквы — у группы крупные внешние углы, внутри мелкие. */
+    var groupTop = true
+    var groupBottom = true
+}
 
 /**
  * Строка списка — стеклянная карточка: значок, название и дата, пакет, плашка источника.
@@ -35,6 +39,8 @@ class AppItemView(ctx: Context) : View(ctx) {
     private val padH = dp(12f)
     private val card = RectF()
     private val glass = GlassDrawable(ctx, 22f)
+    private val groupRect = RectF()
+    private val groupPath = android.graphics.Path()
     private val titleP = Ui.textPaint(ctx, 16f, Ui.medium, Ui.TEXT)
     private val pkgP = Ui.textPaint(ctx, 12.5f, Ui.regular, Ui.TEXT2)
     private val dateP = Ui.textPaint(ctx, 12f, Ui.regular, Ui.TEXT3).apply { textAlign = Paint.Align.RIGHT }
@@ -61,11 +67,20 @@ class AppItemView(ctx: Context) : View(ctx) {
     override fun onDraw(c: Canvas) {
         val rw = row ?: return
         val a = rw.app
-        glass.draw(c)
-        if (rw.selected) {
-            // отмеченная строка: подсветка цветом темы
-            fill.color = Ui.withAlpha(Ui.primary, 0.16f)
-            c.drawRoundRect(card, dp(22f), dp(22f), fill)
+        if (Ui.EXPRESSIVE) {
+            // группа строк одной буквы: крупные внешние углы, мелкие внутренние, зазор 2 dp
+            groupRect.set(card.left, if (rw.groupTop) dp(4f) else dp(1f), card.right, height - if (rw.groupBottom) dp(4f) else dp(1f))
+            Expressive.groupPath(groupPath, groupRect, rw.groupTop, rw.groupBottom, dp(26f), dp(6f))
+            fill.color = Ui.surfaceContainer
+            c.drawPath(groupPath, fill)
+            if (rw.selected) { fill.color = Ui.withAlpha(Ui.primary, 0.22f); c.drawPath(groupPath, fill) }
+        } else {
+            glass.draw(c)
+            if (rw.selected) {
+                // отмеченная строка: подсветка цветом темы
+                fill.color = Ui.withAlpha(Ui.primary, 0.16f)
+                c.drawRoundRect(card, dp(22f), dp(22f), fill)
+            }
         }
 
         // значок или буква на цветном кружке (для приложений, которых на телефоне нет)

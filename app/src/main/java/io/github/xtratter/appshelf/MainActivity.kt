@@ -106,6 +106,7 @@ class MainActivity : Activity() {
         // вместо простого затемнения — мягкие края: список сам размывается у верхнего и нижнего края
         edges = EdgeBlur.wrap(list, 0f, Ui.withAlpha(Ui.base, 0.55f), Ui.withAlpha(Ui.base, 0.35f))!!
         edges.alwaysTop = true; edges.alwaysBottom = true   // размытие под шапкой и у края — всегда, и до прокрутки
+        if (Ui.EXPRESSIVE) buildFab()
         topScrim.visibility = View.GONE
         searchBox = findViewById(R.id.searchBox)
         searchField = findViewById(R.id.searchField)
@@ -213,7 +214,48 @@ class MainActivity : Activity() {
         topBar.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> updateListPadding() }
     }
 
+    /** Expressive: плавающая кнопка главного действия — «Сохранение и восстановление» — внизу справа. */
+    private var fab: TextView? = null
+
+    private fun buildFab() {
+        val root = findViewById<android.widget.FrameLayout>(R.id.root)
+        val f = TextView(this).apply {
+            setText(R.string.save_short)
+            textSize = 16f
+            typeface = Ui.medium
+            gravity = Gravity.CENTER
+            setTextColor(Ui.onPrimaryContainer)
+            val icon = getDrawable(R.drawable.ic_save)?.mutate()?.apply { setTint(Ui.onPrimaryContainer) }
+            setCompoundDrawablesRelativeWithIntrinsicBounds(icon, null, null, null)
+            compoundDrawablePadding = dp(12f)
+            setPadding(dp(20f), 0, dp(24f), 0)
+            // крупная тональная кнопка со «сквиркл»-скруглением, как FAB в M3 Expressive
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = dp(20f).toFloat(); setColor(Ui.mix(Ui.primaryContainer, Ui.primary, 0.25f))
+            }
+            foreground = Ui.ripple(this@MainActivity, 20f)
+            elevation = dp(6f).toFloat()
+            setOnClickListener { SaveDialog.show(this@MainActivity) }
+            Haptics.onClick(this)
+        }
+        root.addView(f, android.widget.FrameLayout.LayoutParams(-2, dp(64f), Gravity.BOTTOM or Gravity.END).apply {
+            rightMargin = dp(16f); bottomMargin = insetBottom + dp(16f)
+        })
+        fab = f
+    }
+
+    /** Кнопка видна в обычном списке; в восстановлении, выборе, очереди и поиске — прячется. */
+    private fun updateFab() {
+        val f = fab ?: return
+        val show = restore == null && !selecting && !(::qBar.isInitialized && qBar.visibility == View.VISIBLE) &&
+            searchBox.visibility != View.VISIBLE
+        val lp = f.layoutParams as android.widget.FrameLayout.LayoutParams
+        if (lp.bottomMargin != insetBottom + dp(16f)) { lp.bottomMargin = insetBottom + dp(16f); f.layoutParams = lp }
+        f.visibility = if (show) View.VISIBLE else View.GONE
+    }
+
     private fun updateListPadding() {
+        updateFab()
         // сверху: под панелью — полное размытие, плавный переход — сразу под ней; снизу — плавно к краю экрана
         edges.topBand = topBar.height + dp(48f)
         edges.topRamp = dp(64f)
@@ -221,7 +263,8 @@ class MainActivity : Activity() {
         edges.bottomRamp = 0
         val top = topBar.height + dp(10f)
         val bottom = insetBottom + dp(16f) + (if (::selBar.isInitialized && selBar.visibility == View.VISIBLE) selBar.height + dp(12f) else 0) +
-            (if (::qBar.isInitialized && qBar.visibility == View.VISIBLE) qBar.height + dp(12f) else 0)
+            (if (::qBar.isInitialized && qBar.visibility == View.VISIBLE) qBar.height + dp(12f) else 0) +
+            (if (fab?.visibility == View.VISIBLE) dp(80f) else 0)
         if (list.paddingTop != top || list.paddingBottom != bottom)
             list.post { list.setPadding(list.paddingLeft, top, list.paddingRight, bottom) }
     }
@@ -273,7 +316,8 @@ class MainActivity : Activity() {
         val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         summary = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            background = GlassDrawable(this@MainActivity, 28f)
+            // Expressive: сводка — «герой» в тональном контейнере акцента, с крупными скруглениями
+            background = if (Ui.EXPRESSIVE) Expressive.pill(this@MainActivity, Ui.primaryContainer, 32f) else GlassDrawable(this@MainActivity, 28f)
             setPadding(dp(20f), dp(18f), dp(20f), dp(18f))
         }
         box.addView(summary, LinearLayout.LayoutParams(-1, -2).apply {
@@ -622,6 +666,7 @@ class MainActivity : Activity() {
         // отмеченные, которых больше нет (удалили), из выбора убираем
         installed?.let { all -> val have = all.mapTo(HashSet()) { it.pkg }; selected.retainAll(have) }
         updateSelectionBar()
+        updateListPadding()
         val items = ArrayList<Any>()
         val excl = prefs.excluded
         var section = ""
@@ -635,6 +680,12 @@ class MainActivity : Activity() {
                 link = if (missing) LinkStore.forApp(this, a.pkg).firstOrNull()?.let { getString(Links.kind(it.first.url).title) }
                     ?: backupFor(a.pkg)?.let { getString(R.string.bk_row) } else null,
                 note = LinkStore.note(this, a.pkg))
+        }
+        // Expressive: строки одной буквы — общая группа (первая и последняя — с крупными углами)
+        for (i in items.indices) {
+            val r = items[i] as? Row ?: continue
+            r.groupTop = items.getOrNull(i - 1) !is Row
+            r.groupBottom = items.getOrNull(i + 1) !is Row
         }
         if (items.isEmpty()) items += getString(
             if (restoring && missingOnly && query.isEmpty() && filter == null) R.string.all_installed else R.string.nothing_found)
@@ -662,7 +713,7 @@ class MainActivity : Activity() {
 
     private fun button(label: String, filled: Boolean, onClick: () -> Unit) = TextView(this).apply {
         text = label
-        textSize = 14f
+        textSize = if (Ui.EXPRESSIVE) 15f else 14f
         typeface = Ui.medium
         gravity = Gravity.CENTER
         setPadding(dp(14f), 0, dp(14f), 0)
@@ -688,7 +739,8 @@ class MainActivity : Activity() {
         val n = apps.size
         val big = LinearLayout(this).apply { gravity = Gravity.BOTTOM }
         if (snap == null) {
-            big.addView(text(44f, Ui.primary, Ui.bold).apply { text = n.toString() })
+            big.addView(if (Ui.EXPRESSIVE) text(64f, Ui.onPrimaryContainer, Ui.heavy).apply { text = n.toString(); includeFontPadding = false }
+                else text(44f, Ui.primary, Ui.bold).apply { text = n.toString() })
             big.addView(text(18f, Ui.TEXT2, Ui.medium).apply {
                 text = resources.getQuantityString(R.plurals.apps, n)
                 setPadding(dp(8f), 0, 0, dp(8f))
@@ -725,8 +777,9 @@ class MainActivity : Activity() {
                 }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(14f) })
             }
             // без выравнивания по тексту: у кнопки с уменьшенным шрифтом базовая линия ниже, и её бы сдвинуло и обрезало
-            summary.addView(button(getString(R.string.save_restore), true) { SaveDialog.show(this) },
-                LinearLayout.LayoutParams(-1, dp(44f)))
+            // Expressive: главное действие — плавающая кнопка внизу справа, под большой палец
+            if (!Ui.EXPRESSIVE) summary.addView(button(getString(R.string.save_restore), true) { SaveDialog.show(this) },
+                LinearLayout.LayoutParams(-1, dp(Ui.buttonDp)))
         } else {
             val missing = apps.count { it.pkg !in installedPkgs }
             summary.addView(text(13f, Ui.primary, Ui.medium).apply { setText(R.string.restore_title) })
@@ -746,18 +799,18 @@ class MainActivity : Activity() {
             // без выравнивания по тексту: у кнопки с уменьшенным шрифтом базовая линия ниже, и её бы сдвинуло и обрезало
             if (missing == 0) {
                 // всё восстановлено — одна понятная кнопка обратно
-                summary.addView(button(getString(R.string.back_to_mine), true) { closeRestore() }, LinearLayout.LayoutParams(-1, dp(44f)))
+                summary.addView(button(getString(R.string.back_to_mine), true) { closeRestore() }, LinearLayout.LayoutParams(-1, dp(Ui.buttonDp)))
                 return
             }
             // главное — поставить всё недостающее по очереди
             summary.addView(button(getString(R.string.q_start, missing), true) { startQueue() },
-                LinearLayout.LayoutParams(-1, dp(44f)).apply { bottomMargin = dp(10f) })
+                LinearLayout.LayoutParams(-1, dp(Ui.buttonDp)).apply { bottomMargin = dp(10f) })
             val buttons = LinearLayout(this).apply { isBaselineAligned = false }
             buttons.addView(button(getString(if (missingOnly) R.string.show_all else R.string.show_missing), false) {
                 missingOnly = !missingOnly; render()
-            }, LinearLayout.LayoutParams(0, dp(44f), 1f))
+            }, LinearLayout.LayoutParams(0, dp(Ui.buttonDp), 1f))
             buttons.addView(button(getString(R.string.close_list), false) { closeRestore() },
-                LinearLayout.LayoutParams(0, dp(44f), 1f).apply { leftMargin = dp(10f) })
+                LinearLayout.LayoutParams(0, dp(Ui.buttonDp), 1f).apply { leftMargin = dp(10f) })
             summary.addView(buttons)
         }
     }
@@ -799,8 +852,16 @@ class MainActivity : Activity() {
             typeface = Ui.medium
             gravity = Gravity.CENTER
             setPadding(dp(if (dot != null) 12f else 16f), 0, dp(16f), 0)
-            setTextColor(if (sel) Ui.ON_ACCENT else Ui.TEXT)
-            background = if (sel) Ui.pill(this@MainActivity, Ui.primary) else Ui.pill(this@MainActivity, Ui.card, Ui.ink(0x33))
+            if (Ui.EXPRESSIVE) {
+                // выбранный — капсула вторичного тона с галочкой, остальные — скруглённые прямоугольники
+                if (sel) text = "✓  $label"
+                setTextColor(if (sel) Ui.onSecondaryContainer else Ui.TEXT)
+                background = if (sel) Expressive.pill(this@MainActivity, Ui.secondaryContainer, 100f)
+                else Ui.pill(this@MainActivity, Ui.surfaceContainer, Ui.ink(0x26), 12f)
+            } else {
+                setTextColor(if (sel) Ui.ON_ACCENT else Ui.TEXT)
+                background = if (sel) Ui.pill(this@MainActivity, Ui.primary) else Ui.pill(this@MainActivity, Ui.card, Ui.ink(0x33))
+            }
             foreground = Ui.ripple(this@MainActivity, 100f)
             if (dot != null) {
                 val d = android.graphics.drawable.GradientDrawable().apply {
@@ -812,7 +873,7 @@ class MainActivity : Activity() {
             }
             setOnClickListener { onClick() }
             Haptics.onClick(this, Haptics.Kind.TICK)
-        }, LinearLayout.LayoutParams(-2, dp(36f)).apply { rightMargin = dp(8f) })
+        }, LinearLayout.LayoutParams(-2, dp(if (Ui.EXPRESSIVE) 40f else 36f)).apply { rightMargin = dp(8f) })
         chip(getString(R.string.all) + " · " + apps.size, filter == null && !noLink && !onlyUpdates, null) {
             filter = null; noLink = false; onlyUpdates = false; render()
         }
@@ -1248,10 +1309,10 @@ class MainActivity : Activity() {
                 return v
             }
             val v = convertView as? TextView ?: TextView(this@MainActivity).apply {
-                textSize = 15f
-                typeface = Ui.bold
+                textSize = if (Ui.EXPRESSIVE) 22f else 15f
+                typeface = if (Ui.EXPRESSIVE) Ui.heavy else Ui.bold
                 setTextColor(Ui.primary)
-                setPadding(dp(28f), dp(14f), dp(28f), dp(4f))
+                setPadding(dp(28f), dp(if (Ui.EXPRESSIVE) 18f else 14f), dp(28f), dp(6f))
             }
             v.text = item as String
             return v
