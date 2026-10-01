@@ -20,6 +20,7 @@ object Store {
                 tries += view("https://f-droid.org/packages/$pkg/")
             }
             Source.RUSTORE -> tries += view("https://www.rustore.ru/catalog/app/$pkg")
+            Source.APPSHELF -> {}   // сам AppShelf магазином не открывается — сразу общий магазин и поиск
             Source.PLAY, Source.AURORA -> {
                 tries += view("market://details?id=$pkg", a.installer)
                 tries += view("https://play.google.com/store/apps/details?id=$pkg")

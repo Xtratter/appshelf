@@ -729,6 +729,11 @@ class MainActivity : Activity() {
         adapter.update(items)
     }
 
+    /** Установленные приложения, для которых на GitHub есть версия новее с APK: пакет, название, ссылка. */
+    private fun updatable(): List<Triple<String, String, String>> = (installed ?: emptyList()).mapNotNull { a ->
+        Updates.available(this, a)?.apkUrl?.let { Triple(a.pkg, a.label, it) }
+    }
+
     /** Источник словами: «Google Play», «APK · через Telegram», название чужого установщика. */
     fun sourceText(a: AppInfo): String = when (a.source) {
         Source.APK -> if (a.initiator.isNotEmpty()) getString(R.string.src_apk_via, label(a.initiator)) else getString(R.string.src_apk)
@@ -807,6 +812,11 @@ class MainActivity : Activity() {
                     setPadding(dp(14f), dp(10f), dp(14f), dp(10f))
                 }
             }, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(if (syncLine() != null) 6f else 14f) })
+            // обновления с GitHub, для которых есть APK, — одной кнопкой
+            val upd = updatable()
+            if (upd.isNotEmpty()) summary.addView(button(getString(R.string.upd_all, upd.size), true) {
+                ApkInstaller.updateAll(this, upd)
+            }, LinearLayout.LayoutParams(-1, dp(Ui.buttonDp)).apply { bottomMargin = dp(14f) })
             syncLine()?.let { (line, bad) ->
                 summary.addView(text(13.5f, if (bad) Ui.WARN else Ui.TEXT3).apply {
                     text = line

@@ -1,0 +1,1 @@
+Update all: GitHub updates in a row, without confirmation for apps installed by AppShelf (Android 12+); AppShelf is a source of its own.

@@ -33,6 +33,9 @@ enum class Source(val title: Int, val color: Int, val stores: List<String> = emp
     GALAXY(R.string.src_galaxy, 0xFF1428A0.toInt(), listOf("com.sec.android.app.samsungapps")),
     APPGALLERY(R.string.src_appgallery, 0xFFCF0A2C.toInt(), listOf("com.huawei.appmarket")),
     AMAZON(R.string.src_amazon, 0xFFFF9900.toInt(), listOf("com.amazon.venezia")),
+    /** Поставлено самим AppShelf (из резервной копии, по ссылке, из релиза GitHub) — он же может и обновлять. */
+    APPSHELF(R.string.src_appshelf, 0xFF5C6BC0.toInt(), listOf("io.github.xtratter.appshelf",
+        "io.github.xtratter.appshelf.help", "io.github.xtratter.appshelf.mdc")),
     APK(R.string.src_apk, 0xFFF9A825.toInt()),
     PREINSTALLED(R.string.src_preinstalled, 0xFF78909C.toInt()),
     OTHER(R.string.src_other, 0xFF8D6E63.toInt()),

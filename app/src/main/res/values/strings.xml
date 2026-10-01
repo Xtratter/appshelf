@@ -71,6 +71,11 @@
     <string name="lk_github_apk">Download and install the APK from the latest release</string>
     <string name="lk_github_looking">Looking for the APK in the latest GitHub release…</string>
     <string name="lk_github_no_apk">No APK in the latest release — opening the releases page</string>
+    <string name="src_appshelf">AppShelf</string>
+    <string name="upd_all">Update all (%d)</string>
+    <string name="upd_all_title">Updating apps</string>
+    <string name="upd_all_progress">%1$d of %2$d: %3$s</string>
+    <string name="upd_all_done">Updated %1$d of %2$d</string>
     <string name="search_hint">Name or package</string>
     <string name="save">Save the list</string>
     <string name="more">More</string>

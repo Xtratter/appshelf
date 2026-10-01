@@ -11,8 +11,8 @@ android {
         applicationId = "io.github.xtratter.appshelf"
         minSdk = 26
         targetSdk = 35
-        versionCode = 76
-        versionName = "1.34"
+        versionCode = 77
+        versionName = "1.35"
     }
     // служебные описания Kotlin для рефлексии — приложению не нужны
     packaging {

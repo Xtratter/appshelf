@@ -70,6 +70,11 @@
     <string name="lk_github_apk">Скачать и установить APK из последнего релиза</string>
     <string name="lk_github_looking">Ищу APK в последнем релизе на GitHub…</string>
     <string name="lk_github_no_apk">В последнем релизе нет APK — открываю страницу релизов</string>
+    <string name="src_appshelf">AppShelf</string>
+    <string name="upd_all">Обновить все (%d)</string>
+    <string name="upd_all_title">Обновление приложений</string>
+    <string name="upd_all_progress">%1$d из %2$d: %3$s</string>
+    <string name="upd_all_done">Обновлено %1$d из %2$d</string>
     <string name="search_hint">Название или пакет</string>
     <string name="save">Сохранить список</string>
     <string name="more">Ещё</string>

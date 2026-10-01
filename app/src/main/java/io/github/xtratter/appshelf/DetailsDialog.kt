@@ -201,7 +201,7 @@ object DetailsDialog {
 
     /** Куда поведёт кнопка «Установить из …». */
     private fun storeName(a: MainActivity, app: AppInfo, source: String) = when (app.source) {
-        Source.APK, Source.PREINSTALLED, Source.UNKNOWN -> a.getString(R.string.store_any)
+        Source.APK, Source.APPSHELF, Source.PREINSTALLED, Source.UNKNOWN -> a.getString(R.string.store_any)
         Source.OTHER -> source
         else -> a.getString(app.source.title)
     }

@@ -139,38 +139,13 @@ object ApkInstaller {
         val file = File(dir, "download.apk")
         Thread {
             val err = try {
-                val c = URL(WebDav.encodeUrl(url.trim())).openConnection() as HttpURLConnection
-                c.connectTimeout = 15_000
-                c.readTimeout = 30_000
-                c.setRequestProperty("User-Agent", "AppShelf")
-                try {
-                    if (c.responseCode !in 200..299) throw WebDav.HttpError(c.responseCode, c.responseMessage.orEmpty())
-                    val total = c.contentLengthLong
-                    var done = 0L
-                    var shown = 0L
-                    c.inputStream.use { inp ->
-                        file.outputStream().use { out ->
-                            val buf = ByteArray(64 * 1024)
-                            while (!stop.get()) {
-                                val n = inp.read(buf)
-                                if (n < 0) break
-                                out.write(buf, 0, n)
-                                done += n
-                                if (done - shown > 256 * 1024) {
-                                    shown = done
-                                    val d = done
-                                    a.runOnUiThread {
-                                        if (total > 0) { bar.isIndeterminate = false; bar.max = 1000; bar.progress = (d * 1000 / total).toInt() }
-                                        info.text = if (total > 0) a.getString(R.string.inst_progress,
-                                            Formatter.formatShortFileSize(a, d), Formatter.formatShortFileSize(a, total))
-                                        else Formatter.formatShortFileSize(a, d)
-                                    }
-                                }
-                            }
-                        }
+                fetchUrl(url, file, stop) { d, total ->
+                    a.runOnUiThread {
+                        if (total > 0) { bar.isIndeterminate = false; bar.max = 1000; bar.progress = (d * 1000 / total).toInt() }
+                        info.text = if (total > 0) a.getString(R.string.inst_progress,
+                            Formatter.formatShortFileSize(a, d), Formatter.formatShortFileSize(a, total))
+                        else Formatter.formatShortFileSize(a, d)
                     }
-                } finally {
-                    c.disconnect()
                 }
                 null
             } catch (e: Exception) {
@@ -202,6 +177,131 @@ object ApkInstaller {
         }
     }
 
+    /** Скачать [url] в [file]; [progress] — примерно каждые 256 КБ (скачано, всего или −1). Только в фоне. */
+    private fun fetchUrl(url: String, file: File, stop: java.util.concurrent.atomic.AtomicBoolean, progress: (Long, Long) -> Unit) {
+        val c = URL(WebDav.encodeUrl(url.trim())).openConnection() as HttpURLConnection
+        c.connectTimeout = 15_000
+        c.readTimeout = 30_000
+        c.setRequestProperty("User-Agent", "AppShelf")
+        try {
+            if (c.responseCode !in 200..299) throw WebDav.HttpError(c.responseCode, c.responseMessage.orEmpty())
+            val total = c.contentLengthLong
+            var done = 0L
+            var shown = 0L
+            c.inputStream.use { inp ->
+                file.outputStream().use { out ->
+                    val buf = ByteArray(64 * 1024)
+                    while (!stop.get()) {
+                        val n = inp.read(buf)
+                        if (n < 0) break
+                        out.write(buf, 0, n)
+                        done += n
+                        if (done - shown > 256 * 1024) { shown = done; progress(done, total) }
+                    }
+                }
+            }
+        } finally {
+            c.disconnect()
+        }
+    }
+
+    // ---------- «Обновить все» ----------
+
+    /** Очередь обновлений: пакет, название, ссылка на APK. */
+    private val updates = ArrayDeque<Triple<String, String, String>>()
+    private var upDialog: AlertDialog? = null
+    private var upTitle: TextView? = null
+    private var upBar: ProgressBar? = null
+    private var upStop = java.util.concurrent.atomic.AtomicBoolean(false)
+    private var upTotal = 0
+    private var upDone = 0
+    private var upFailed = 0
+    private var upCurrent = ""
+
+    /**
+     * Обновить приложения одно за другим: скачать APK релиза и поставить. Приложения, которые когда-то поставил сам
+     * AppShelf, на Android 12+ обновляются без окна подтверждения; остальные Android попросит подтвердить.
+     */
+    fun updateAll(a: MainActivity, items: List<Triple<String, String, String>>) {
+        if (items.isEmpty()) return
+        if (needPermission(a) { updateAll(a, items) }) return
+        val dp = a.resources.displayMetrics.density
+        val title = TextView(a).apply { textSize = 15f; setTextColor(Ui.TEXT) }
+        val bar = ProgressBar(a, null, android.R.attr.progressBarStyleHorizontal).apply {
+            isIndeterminate = true
+            progressTintList = android.content.res.ColorStateList.valueOf(Ui.primary)
+            indeterminateTintList = progressTintList
+        }
+        val box = LinearLayout(a).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding((24 * dp).toInt(), (8 * dp).toInt(), (24 * dp).toInt(), 0)
+            addView(title)
+            addView(bar, LinearLayout.LayoutParams(-1, -2).apply { topMargin = (10 * dp).toInt() })
+        }
+        upStop = java.util.concurrent.atomic.AtomicBoolean(false)
+        val dialog = AlertDialog.Builder(a).setTitle(R.string.upd_all_title).setView(box)
+            .setNegativeButton(R.string.q_stop) { _, _ -> upStop.set(true); updates.clear() }
+            .setCancelable(false).create()
+        dialog.show()
+        Ui.glassDialog(dialog)
+        upDialog = dialog; upTitle = title; upBar = bar
+        updates.clear(); updates.addAll(items)
+        upTotal = items.size; upDone = 0; upFailed = 0
+        nextUpdate(a)
+    }
+
+    /** Ответ системы про текущее обновление ([ok] — поставилось) — и дальше по очереди. */
+    fun updateResult(ctx: Context, ok: Boolean) {
+        if (ok) upDone++ else upFailed++
+        val a = MainActivity.current?.get()
+        if (a != null) a.runOnUiThread { nextUpdate(a) } else updates.clear()
+    }
+
+    private fun nextUpdate(a: MainActivity) {
+        val item = if (upStop.get()) null else updates.removeFirstOrNull()
+        if (item == null) {
+            upDialog?.dismiss(); upDialog = null
+            if (upTotal > 0) {
+                Haptics.play(if (upFailed == 0) Haptics.Kind.SUCCESS else Haptics.Kind.ERROR)
+                Toast.makeText(a, a.getString(R.string.upd_all_done, upDone, upTotal), Toast.LENGTH_LONG).show()
+            }
+            upTotal = 0
+            a.onInstalled()
+            return
+        }
+        val (pkg, label, url) = item
+        upCurrent = label
+        val n = upTotal - updates.size
+        upTitle?.text = a.getString(R.string.upd_all_progress, n, upTotal, label)
+        upBar?.apply { isIndeterminate = true }
+        val dir = File(a.cacheDir, "apk").apply { mkdirs(); listFiles()?.forEach { it.delete() } }
+        val file = File(dir, "update.apk")
+        Thread {
+            val err = try {
+                fetchUrl(url, file, upStop) { d, total ->
+                    a.runOnUiThread {
+                        upBar?.apply { if (total > 0) { isIndeterminate = false; max = 1000; progress = (d * 1000 / total).toInt() } }
+                    }
+                }
+                null
+            } catch (e: Exception) { e }
+            a.runOnUiThread {
+                when {
+                    upStop.get() -> { file.delete(); nextUpdate(a) }
+                    err != null -> {
+                        Toast.makeText(a, a.getString(R.string.inst_failed, label + ": " + Sync.error(a, err)), Toast.LENGTH_LONG).show()
+                        upFailed++; nextUpdate(a)
+                    }
+                    @Suppress("DEPRECATION") a.packageManager.getPackageArchiveInfo(file.path, 0)?.packageName != pkg -> {
+                        Toast.makeText(a, a.getString(R.string.inst_failed, label + ": " + a.getString(R.string.inst_not_apk)), Toast.LENGTH_LONG).show()
+                        file.delete(); upFailed++; nextUpdate(a)
+                    }
+                    else -> if (!commit(a, file, update = true)) { upFailed++; nextUpdate(a) }
+                }
+            }
+        }.start()
+    }
+
     /** Очередь удаления нескольких приложений: следующее — когда Android ответил про предыдущее. */
     private val queue = ArrayDeque<Pair<String, String>>()
 
@@ -230,10 +330,13 @@ object ApkInstaller {
         }
     }
 
-    private fun commit(ctx: Context, file: File) {
+    /** Передать файл установщику; [update] — шаг «Обновить все» (ответ придёт в [updateResult]). false — не вышло. */
+    private fun commit(ctx: Context, file: File, update: Boolean = false): Boolean {
         try {
             val installer = ctx.packageManager.packageInstaller
             val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
+            // обновление приложения, которое поставил сам AppShelf, — без окна подтверждения (Android 12+)
+            if (Build.VERSION.SDK_INT >= 31) params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED)
             val id = installer.createSession(params)
             installer.openSession(id).use { s ->
                 if (file.name.endsWith(".apks")) {
@@ -251,10 +354,13 @@ object ApkInstaller {
                     s.fsync(out)
                 }
                 val flags = PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= 31) PendingIntent.FLAG_MUTABLE else 0)
-                s.commit(PendingIntent.getBroadcast(ctx, id, Intent(ctx, InstallReceiver::class.java), flags).intentSender)
+                val intent = Intent(ctx, InstallReceiver::class.java).putExtra(InstallReceiver.EXTRA_UPDATE, update)
+                s.commit(PendingIntent.getBroadcast(ctx, id, intent, flags).intentSender)
             }
+            return true
         } catch (e: IOException) {
             Toast.makeText(ctx, ctx.getString(R.string.inst_failed, e.message.orEmpty()), Toast.LENGTH_LONG).show()
+            return false
         } finally {
             file.delete()
         }
@@ -266,12 +372,22 @@ class InstallReceiver : BroadcastReceiver() {
     companion object {
         /** Это ответ на удаление; значение — название приложения. */
         const val EXTRA_REMOVED = "io.github.xtratter.appshelf.REMOVED"
+        /** Это шаг «Обновить все»: после ответа — следующее обновление. */
+        const val EXTRA_UPDATE = "io.github.xtratter.appshelf.UPDATE"
     }
 
     override fun onReceive(ctx: Context, intent: Intent) {
         val removed = intent.getStringExtra(EXTRA_REMOVED)
         Kit.init(ctx)
-        when (intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)) {
+        val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
+        if (intent.getBooleanExtra(EXTRA_UPDATE, false) && status != PackageInstaller.STATUS_PENDING_USER_ACTION) {
+            if (status != PackageInstaller.STATUS_SUCCESS && status != PackageInstaller.STATUS_FAILURE_ABORTED)
+                Toast.makeText(ctx, ctx.getString(R.string.inst_failed, intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE).orEmpty()),
+                    Toast.LENGTH_LONG).show()
+            ApkInstaller.updateResult(ctx, status == PackageInstaller.STATUS_SUCCESS)
+            return
+        }
+        when (status) {
             PackageInstaller.STATUS_PENDING_USER_ACTION -> {
                 val confirm = if (Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent::class.java)
                 else @Suppress("DEPRECATION") intent.getParcelableExtra(Intent.EXTRA_INTENT)

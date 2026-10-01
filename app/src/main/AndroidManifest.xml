@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- удаление приложений из карточки (Android всё равно спрашивает подтверждение) -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <!-- обновлять приложения, которые поставил сам AppShelf, без окна подтверждения (Android 12+) -->
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
     <!-- отклик вибрацией (меню ⋮ → «Вибрация», можно выключить) -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <!-- восстановить расписание после перезагрузки -->

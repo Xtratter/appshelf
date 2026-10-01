@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.35 — 2026-10-01
+
+- **"AppShelf" is a source of its own**: apps that AppShelf installed itself (from an APK backup, a link or a GitHub release) are grouped as "AppShelf" with their own colour and chip instead of "Other"
+- **Update all**: when GitHub has newer versions with an APK, the summary shows "Update all (N)" — AppShelf downloads and installs them one after another with a progress window and a Stop button. Apps that AppShelf installed itself are updated **without a confirmation window** on Android 12+; for the rest Android asks as usual
+
 ## 1.34 — 2026-10-01
 
 - **GitHub links install the app directly**: "Install: GitHub" (and the install-all queue) finds the APK in the repository's latest release, downloads and installs it — no browser; links in the catalog stay valid for every new version. If the release has no APK, the releases page opens as before; with Obtainium installed you choose between the APK, the page and Obtainium
