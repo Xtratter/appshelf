@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.32 — 2026-10-01
+
+- **Long-press help**: hold a finger on a button or item and a bubble shows its name and what it does — the search bar, the ⋮ menu and its items, the Save button, filter chips, the summary, the app card buttons and the Save & restore window. It hides on a tap elsewhere or after 5 seconds (list rows keep long-press for selecting several apps)
+
 ## 1.31 — 2026-10-01
 
 - **Save & restore reorganized**: at the top a "what is protected" card — when and where the app list was last saved, how many APK backups there are and when, whether the app settings were saved; then two big buttons **Save** (list to a file, share, send to the server now, APK backups now, app settings, links for the catalog) and **Restore** (list from a file or the server, app settings); below, collapsible **Automation** (WebDAV, autosave, APK backups) and **What to save** (apps in the list)

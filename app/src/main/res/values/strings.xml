@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">AppShelf Help</string>
+    <string name="app_name">AppShelf</string>
     <string name="search">Search</string>
     <string name="search_apps">Search apps</string>
     <string name="save_short">Save</string>

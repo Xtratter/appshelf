@@ -8,11 +8,11 @@ android {
     compileSdk = 35
     buildToolsVersion = "35.0.0"
     defaultConfig {
-        applicationId = "io.github.xtratter.appshelf.help"   // эксперимент: ставится рядом с обычным AppShelf
+        applicationId = "io.github.xtratter.appshelf"
         minSdk = 26
         targetSdk = 35
-        versionCode = 69
-        versionName = "1.31-help"
+        versionCode = 70
+        versionName = "1.32"
     }
     buildTypes {
         release {
