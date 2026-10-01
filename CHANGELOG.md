@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.28.3 — 2026-10-01
+
+- A fresh install now really starts with "Follow system": the theme and the transparency are no longer part of Android's backup, which used to bring the old theme back after reinstalling (all other settings are still backed up). After this update the theme is "Follow system" once more
+- Switching the theme or the transparency no longer flashes: the old screen gently dissolves into the new one under the Theme window
+
 ## 1.28.2 — 2026-10-01
 
 - The Theme window stays open when you switch the theme or the transparency: the screen is rebuilt in the new colours right under it, so you can try themes one after another

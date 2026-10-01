@@ -7,8 +7,15 @@ import kotlin.reflect.KProperty
 /** Сохранённые настройки. */
 class Prefs(ctx: Context) {
     private val sp = ctx.applicationContext.getSharedPreferences("prefs", Context.MODE_PRIVATE)
+    /**
+     * Вид (тема, прозрачность) — отдельно и без резервной копии Android: иначе после переустановки система
+     * возвращала прежнюю тему вместо темы по умолчанию («Как в системе»).
+     */
+    private val ui = ctx.applicationContext.getSharedPreferences("ui", Context.MODE_PRIVATE)
 
-    var theme by str("theme", Theme.DEFAULT.name)
+    var theme: String
+        get() = ui.getString("theme", null) ?: Theme.DEFAULT.name
+        set(v) = ui.edit().putString("theme", v).apply()
     fun theme(): Theme = runCatching { Theme.valueOf(theme) }.getOrDefault(Theme.DEFAULT)
 
 
@@ -22,7 +29,9 @@ class Prefs(ctx: Context) {
     var apkAuto by bool("apk_auto", false)
 
     /** Прозрачность интерфейса (тональные поверхности слегка прозрачны). */
-    var translucent by bool("translucent", true)
+    var translucent: Boolean
+        get() = ui.getBoolean("translucent", true)
+        set(v) = ui.edit().putBoolean("translucent", v).apply()
 
     /** Сила отклика вибрацией ([Haptics.Level]). */
     var haptics by str("haptics", Haptics.Level.MEDIUM.name)

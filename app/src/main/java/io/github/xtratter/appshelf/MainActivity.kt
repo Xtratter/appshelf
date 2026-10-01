@@ -35,6 +35,8 @@ class MainActivity : Activity() {
     companion object {
         /** Окно «Тема» нужно открыть снова после перестройки экрана (сменили тему или прозрачность). */
         private var reopenTheme = false
+        /** Снимок экрана (с окном «Тема») до смены темы — плавно растворяется поверх нового. */
+        private var themeSnap: android.graphics.Bitmap? = null
         /** Открытый экран — чтобы после установки APK обновить список. */
         var current: java.lang.ref.WeakReference<MainActivity>? = null
 
@@ -140,7 +142,21 @@ class MainActivity : Activity() {
         buildSelectionBar()
         render()
         // тему или прозрачность переключили в окне «Тема» — после перестройки экрана окно снова на месте
-        if (reopenTheme) { reopenTheme = false; list.post { themeDialog(instant = true) } }
+        if (reopenTheme) {
+            reopenTheme = false
+            // плавная смена: прежний экран (снимок) поверх нового растворяется — без вспышки
+            val snap = themeSnap; themeSnap = null
+            val cover = snap?.let { b ->
+                android.widget.ImageView(this).apply {
+                    setImageBitmap(b); scaleType = android.widget.ImageView.ScaleType.FIT_XY
+                }.also { (window.decorView as ViewGroup).addView(it, ViewGroup.LayoutParams(-1, -1)) }
+            }
+            list.post {
+                themeDialog(instant = true)
+                cover?.animate()?.alpha(0f)?.setStartDelay(60)?.setDuration(320)
+                    ?.withEndAction { (cover.parent as? ViewGroup)?.removeView(cover) }?.start()
+            }
+        }
     }
 
     override fun onResume() {
@@ -1184,12 +1200,30 @@ class MainActivity : Activity() {
      * (без анимации) — выглядит так, будто тема сменилась прямо под открытым окном.
      */
     private fun applyThemeKeepingDialog(dialog: AlertDialog, change: () -> Unit) {
+        themeSnap = snapScreen(dialog)
         change()
         Ui.apply(this, prefs.theme())
         reopenTheme = true
         dialog.window?.setWindowAnimations(0)
         dialog.dismiss()
         recreate()
+    }
+
+    /** Картинка экрана как сейчас: главное окно и поверх него окно [dialog] на своём месте. */
+    private fun snapScreen(dialog: AlertDialog): android.graphics.Bitmap? = try {
+        val root = window.decorView
+        val b = android.graphics.Bitmap.createBitmap(root.width, root.height, android.graphics.Bitmap.Config.ARGB_8888)
+        val c = android.graphics.Canvas(b)
+        root.draw(c)
+        dialog.window?.decorView?.let { d ->
+            val a = IntArray(2); val r = IntArray(2)
+            d.getLocationOnScreen(a); root.getLocationOnScreen(r)
+            c.drawColor(Ui.withAlpha(0xFF000000.toInt(), 0.35f))   // затемнение позади окна, как у настоящего
+            c.save(); c.translate((a[0] - r[0]).toFloat(), (a[1] - r[1]).toFloat()); d.draw(c); c.restore()
+        }
+        b
+    } catch (e: Exception) {
+        null
     }
 
     private fun themeDialog(instant: Boolean = false) {
