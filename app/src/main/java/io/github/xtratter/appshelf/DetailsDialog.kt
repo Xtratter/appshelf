@@ -142,9 +142,10 @@ object DetailsDialog {
         box.addView(linksBox)
 
         // действия — тональные кнопки-«пилюли»; главная — залитая
-        fun action(text: String, main: Boolean = false, danger: Boolean = false, block: () -> Unit) {
+        fun action(text: String, main: Boolean = false, danger: Boolean = false, help: Int = 0, block: () -> Unit) {
             box.addView(TextView(a).apply {
                 this.text = text
+                if (help != 0) Help.attach(this, text, a.getString(help))
                 gravity = Gravity.CENTER
                 textSize = 15f
                 typeface = Ui.medium
@@ -167,7 +168,7 @@ object DetailsDialog {
             if (backup != null) action(a.getString(R.string.bk_install), main = links.isEmpty()) {
                 ApkInstaller.fromBackup(a, app.pkg, app.label, backup)
             }
-            action(a.getString(R.string.install_from, storeName(a, app, source)), main = links.isEmpty() && backup == null) { Store.open(a, app) }
+            action(a.getString(R.string.install_from, storeName(a, app, source)), main = links.isEmpty() && backup == null, help = R.string.h_install) { Store.open(a, app) }
         } else {
             // на GitHub есть версия новее — обновить прямо отсюда (или открыть релиз, если подходящего APK нет)
             Updates.available(a, app)?.let { rel ->
@@ -177,18 +178,18 @@ object DetailsDialog {
                 }
             }
             if (a.packageManager.getLaunchIntentForPackage(app.pkg) != null)
-                action(a.getString(R.string.open_app), main = true) { Store.launch(a, app.pkg) }
-            action(a.getString(R.string.open_store)) { Store.open(a, app) }
-            action(a.getString(R.string.app_settings)) { Store.details(a, app.pkg) }
+                action(a.getString(R.string.open_app), main = true, help = R.string.h_open) { Store.launch(a, app.pkg) }
+            action(a.getString(R.string.open_store), help = R.string.h_store) { Store.open(a, app) }
+            action(a.getString(R.string.app_settings), help = R.string.h_sys_settings) { Store.details(a, app.pkg) }
             if (r.installed == null) {
                 val out = a.isExcluded(app.pkg)
-                action(a.getString(if (out) R.string.include else R.string.exclude)) { a.toggleExcluded(app.pkg) }
+                action(a.getString(if (out) R.string.include else R.string.exclude), help = R.string.h_exclude) { a.toggleExcluded(app.pkg) }
             }
             // системные удалить нельзя; AppShelf сам себя не удаляет
             if (!app.system && app.pkg != a.packageName)
-                action(a.getString(R.string.uninstall), danger = true) { ApkInstaller.uninstall(a, app.pkg, app.label) }
+                action(a.getString(R.string.uninstall), danger = true, help = R.string.h_uninstall) { ApkInstaller.uninstall(a, app.pkg, app.label) }
         }
-        action(a.getString(R.string.copy_pkg)) {
+        action(a.getString(R.string.copy_pkg), help = R.string.h_copy) {
             a.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(app.label, app.pkg))
             Toast.makeText(a, R.string.copied, Toast.LENGTH_SHORT).show()
         }

@@ -244,6 +244,7 @@ class MainActivity : Activity() {
             elevation = dp(6f).toFloat()
             setOnClickListener { SaveDialog.show(this@MainActivity) }
             Haptics.onClick(this)
+            Help.attach(this, R.string.save_restore, R.string.h_fab)
         }
         root.addView(f, android.widget.FrameLayout.LayoutParams(-2, dp(64f), Gravity.BOTTOM or Gravity.END).apply {
             rightMargin = dp(16f); bottomMargin = insetBottom + dp(16f)
@@ -287,6 +288,11 @@ class MainActivity : Activity() {
         findViewById<View>(R.id.btnSearch).setOnClickListener { showSearch(searchBox.visibility != View.VISIBLE) }
         findViewById<View>(R.id.btnSearchClose).setOnClickListener { showSearch(false) }
         findViewById<View>(R.id.btnMore).setOnClickListener { showMenu(it) }
+        // справка по удержанию
+        Help.attach(findViewById(R.id.bar), R.string.search_apps, R.string.h_search)
+        Help.attach(findViewById(R.id.title), R.string.search_apps, R.string.h_search)
+        Help.attach(findViewById(R.id.btnSearch), R.string.search_apps, R.string.h_search)
+        Help.attach(findViewById(R.id.btnMore), R.string.more, R.string.h_more)
         // щелчок вибрацией на кнопках панели
         for (id in intArrayOf(R.id.bar, R.id.title, R.id.btnSearch, R.id.btnSearchClose, R.id.btnMore))
             Haptics.onClick(findViewById(id))
@@ -336,6 +342,7 @@ class MainActivity : Activity() {
             addView(chipsBox)
         }
         box.addView(chipsScroll, LinearLayout.LayoutParams(-1, -2).apply { bottomMargin = dp(6f) })
+        Help.attach(summary, R.string.h_summary_t, R.string.h_summary)
         list.addHeaderView(box, null, false)
     }
 
@@ -855,6 +862,7 @@ class MainActivity : Activity() {
         if (filter != null && counts.none { it.key == filter }) filter = null
         fun chip(label: String, sel: Boolean, dot: Int?, onClick: () -> Unit) = chipsBox.addView(TextView(this).apply {
             text = label
+            Help.attach(this, label.substringBefore(" · "), getString(if (dot == null) R.string.h_chip_all else R.string.h_chip))
             textSize = 13.5f
             typeface = Ui.medium
             gravity = Gravity.CENTER
@@ -1178,8 +1186,9 @@ class MainActivity : Activity() {
             setPadding(dp(8f), dp(10f), dp(8f), dp(10f))
         }
         val dialog = AlertDialog.Builder(this).setView(box).create()
-        fun item(title: Int, action: () -> Unit) = box.addView(TextView(this).apply {
+        fun item(title: Int, help: Int, action: () -> Unit) = box.addView(TextView(this).apply {
             setText(title)
+            Help.attach(this, title, help)
             textSize = 16f
             setTextColor(Ui.TEXT)
             gravity = Gravity.CENTER_VERTICAL
@@ -1210,12 +1219,13 @@ class MainActivity : Activity() {
                 change(box2.isChecked)
             }
         }, LinearLayout.LayoutParams(-1, -2))
-        item(R.string.hi_title) { HistoryDialog.show(this) }
-        item(R.string.catalog_title) { CatalogDialog.show(this) }
-        item(R.string.theme) { themeDialog() }
-        item(R.string.haptics) { hapticsDialog() }
+        item(R.string.hi_title, R.string.h_history) { HistoryDialog.show(this) }
+        item(R.string.catalog_title, R.string.h_catalog) { CatalogDialog.show(this) }
+        item(R.string.theme, R.string.h_theme) { themeDialog() }
+        item(R.string.haptics, R.string.h_haptics) { hapticsDialog() }
         toggle(R.string.show_system, prefs.showSystem) { prefs.showSystem = it; render() }
-        item(R.string.about) { about() }
+        Help.attach(box.getChildAt(box.childCount - 1), R.string.show_system, R.string.h_system)
+        item(R.string.about, R.string.h_about) { about() }
         dialog.show()
         Ui.glassDialog(dialog)
         dialog.window?.apply {
