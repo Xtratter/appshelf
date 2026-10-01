@@ -214,7 +214,7 @@ object Motion {
      */
     @TargetApi(33)
     private fun flow(from: RectF, fromR: Float, to: RectF, toR: Float, ms: Long, content: android.graphics.Bitmap? = null,
-                     appear: Boolean = true, atReveal: () -> Unit, done: () -> Unit) {
+                     appear: Boolean = true, revealAt: Float = 0.8f, atReveal: () -> Unit, done: () -> Unit) {
         val root = overlayRoot() ?: run { atReveal(); done(); return }
         val blob = Blob(root.context, from, fromR, to, toR, content, appear)
         root.addView(blob, ViewGroup.LayoutParams(-1, -1))
@@ -224,14 +224,17 @@ object Motion {
             interpolator = LinearInterpolator()   // сглаживание — у каждого края своё (см. Blob)
             addUpdateListener {
                 blob.t = it.animatedValue as Float
+                // закрытие: в конце капля растворяется поверх уже проявившейся кнопки, а не закрывает её собой
+                if (!appear) blob.alpha = ((1f - blob.t) / 0.3f).coerceIn(0f, 1f)
                 blob.invalidate()
-                if (!revealed && blob.t >= 0.8f) { revealed = true; atReveal() }
+                if (!revealed && blob.t >= revealAt) { revealed = true; atReveal() }
             }
             addListener(object : android.animation.AnimatorListenerAdapter() {
                 override fun onAnimationEnd(a: android.animation.Animator) {
                     if (!revealed) atReveal()
-                    // капля уходит чуть позже — пока проявляется то, во что она превратилась
-                    blob.postDelayed({ root.removeView(blob); done() }, 120)
+                    // при открытии капля уходит чуть позже — пока проявляется окно, в которое она превратилась
+                    if (appear) blob.postDelayed({ root.removeView(blob); done() }, 120)
+                    else { root.removeView(blob); done() }
                 }
             })
             start()
@@ -303,12 +306,54 @@ object Motion {
      * Окно вытекает из кнопки [src]: пока капля растёт, окно невидимо, без затемнения и размытия позади
      * (иначе система размыла бы и каплю); потом окно проявляется, а при закрытии стекает обратно в кнопку.
      */
+    /** Только что закрытое «перетекающее» окно: где оно было — новое окно может вытечь прямо из него. */
+    private class Closing(val rect: RectF, val radius: Float, val at: Long)
+    private var closing: Closing? = null
+
+    /**
+     * Окно открыли сразу из другого (тот только что закрылся): новое вытекает из места старого — окно «перетекает»
+     * в окно, размытие фона не выключается. true — эстафета принята.
+     */
+    fun handoff(d: Dialog): Boolean {
+        val c = closing ?: return false
+        if (!enabled || android.os.SystemClock.uptimeMillis() - c.at > 400) return false
+        closing = null
+        val w = d.window ?: return false
+        w.setWindowAnimations(0)
+        val decor = w.decorView
+        decor.alpha = 0f
+        decor.viewTreeObserver.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                decor.viewTreeObserver.removeOnPreDrawListener(this)
+                val at = IntArray(2); val base = IntArray(2)
+                decor.getLocationOnScreen(at)
+                Ui.liquidRoot?.getLocationOnScreen(base)
+                val x = (at[0] - base[0]).toFloat(); val y = (at[1] - base[1]).toFloat()
+                if (decor.width <= 0 || decor.height <= 0) { decor.alpha = 1f; return true }
+                // окно растягивается из прямоугольника прежнего окна в свой, с пружинкой
+                decor.pivotX = 0f; decor.pivotY = 0f
+                decor.translationX = c.rect.left - x
+                decor.translationY = c.rect.top - y
+                decor.scaleX = c.rect.width() / decor.width
+                decor.scaleY = c.rect.height() / decor.height
+                decor.animate().alpha(1f).setDuration(120).start()
+                decor.animate().translationX(0f).translationY(0f).scaleX(1f).scaleY(1f)
+                    .setDuration(420).setInterpolator(Spring()).start()
+                Haptics.play(Haptics.Kind.TICK)
+                return true
+            }
+        })
+        return true
+    }
+
     fun morphIn(d: Dialog, src: View) {
         if (!enabled || src.rootView !== Ui.liquidRoot) return
         val w = d.window ?: return
         val decor = w.decorView
         val dp = src.resources.displayMetrics.density
         decor.alpha = 0f
+        // без системной анимации окна: иначе при закрытии оно гасло само, а поверх уже бежала капля (двоилось)
+        w.setWindowAnimations(0)
         w.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
         val from = glassRect(src)
         val fromR = glassRadius(src, from)
@@ -354,13 +399,20 @@ object Motion {
         decor.addOnAttachStateChangeListener(object : View.OnAttachStateChangeListener {
             override fun onViewAttachedToWindow(v: View) {}
             override fun onViewDetachedFromWindow(v: View) {
-                val shot = capture(decor)
-                Haptics.play(Haptics.Kind.CLOSE)
                 v.removeOnAttachStateChangeListener(this)
-                val back = if (src.isAttachedToWindow) glassRect(src) else from
-                flow(to, toR, back, fromR, 300, content = shot, appear = false, atReveal = {
-                    src.animate().alpha(1f).setDuration(100).start()
-                }) {}
+                val shot = capture(decor)
+                // из окна сразу открыли другое (например, «Тема» из меню) — окно перетекает в него, а не в кнопку
+                closing = Closing(to, toR, android.os.SystemClock.uptimeMillis())
+                val mine = closing
+                v.post {
+                    if (closing !== mine) { src.alpha = 1f; return@post }   // эстафету приняло новое окно
+                    closing = null
+                    Haptics.play(Haptics.Kind.CLOSE)
+                    val back = if (src.isAttachedToWindow) glassRect(src) else from
+                    flow(to, toR, back, fromR, 300, content = shot, appear = false, revealAt = 0.55f, atReveal = {
+                        src.animate().alpha(1f).setDuration(120).start()
+                    }) {}
+                }
             }
         })
     }

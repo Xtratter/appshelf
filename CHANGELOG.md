@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.23.1 — 2026-10-01
+
+- Smoother flowing glass (checked frame by frame on a screen recording): a window that flows back into its button no longer shows twice — the system fade of the window is off, the glass drop takes its place at once; at the end of closing the button reappears earlier and the drop melts over it instead of covering it with a blurred patch; a window opened straight from another one (menu → Theme) now flows out of the previous window, without the background flashing sharp in between
+
 ## 1.23 — 2026-09-30
 
 - **What changed** (menu ⋮): a timeline of installed and uninstalled apps by day — for a week, a month, 3 months or all time. Installs come from Android's install dates; uninstalls are noticed by AppShelf itself every time it opens, and older ones can be added from the versions of this phone's list on the WebDAV server

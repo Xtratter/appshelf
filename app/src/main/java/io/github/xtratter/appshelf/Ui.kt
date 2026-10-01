@@ -367,7 +367,9 @@ object Ui {
         listOf(AlertDialog.BUTTON_POSITIVE, AlertDialog.BUTTON_NEGATIVE, AlertDialog.BUTTON_NEUTRAL)
             .forEach { d.getButton(it)?.setTextColor(primary) }
         // «жидкое стекло»: окно, открытое кнопкой главного экрана, вытекает из неё и стекает обратно
-        Motion.takeSource()?.let { Motion.morphIn(d, it) }
+        // а открытое прямо из другого окна (меню → «Тема») — перетекает из места прежнего окна
+        val src = Motion.takeSource()
+        if (src != null) Motion.morphIn(d, src) else Motion.handoff(d)
         if (liquid) watchScroll(w.decorView)
         Haptics.attachAll(w.decorView)   // щелчки при нажатии на кнопки и пункты окна
     }
