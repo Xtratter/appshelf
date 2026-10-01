@@ -1,15 +1,32 @@
-AppShelf keeps a list of the apps installed on your phone — name, package, where each one came from and when it was installed — so you can reinstall them after a factory reset or on a new phone.
+AppShelf keeps a list of the apps installed on your phone — name, package, version, where each one came from and when it was installed — so you can get them all back after a factory reset or on a new phone.
 
-<b>Features</b>
+<b>The list</b>
 <ul>
-<li>All installed apps sorted by name, with letter headers</li>
+<li>All installed apps sorted by name, with letter headers and search by name, package or your notes</li>
 <li>Source of every app: Google Play, F-Droid, Aurora Store, Obtainium, RuStore, GetApps, Galaxy Store, AppGallery, Amazon — or an APK file, including the app it was opened from</li>
-<li>Install date, version and last update</li>
-<li>Search, filter by source, optional system apps</li>
-<li>Save the list as JSON, Markdown or CSV, or share it as text</li>
-<li>Autosave to a file you choose every time you open the app</li>
-<li>Restore mode: open a saved list, see which apps are missing and install each from its store</li>
-<li>Material 3 "liquid glass" design, five themes including AMOLED black and light</li>
+<li>Install date, version, last update; filters by source; system apps optional</li>
+<li>Notes and your own download links (GitHub, Telegram, direct APK) for any app, plus a shared link catalog</li>
+<li>"What changed": installs and removals by day, comparison with another phone</li>
 </ul>
 
-No internet permission: the list never leaves the phone unless you save or share it yourself.
+<b>Save</b>
+<ul>
+<li>Save the list as JSON, Markdown or CSV, share it as text, or autosave it to a file on every start</li>
+<li>WebDAV sync on a schedule (e.g. Nextcloud, Yandex Disk) with a folder per phone and several versions; a missed send is caught up later</li>
+<li>Backups of APK files you cannot get anywhere else — to a folder or to the server</li>
+<li>Save and restore AppShelf's own settings — to a file or the server, with or without the WebDAV password</li>
+</ul>
+
+<b>Restore</b>
+<ul>
+<li>Open a saved list and see what is missing; install each app from its store, your link or an APK backup — or all of them in a row</li>
+<li>Updates for apps from GitHub releases</li>
+</ul>
+
+<b>Design</b>
+<ul>
+<li>Material 3 Expressive, themes: system, light, dark, graphite, AMOLED black; optional transparency</li>
+<li>Soft blurred edges, haptic feedback, long-press help on every button</li>
+</ul>
+
+No ads, no trackers, no account. Network is used only for what you set up yourself: your WebDAV server, the link catalog and GitHub releases.

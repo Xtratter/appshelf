@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.33.1 — 2026-10-01
+
+- F-Droid metadata (fastlane): up-to-date description of all features in English and Russian
+
 ## 1.33 — 2026-10-01
 
 - **Faster start**: the list from the previous launch appears at once, and the fresh one is gathered in the background (asking the system about several apps in parallel) and quietly replaces it

@@ -1,0 +1,1 @@
+Faster start (cached list, parallel loading), smoother scrolling, smaller APK.
