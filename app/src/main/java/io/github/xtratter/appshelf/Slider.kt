@@ -75,7 +75,13 @@ class Slider(ctx: Context, private val max: Int, value: Int, private val step: I
         when (e.actionMasked) {
             MotionEvent.ACTION_DOWN -> { parent?.requestDisallowInterceptTouchEvent(true); pressed = true; setFromX(e.x); invalidate() }
             MotionEvent.ACTION_MOVE -> setFromX(e.x)
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { pressed = false; invalidate(); onCommit(value) }
+            MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                pressed = false; invalidate()
+                // применяем после касания: применение перестраивает окно, и этот ползунок убирается из него —
+                // убирать вид прямо во время обработки его касания нельзя (приложение вылетало)
+                val v = value
+                post { onCommit(v) }
+            }
         }
         return true
     }

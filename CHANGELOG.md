@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.29.1 — 2026-10-01
+
+- Fixed a crash when letting go of the Blur, Transparency or Grain slider in the Theme window
+
 ## 1.29 — 2026-10-01
 
 - Theme window: Material 3 Expressive sliders instead of the transparency switch — **Transparency** (0–60 %, 0 turns it off), **Blur** (how blurred the background behind windows and the soft list edges are) and **Grain** (test: a fine frosted-glass grain on the background and surfaces). A slider has a thick track, a slim vertical handle with a gap around it and an end dot; it ticks every 5 %, and the change is applied in place when you let go

@@ -11,8 +11,8 @@ android {
         applicationId = "io.github.xtratter.appshelf"
         minSdk = 26
         targetSdk = 35
-        versionCode = 65
-        versionName = "1.29"
+        versionCode = 66
+        versionName = "1.29.1"
     }
     buildTypes {
         release {
