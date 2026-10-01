@@ -1,0 +1,25 @@
+Categories:
+  - System
+License: GPL-3.0-or-later
+AuthorName: Xtratter
+SourceCode: https://github.com/Xtratter/appshelf
+IssueTracker: https://github.com/Xtratter/appshelf/issues
+Changelog: https://github.com/Xtratter/appshelf/blob/HEAD/CHANGELOG.md
+
+AutoName: AppShelf
+
+RepoType: git
+Repo: https://github.com/Xtratter/appshelf.git
+
+Builds:
+  - versionName: 1.33.1
+    versionCode: 72
+    commit: aca314e7583c7118fd0c188bb620e149bc74bfe7
+    subdir: app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: 1.33.1
+CurrentVersionCode: 72
