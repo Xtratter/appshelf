@@ -38,6 +38,34 @@ object Ui {
     /** Цвета пятен фона и их яркость. */
     var auroraColors = intArrayOf(primary, tertiary, secondary); private set
     var auroraStrength = 1f; private set
+    /** ЭКСПЕРИМЕНТ (ветка experiment/m3-expressive): Material 3 Expressive — тональные поверхности, крупные формы. */
+    const val EXPRESSIVE = true
+    /** Тональные цвета M3: контейнеры акцента и поверхности. */
+    var primaryContainer = 0; private set
+    var onPrimaryContainer = 0; private set
+    var secondaryContainer = 0; private set
+    var onSecondaryContainer = 0; private set
+    var surfaceContainer = 0; private set
+    var surfaceContainerHigh = 0; private set
+    /** Высота кнопок: крупнее в Expressive — по исследованию Google по ним быстрее попадают. */
+    val buttonDp get() = if (EXPRESSIVE) 52f else 44f
+    /** Очень жирное начертание для крупных цифр. */
+    val heavy: Typeface =
+        if (Build.VERSION.SDK_INT >= 28) Typeface.create(Typeface.DEFAULT, 800, false) else Typeface.DEFAULT_BOLD
+
+    private fun tonal() {
+        val white = 0xFFFFFFFF.toInt(); val black = 0xFF000000.toInt()
+        if (light) {
+            primaryContainer = mix(white, primary, 0.22f); onPrimaryContainer = mix(primary, black, 0.55f)
+            secondaryContainer = mix(white, secondary, 0.22f); onSecondaryContainer = mix(secondary, black, 0.55f)
+            surfaceContainer = mix(base, white, 0.55f); surfaceContainerHigh = mix(base, white, 0.85f)
+        } else {
+            primaryContainer = mix(base, primary, 0.36f); onPrimaryContainer = mix(primary, white, 0.7f)
+            secondaryContainer = mix(base, secondary, 0.3f); onSecondaryContainer = mix(secondary, white, 0.7f)
+            surfaceContainer = mix(base, white, 0.07f); surfaceContainerHigh = mix(base, white, 0.12f)
+        }
+    }
+
     /** AMOLED: кнопки не цветные, а чёрные с окантовкой. */
     var amoled = false; private set
 
@@ -115,6 +143,7 @@ object Ui {
             dialogBlur = 0xC8F7F8FC.toInt(); dialogSolid = 0xFAF7F8FC.toInt()
             surface = 0xFFF7F8FC.toInt()
             hintFill = 0x33FFB300; hintText = 0xFF6D4C00.toInt()
+            tonal()
             return
         }
         // тёмные темы
@@ -153,6 +182,7 @@ object Ui {
             }
         }
         auroraColors = intArrayOf(primary, tertiary, secondary)
+        tonal()
     }
 
     fun withAlpha(color: Int, a: Float) = (color and 0xFFFFFF) or ((a * 255).toInt().coerceIn(0, 255) shl 24)
@@ -293,6 +323,16 @@ class GlassDrawable(ctx: Context, radiusDp: Float, private val fill: Int = Ui.ca
     }
 
     override fun draw(c: Canvas) {
+        if (Ui.EXPRESSIVE) {
+            // Expressive: плоская тональная поверхность вместо стекла
+            fillP.color = when {
+                fill == Ui.card -> Ui.surfaceContainer
+                (fill ushr 24) >= 0x80 -> Ui.surfaceContainerHigh
+                else -> fill
+            }
+            c.drawRoundRect(r, radius, radius, fillP)
+            return
+        }
         c.drawRoundRect(r, radius, radius, fillP)
         c.drawRoundRect(r, radius, radius, hiP)
         c.drawRoundRect(r, radius, radius, edgeP)

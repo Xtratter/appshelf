@@ -181,6 +181,7 @@ object Haptics {
     @android.annotation.SuppressLint("ClickableViewAccessibility")
     fun onClick(v: View, kind: Kind = Kind.TAP) {
         v.setOnTouchListener { view, e ->
+            if (Ui.EXPRESSIVE) Expressive.morph(view, e)
             if (e.actionMasked == android.view.MotionEvent.ACTION_UP && view.isPressed &&
                 e.x >= 0 && e.y >= 0 && e.x <= view.width && e.y <= view.height) play(kind)
             false
