@@ -188,7 +188,7 @@ class MainActivity : Activity() {
         for (id in intArrayOf(R.id.btnSearch, R.id.btnMore, R.id.btnSearchClose))
             findViewById<ImageButton>(id).imageTintList = tint
         findViewById<android.widget.ImageView>(R.id.searchIcon).imageTintList = tint
-        findViewById<TextView>(R.id.title).setTextColor(Ui.TEXT)
+        findViewById<TextView>(R.id.title).setTextColor(Ui.TEXT3)   // подсказка в строке поиска
         searchField.setTextColor(Ui.TEXT)
         searchField.setHintTextColor(Ui.TEXT3)
     }

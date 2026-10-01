@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">AppShelf</string>
     <string name="search">Search</string>
+    <string name="search_apps">Search apps</string>
     <string name="search_hint">Name or package</string>
     <string name="save">Save the list</string>
     <string name="more">More</string>

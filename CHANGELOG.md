@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.26 — 2026-10-01
+
+- The top bar now looks like what it is — a search field: the magnifier on the left, "Search apps" in grey, the ⋮ menu on the right. Tapping anywhere on it opens the search, as before
+
 ## 1.25.4 — 2026-10-01
 
 - Main list: the blur under the top bar and at the bottom edge is always there, also before you start scrolling

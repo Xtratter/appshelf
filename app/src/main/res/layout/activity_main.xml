@@ -36,25 +36,24 @@
             android:layout_height="64dp"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingLeft="20dp"
+            android:paddingLeft="10dp"
             android:paddingRight="6dp">
+
+            <!-- шапка — это строка поиска: лупа слева, подсказка, меню справа -->
+            <ImageButton android:id="@+id/btnSearch" style="@style/BarButton"
+                android:contentDescription="@string/search" android:src="@drawable/ic_search" />
 
             <TextView
                 android:id="@+id/title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:maxLines="1"
-                android:text="@string/app_name"
-                android:textSize="22sp" />
-
-            <View
                 android:layout_width="0dp"
-                android:layout_height="1dp"
-                android:layout_weight="1" />
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:paddingLeft="4dp"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:text="@string/search_apps"
+                android:textSize="17sp" />
 
-            <ImageButton android:id="@+id/btnSearch" style="@style/BarButton"
-                android:contentDescription="@string/search" android:src="@drawable/ic_search" />
             <ImageButton android:id="@+id/btnMore" style="@style/BarButton"
                 android:contentDescription="@string/more" android:src="@drawable/ic_more" />
         </LinearLayout>
