@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.37.1 — 2026-10-06
+
+- **Faster start**: the list of installed apps is re-read only for apps that changed since the last launch (new, updated, reinstalled); names and install sources of the others are taken from the saved list. On a phone with 547 apps loading dropped from about 1.2 s to 40–60 ms. After a language or system update everything is read again once
+- Tests for the reuse rule
+
 ## 1.37.0 — 2026-10-06
 
 - **The screen keeps its state** when it is recreated (rotation, system theme or language change, low memory): search text, filters, selected apps, the opened saved list and the restore queue stay as they were; switching the theme with search open no longer hides the search field while still filtering

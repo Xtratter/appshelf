@@ -1,0 +1,1 @@
+Faster start: only changed apps are re-read (about 1.2 s down to 50 ms on 547 apps).
