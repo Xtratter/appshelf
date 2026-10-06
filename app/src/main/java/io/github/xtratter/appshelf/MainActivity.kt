@@ -629,7 +629,7 @@ class MainActivity : Activity() {
             .show().also { Ui.glassDialog(it) }
     }
 
-    private fun needsLink(a: AppInfo) = a.source == Source.APK && LinkStore.forApp(this, a.pkg).isEmpty()
+    private fun memo() = RenderMemo({ Updates.available(this, it) }, { LinkStore.forApp(this, it.pkg).isEmpty() })
 
     /** Обновить список и сводку (например, после изменения ссылок). */
     fun refresh() { if (!isDestroyed) render() }
@@ -681,23 +681,30 @@ class MainActivity : Activity() {
 
     private fun current(): List<AppInfo>? = restore?.apps?.let { visible(it) } ?: installed?.let { visible(it) }
 
+    /** То же, что [current], но по алфавиту: сортировка запоминается, фильтры порядок не меняют. */
+    private fun currentSorted(): List<AppInfo>? =
+        (restore?.apps ?: installed)?.let { visible(model.sorted(it)) }
+
+    private val model = ListModel()
+
     private fun render() {
         renderSummary()
-        val apps = current() ?: run { adapter.update(emptyList()); renderChips(emptyList()); return }
-        renderChips(apps)
+        val apps = currentSorted() ?: run { adapter.update(emptyList()); renderChips(emptyList(), memo()); return }
+        val memo = memo()
+        renderChips(apps, memo)
         val restoring = restore != null
         var shown = apps
         // при поиске фильтры не видны — ищем среди всех
         if (!searching) {
             filter?.let { f -> shown = shown.filter { it.source == f } }
-            if (!restoring && noLink) shown = shown.filter { needsLink(it) }
-            if (!restoring && onlyUpdates) shown = shown.filter { Updates.available(this, it) != null }
+            if (!restoring && noLink) shown = shown.filter { memo.needsLink(it) }
+            if (!restoring && onlyUpdates) shown = shown.filter { memo.update(it) != null }
         }
         if (restoring && missingOnly && !searching) shown = shown.filter { it.pkg !in installedPkgs }
         if (query.isNotEmpty()) {
             val q = query.lowercase()
             // ищем и по названию, и по пакету, и по своим заметкам
-            shown = shown.filter { q in it.label.lowercase() || q in it.pkg.lowercase() || q in LinkStore.note(this, it.pkg).lowercase() }
+            shown = shown.filter { model.matches(it, q) { LinkStore.note(this, it.pkg) } }
         }
         shownApps = if (restoring) emptyList() else shown
         // отмеченные, которых больше нет (удалили), из выбора убираем
@@ -707,13 +714,13 @@ class MainActivity : Activity() {
         val items = ArrayList<Any>()
         val excl = prefs.excluded
         var section = ""
-        for (a in ListFile.sorted(shown)) {
+        for (a in shown) {
             val s = ListFile.section(a.label)
             if (s != section) { section = s; items += s }
             val missing = restoring && a.pkg !in installedPkgs
             items += Row(a, sourceText(a), dateText(a.firstInstall), if (restoring) !missing else null,
                 excluded = !restoring && a.pkg in excl, selected = a.pkg in selected,
-                update = if (restoring) null else Updates.available(this, a)?.let { Updates.numbers(it.tag).joinToString(".").ifEmpty { it.tag } },
+                update = if (restoring) null else memo.update(a)?.let { Updates.numbers(it.tag).joinToString(".").ifEmpty { it.tag } },
                 link = if (missing) LinkStore.forApp(this, a.pkg).firstOrNull()?.let { getString(Links.kind(it.first.url).title) }
                     ?: backupFor(a.pkg)?.let { getString(R.string.bk_row) } else null,
                 note = LinkStore.note(this, a.pkg))
@@ -914,7 +921,7 @@ class MainActivity : Activity() {
         render()
     }
 
-    private fun renderChips(apps: List<AppInfo>) {
+    private fun renderChips(apps: List<AppInfo>, memo: RenderMemo) {
         chipsBox.removeAllViews()
         if (apps.isEmpty()) return
         val counts = apps.groupingBy { it.source }.eachCount().entries.sortedByDescending { it.value }
@@ -952,7 +959,7 @@ class MainActivity : Activity() {
             filter = null; noLink = false; onlyUpdates = false; render()
         }
         // обновления с GitHub — первым делом, если есть
-        val upd = if (restore == null) apps.count { Updates.available(this, it) != null } else 0
+        val upd = if (restore == null) apps.count { memo.update(it) != null } else 0
         if (upd > 0 || onlyUpdates) chip(getString(R.string.upd_chip) + " · " + upd, onlyUpdates, Ui.primary) {
             onlyUpdates = !onlyUpdates; render()
         }
@@ -962,7 +969,7 @@ class MainActivity : Activity() {
             }
         }
         // приложения из APK, для которых неизвестно, где их потом взять
-        val without = if (restore == null) apps.count { needsLink(it) } else 0
+        val without = if (restore == null) apps.count { memo.needsLink(it) } else 0
         if (without > 0 || noLink) chip(getString(R.string.no_link_chip) + " · " + without, noLink, null) {
             noLink = !noLink; render()
         }
