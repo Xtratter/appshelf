@@ -93,7 +93,7 @@ internal class SchedulePicker(private val kit: DialogKit, private val p: Prefs, 
         timeRow.addView(timeBtn, LinearLayout.LayoutParams(px(96f), px(40f)))
         plan.addView(timeRow)
 
-        val wifi = CheckBox(a).apply {
+        wifi = CheckBox(a).apply {
             setText(R.string.dav_wifi); textSize = 15f; setTextColor(Ui.TEXT); buttonTintList = tint
             isChecked = p.syncWifi; minHeight = px(44f)
         }
