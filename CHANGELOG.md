@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.37.2 — 2026-10-06
+
+- **WebDAV password in exported settings is now encrypted** with a passphrase you choose (PBKDF2-HMAC-SHA256 + AES-GCM) instead of being written as plain text; the passphrase is asked when saving to a file or to the server and when restoring. A wrong passphrase changes nothing; old files with a plain-text password are still read
+- Tests for the encryption (round trip, wrong passphrase, damaged and foreign data)
+
 ## 1.37.1 — 2026-10-06
 
 - **Faster start**: the list of installed apps is re-read only for apps that changed since the last launch (new, updated, reinstalled); names and install sources of the others are taken from the saved list. On a phone with 547 apps loading dropped from about 1.2 s to 40–60 ms. After a language or system update everything is read again once
