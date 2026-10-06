@@ -49,12 +49,15 @@ object Updates {
         )
         val mine = tokens[abi].orEmpty()
         val others = tokens.filterKeys { it != abi }.values.flatten().filter { t -> mine.none { it.contains(t) || t.contains(it) } }
+        // «x86» входит в «x86_64»: пометки длиннее нашей считаем чужими, а из имени для сравнения вычёркиваем
+        val longer = tokens.filterKeys { it != abi }.values.flatten().filter { t -> mine.any { it != t && it in t } }
         fun score(n: String): Int {
             val l = n.lowercase()
+            val bare = longer.fold(l) { acc, t -> acc.replace(t, "") }
             return when {
-                mine.any { it in l } -> 3
+                mine.any { it in bare } -> 3
                 "universal" in l || "all" in l.split('-', '_', '.') -> 2
-                others.any { it in l } -> -10
+                others.any { it in l } || longer.any { it in l } -> -10
                 else -> 1
             }
         }

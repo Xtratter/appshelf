@@ -2,6 +2,7 @@ package io.github.xtratter.appshelf
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -81,5 +82,50 @@ class ScheduleTest {
         )
         assertEquals(listOf("AppShelf-POCO F3_2026-09-28_210000.json"), ListFile.oldVersions(names, "AppShelf-POCO F3.json", 2))
         assertEquals(emptyList<String>(), ListFile.oldVersions(names, "AppShelf-POCO F3.json", 10))
+    }
+
+    @Test
+    fun offAndEmptyWeekdaysNeverRun() {
+        assertNull(Schedule(Repeat.OFF, 9, 0).next(now, tz))
+        assertNull(Schedule(Repeat.WEEKDAYS, 9, 0, days = 0).next(now, tz))
+    }
+
+    @Test
+    fun singleWeekdayWrapsToNextWeek() {
+        val wed = Schedule(Repeat.WEEKDAYS, 9, 0, days = Schedule.bit(Calendar.WEDNESDAY))
+        assertEquals("2026-10-07 09:00 Wed", wed.next(now, tz).str())   // в эту среду 09:00 уже прошло
+    }
+
+    @Test
+    fun crossesYearAndLeapDay() {
+        assertEquals("2027-01-01 08:00 Fri", Schedule(Repeat.DAILY, 8, 0).next(t("2026-12-31 23:00"), tz).str())
+        assertEquals("2028-02-29 12:00 Tue", Schedule(Repeat.DAILY, 12, 0).next(t("2028-02-28 23:45"), tz).str())
+    }
+
+    @Test
+    fun everyNKeepsThePhaseFromTheAnchor() {
+        val anchor = t("2026-09-01 10:00")
+        val s = Schedule(Repeat.EVERY_N, 10, 0, every = 3, anchor = anchor)
+        assertEquals("2026-10-01 10:00 Thu", s.next(now, tz).str())       // 1 сен + 30 дней
+        assertEquals("2026-09-01 10:00 Tue", s.next(t("2026-08-01 00:00"), tz).str())   // якорь в будущем
+        // every < 1 считается как 1
+        assertEquals("2026-10-01 10:00 Thu", Schedule(Repeat.EVERY_N, 10, 0, every = 0, anchor = anchor).next(now, tz).str())
+    }
+
+    @Test
+    fun anchoredAtStartsAtTheNearestTime() {
+        assertEquals("2026-09-30 21:00 Wed", Schedule(Repeat.EVERY_N, 21, 0, every = 2).anchoredAt(now, tz).anchor.str())
+        assertEquals("2026-10-01 09:00 Thu", Schedule(Repeat.EVERY_N, 9, 0, every = 2).anchoredAt(now, tz).anchor.str())
+    }
+
+    @Test
+    fun nextIsAlwaysInTheFuture() {
+        val s = listOf(Schedule(Repeat.DAILY, 3, 15), Schedule(Repeat.WEEKDAYS, 22, 5, days = 0x2A),
+            Schedule(Repeat.EVERY_N, 7, 30, every = 5, anchor = t("2026-01-01 07:30")))
+        var x = t("2026-03-01 00:00")
+        repeat(400) {
+            for (sc in s) assertTrue("$sc at ${fmt.format(x)}", sc.next(x, tz)!! > x)
+            x += 17 * 60 * 60 * 1000L + 13 * 60 * 1000L
+        }
     }
 }

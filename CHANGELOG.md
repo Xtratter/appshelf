@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.36.5 — 2026-10-06
+
+- **Tests**: 18 new unit tests for update logic (version comparison, APK choice per processor, GitHub link parsing), links (kinds, merge, catalog files) and the sending schedule (year and leap-day borders, single weekday, "every N days" phase)
+- Fix: on a 32-bit x86 device the update picker could choose the `x86_64` build because "x86" is part of "x86_64"; now such builds are skipped
+
 ## 1.36.4 — 2026-10-06
 
 - Code cleanup, no changes in behavior: `ApkInstaller` split into installation (`ApkInstaller.kt`), "Update all" (`UpdateAll.kt`), uninstall queue (`Uninstaller.kt`) and the system reply receiver (`InstallReceiver.kt`); the three copies of the progress window code replaced by shared helpers (`InstallUi.kt`)

@@ -1,0 +1,1 @@
+More tests; fixed APK choice for 32-bit x86 devices.
