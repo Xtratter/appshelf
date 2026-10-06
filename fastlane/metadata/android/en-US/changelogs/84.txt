@@ -1,0 +1,1 @@
+The screen keeps search, filters and the opened list on rotation; Update all survives screen changes; TalkBack reads app rows; large fonts no longer overlap.

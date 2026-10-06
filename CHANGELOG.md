@@ -2,6 +2,15 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.37.0 — 2026-10-06
+
+- **The screen keeps its state** when it is recreated (rotation, system theme or language change, low memory): search text, filters, selected apps, the opened saved list and the restore queue stay as they were; switching the theme with search open no longer hides the search field while still filtering
+- **"Update all" survives screen changes**: the progress window moves to the new screen and the queue goes on
+- **Safer background work**: results of network actions no longer pop up dialogs or toasts on a closed screen; the screen's worker thread stops with it
+- **Accessibility**: app rows are read by TalkBack (name, version, source, update, note)
+- **Large system font**: rows grow with the font size instead of overlapping
+- Code cleanup: `SyncDialog` split into `SyncDialog`, `DialogKit`, `SchedulePicker`, `ServerLists`; unused imports removed
+
 ## 1.36.5 — 2026-10-06
 
 - **Tests**: 18 new unit tests for update logic (version comparison, APK choice per processor, GitHub link parsing), links (kinds, merge, catalog files) and the sending schedule (year and leap-day borders, single weekday, "every N days" phase)
