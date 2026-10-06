@@ -1,0 +1,1 @@
+Faster list: search and filters no longer re-sort or re-check every row.

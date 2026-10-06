@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.36.2 — 2026-10-06
+
+- **Faster list**: search, filters and the "Show system apps" switch no longer re-sort the list or re-check updates and links for every row on each keystroke — sorting and search strings are cached, each app is checked once per redraw
+- Code cleanup: menu, theme, haptics and "About" dialogs moved out of `MainActivity` into `MenuDialogs.kt`; list caching in `AppListModel.kt` (with unit tests)
+
 ## 1.36.1 — 2026-10-01
 
 - F-Droid page: app icon and 7 screenshots of the current design (fastlane `images/`), also shown in the README
