@@ -420,4 +420,12 @@
     <string name="inst_done">Установлено ✓</string>
 
     <string name="about_text"><![CDATA[Версия %1$s<br><br>Список установленных приложений — откуда каждое и когда установлено, — чтобы восстановить их на новом телефоне.<br><br><a href="https://github.com/Xtratter/appshelf">github.com/Xtratter/appshelf</a><br>GPL-3.0-or-later]]></string>
+    <string name="rp_hint">Приложений к установке: %d, по одному. На каждом шаге откроется установщик или страница, подтверждаете вы.</string>
+    <string name="rp_backup">Из резервной копии APK</string>
+    <string name="rp_direct">Скачать и поставить здесь (GitHub или ссылка на APK)</string>
+    <string name="rp_page">Открыть сохранённую ссылку (страница или Obtainium)</string>
+    <string name="rp_store">Из магазина, откуда оно было</string>
+    <string name="rp_search">Источника нет — только поиск, ставить вручную</string>
+    <string name="rp_skip">Пропустить приложения без источника (%d)</string>
+    <string name="rp_go">Начать</string>
 </resources>

@@ -493,11 +493,16 @@ class MainActivity : Activity() {
 
     private fun startQueue() {
         val snap = restore ?: return
-        queue = ListFile.sorted(visible(snap.apps).filter { it.pkg !in installedPkgs })
-        if (queue.isEmpty()) return
-        qIndex = 0; qDone = 0
-        if (!::qBar.isInitialized) buildQueueBar()
-        openCurrent()
+        val missing = ListFile.sorted(visible(snap.apps).filter { it.pkg !in installedPkgs })
+        if (missing.isEmpty()) return
+        // сначала показываем план: откуда что поставится, и даём пропустить то, у чего нет источника
+        RestorePlanDialog.show(this, missing) { chosen ->
+            queue = chosen
+            if (queue.isEmpty()) return@show
+            qIndex = 0; qDone = 0
+            if (!::qBar.isInitialized) buildQueueBar()
+            openCurrent()
+        }
     }
 
     /** Открыть, откуда ставить текущее: резервная копия, своя ссылка или из каталога, иначе магазин. */

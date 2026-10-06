@@ -416,4 +416,12 @@
     <string name="inst_done">Installed ✓</string>
 
     <string name="about_text"><![CDATA[Version %1$s<br><br>A list of your installed apps — where each one came from and when it was installed — to reinstall them on a new phone.<br><br><a href="https://github.com/Xtratter/appshelf">github.com/Xtratter/appshelf</a><br>GPL-3.0-or-later]]></string>
+    <string name="rp_hint">%d apps will be installed one by one. Each step opens the installer or a page, and you confirm it.</string>
+    <string name="rp_backup">From your APK backup</string>
+    <string name="rp_direct">Download and install here (GitHub or APK link)</string>
+    <string name="rp_page">Open the saved link (page or Obtainium)</string>
+    <string name="rp_store">From the store it came from</string>
+    <string name="rp_search">No source — search only, install by hand</string>
+    <string name="rp_skip">Skip apps without a source (%d)</string>
+    <string name="rp_go">Start</string>
 </resources>
