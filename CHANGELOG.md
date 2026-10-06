@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.36.3 — 2026-10-06
+
+- Code cleanup, no changes in behavior: saving to file, settings transfer, links export, sharing and autosave moved out of `MainActivity` into `FileActions.kt` (`MainActivity` is now ~30% smaller than at 1.36.1)
+
 ## 1.36.2 — 2026-10-06
 
 - **Faster list**: search, filters and the "Show system apps" switch no longer re-sort the list or re-check updates and links for every row on each keystroke — sorting and search strings are cached, each app is checked once per redraw
