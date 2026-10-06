@@ -40,13 +40,13 @@ class MainActivity : Activity() {
         /** Открытый экран — чтобы после установки APK обновить список. */
         var current: java.lang.ref.WeakReference<MainActivity>? = null
 
-        private const val REQ_SAVE = 1
-        private const val REQ_AUTOSAVE = 2
-        private const val REQ_OPEN = 3
-        private const val REQ_LINKS = 4
-        private const val REQ_APK_FOLDER = 5
-        private const val REQ_SETTINGS_SAVE = 6
-        private const val REQ_SETTINGS_OPEN = 7
+        internal const val REQ_SAVE = 1
+        internal const val REQ_AUTOSAVE = 2
+        internal const val REQ_OPEN = 3
+        internal const val REQ_LINKS = 4
+        internal const val REQ_APK_FOLDER = 5
+        internal const val REQ_SETTINGS_SAVE = 6
+        internal const val REQ_SETTINGS_OPEN = 7
     }
 
     internal lateinit var prefs: Prefs
@@ -64,11 +64,12 @@ class MainActivity : Activity() {
     /** Открыт поиск: сводка и фильтры скрыты, найденное — сразу под строкой поиска. */
     private val searching get() = searchBox.visibility == View.VISIBLE
     private val adapter = Adapter()
-    private val io = Executors.newSingleThreadExecutor()
+    internal val io = Executors.newSingleThreadExecutor()
     internal val main = Handler(Looper.getMainLooper())
 
     /** Все установленные приложения (null — ещё загружаются). */
-    private var installed: List<AppInfo>? = null
+    internal var installed: List<AppInfo>? = null
+        private set
     private var installedPkgs = emptySet<String>()
     /** Открытый сохранённый список — режим восстановления. */
     private var restore: Snapshot? = null
@@ -89,7 +90,7 @@ class MainActivity : Activity() {
     /** Фильтр «APK без ссылки»: приложения из APK-файлов, для которых нет ни своей ссылки, ни ссылки из каталога. */
     private var noLink = false
     private var query = ""
-    private var pendingFormat = Format.JSON
+    internal var pendingFormat = Format.JSON
     private val labels = HashMap<String, String>()
     private var insetBottom = 0
 
@@ -803,7 +804,7 @@ class MainActivity : Activity() {
         Haptics.onClick(this)
     }
 
-    private fun renderSummary() {
+    internal fun renderSummary() {
         summary.removeAllViews()
         val snap = restore
         val apps = current()
@@ -977,7 +978,7 @@ class MainActivity : Activity() {
 
     // ---------- сохранение ----------
 
-    private fun snapshot(): Snapshot? = installed?.let { Apps.snapshot(this, it, prefs) }
+    internal fun snapshot(): Snapshot? = installed?.let { Apps.snapshot(this, it, prefs) }
 
     fun isExcluded(pkg: String) = pkg in prefs.excluded
 
@@ -1009,239 +1010,15 @@ class MainActivity : Activity() {
         SelectDialog.show(this, apps, prefs.excluded) { excl -> setExcluded(excl); then?.invoke() }
     }
 
-    private fun sourceName(s: Source) = getString(s.title)
-
-    /** Сохранить в файл: выбор формата, затем системный выбор места. */
-    fun saveToFile() {
-        val formats = Format.entries
-        if (installed == null) return
-        val names = arrayOf(getString(R.string.fmt_json), getString(R.string.fmt_md), getString(R.string.fmt_csv))
-        AlertDialog.Builder(this)
-            .setTitle(R.string.save_file)
-            .setItems(names) { _, i ->
-                pendingFormat = formats[i]
-                val day = ListFile.date(System.currentTimeMillis())
-                startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-                    addCategory(Intent.CATEGORY_OPENABLE)
-                    type = pendingFormat.mime
-                    putExtra(Intent.EXTRA_TITLE, "AppShelf-$day.${pendingFormat.ext}")
-                }, REQ_SAVE)
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .show().also { Ui.glassDialog(it) }
-    }
-
-    /** Свои ссылки в формате каталога (sources.json) — чтобы перенести их в репозиторий каталога. */
-    // ---------- перенос настроек ----------
-
-    private var settingsWithPassword = false
-
-    /** Сохранить настройки в файл на телефоне (системный выбор места). */
-    fun saveSettingsFile(withPassword: Boolean) {
-        settingsWithPassword = withPassword
-        startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "application/json"
-            putExtra(Intent.EXTRA_TITLE, "AppShelf-settings-" + Apps.shortName(this@MainActivity) + ".json")
-        }, REQ_SETTINGS_SAVE)
-    }
-
-    fun openSettingsFile() {
-        startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "*/*"
-        }, REQ_SETTINGS_OPEN)
-    }
-
-    /** Применить настройки из текста: всё сразу на экране, расписание WebDAV — заново. */
-    fun importSettings(text: String) {
-        val withPass = try { SettingsIO.apply(this, text) } catch (e: Exception) {
-            Haptics.play(Haptics.Kind.ERROR)
-            Toast.makeText(this, R.string.st_bad_file, Toast.LENGTH_LONG).show(); return
-        }
-        Kit.init(this)
-        Sync.schedule(this)
-        applyThemeInPlace {}
-        Haptics.play(Haptics.Kind.SUCCESS)
-        Toast.makeText(this, if (withPass) R.string.st_restored_pass else R.string.st_restored, Toast.LENGTH_LONG).show()
-    }
-
-    fun exportLinks() {
-        startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = Format.JSON.mime
-            putExtra(Intent.EXTRA_TITLE, "sources.json")
-        }, REQ_LINKS)
-    }
-
-    fun share() {
-        val s = snapshot() ?: return
-        val text = ListFile.write(s, Format.MARKDOWN, ::sourceName)
-        startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_SUBJECT, "AppShelf — " + ListFile.date(s.created))
-            putExtra(Intent.EXTRA_TEXT, text)
-        }, getString(R.string.share_list)))
-    }
-
-    /** Записать список в файл [uri] в фоне; [done] получает ошибку или null. */
-    private fun writeTo(uri: Uri, f: Format, done: (Exception?) -> Unit) {
-        val s = snapshot() ?: return done(IllegalStateException("not loaded"))
-        io.execute {
-            val err = try {
-                contentResolver.openOutputStream(uri, "wt")!!.use { it.write(ListFile.write(s, f, ::sourceName).toByteArray()) }
-                null
-            } catch (e: Exception) {
-                e
-            }
-            main.post {
-                if (err == null) {
-                    prefs.lastSaved = s.created
-                    prefs.lastSavedName = fileName(uri)
-                    if (!isDestroyed) renderSummary()
-                }
-                done(err)
-            }
-        }
-    }
-
-    private fun fileName(uri: Uri): String = try {
-        contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use {
-            if (it.moveToFirst()) it.getString(0) else null
-        } ?: uri.lastPathSegment.orEmpty()
-    } catch (e: Exception) {
-        uri.lastPathSegment.orEmpty()
-    }
-
-    /** Автосохранение: при каждом запуске список заново записывается в выбранный файл. */
-    private fun autosave() {
-        val u = prefs.autosaveUri.takeIf { it.isNotEmpty() } ?: return
-        writeTo(Uri.parse(u), Format.JSON) { err ->
-            if (err != null) {
-                prefs.autosaveUri = ""
-                Toast.makeText(this, R.string.autosave_failed, Toast.LENGTH_LONG).show()
-                if (!isDestroyed) renderSummary()
-            }
-        }
-    }
-
-    fun autosaveDialog() {
-        val on = prefs.autosaveUri.isNotEmpty()
-        val b = AlertDialog.Builder(this).setTitle(R.string.autosave)
-        if (on) {
-            b.setMessage(getString(R.string.autosave_is_on, fileName(Uri.parse(prefs.autosaveUri))))
-                .setPositiveButton(R.string.autosave_disable) { _, _ ->
-                    try {
-                        contentResolver.releasePersistableUriPermission(Uri.parse(prefs.autosaveUri),
-                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                    } catch (e: Exception) {}
-                    prefs.autosaveUri = ""
-                    renderSummary()
-                }
-                .setNeutralButton(R.string.autosave_other) { _, _ -> pickAutosave() }
-        } else {
-            b.setMessage(R.string.autosave_explain).setPositiveButton(R.string.autosave_choose) { _, _ -> pickAutosave() }
-        }
-        b.setNegativeButton(android.R.string.cancel, null).show().also { Ui.glassDialog(it) }
-    }
-
-    private fun pickAutosave() {
-        startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = Format.JSON.mime
-            putExtra(Intent.EXTRA_TITLE, "AppShelf.json")
-        }, REQ_AUTOSAVE)
-    }
-
-    fun openList() {
-        startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "*/*"
-            putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/json", "text/csv", "text/comma-separated-values",
-                "text/plain", "application/octet-stream"))
-        }, REQ_OPEN)
-    }
-
     @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         val uri = data?.data
         if (resultCode != RESULT_OK || uri == null) return
-        when (requestCode) {
-            REQ_SAVE -> writeTo(uri, pendingFormat) { err ->
-                Haptics.play(if (err == null) Haptics.Kind.SUCCESS else Haptics.Kind.ERROR)
-                Toast.makeText(this, if (err == null) getString(R.string.saved_to, fileName(uri))
-                else getString(R.string.save_failed, err.message), Toast.LENGTH_LONG).show()
-            }
-            REQ_AUTOSAVE -> {
-                try {
-                    contentResolver.takePersistableUriPermission(uri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                } catch (e: SecurityException) {
-                    // провайдер не даёт постоянный доступ — запишем хотя бы сейчас
-                }
-                prefs.autosaveUri = uri.toString()
-                writeTo(uri, Format.JSON) { err ->
-                    Toast.makeText(this, if (err == null) getString(R.string.autosave_enabled, fileName(uri))
-                    else getString(R.string.save_failed, err.message), Toast.LENGTH_LONG).show()
-                    if (err != null) prefs.autosaveUri = ""
-                    renderSummary()
-                }
-            }
-            REQ_SETTINGS_SAVE -> io.execute {
-                val err = try {
-                    contentResolver.openOutputStream(uri, "wt")!!.use { it.write(SettingsIO.write(this, settingsWithPassword).toByteArray()) }
-                    null
-                } catch (e: Exception) { e }
-                main.post {
-                    if (err == null) prefs.settingsSaved = System.currentTimeMillis()
-                    Haptics.play(if (err == null) Haptics.Kind.SUCCESS else Haptics.Kind.ERROR)
-                    Toast.makeText(this, if (err == null) getString(R.string.saved_to, fileName(uri))
-                    else getString(R.string.save_failed, err.message), Toast.LENGTH_LONG).show()
-                }
-            }
-            REQ_SETTINGS_OPEN -> io.execute {
-                val text = try { contentResolver.openInputStream(uri)!!.use { it.readBytes().toString(Charsets.UTF_8) } } catch (e: Exception) { "" }
-                main.post { importSettings(text) }
-            }
-            REQ_APK_FOLDER -> {
-                try {
-                    contentResolver.takePersistableUriPermission(uri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                } catch (e: SecurityException) {}
-                prefs.apkFolderUri = uri.toString()
-                prefs.apkDest = ApkBackup.Dest.FOLDER.name
-                ApkBackupDialog.show(this)
-            }
-            REQ_LINKS -> io.execute {
-                val err = try {
-                    contentResolver.openOutputStream(uri, "wt")!!.use { it.write(LinkStore.catalogExport(this).toByteArray()) }
-                    null
-                } catch (e: Exception) {
-                    e
-                }
-                main.post {
-                    Toast.makeText(this, if (err == null) getString(R.string.saved_to, fileName(uri))
-                    else getString(R.string.save_failed, err.message), Toast.LENGTH_LONG).show()
-                }
-            }
-            REQ_OPEN -> io.execute {
-                val result = try {
-                    val text = contentResolver.openInputStream(uri)!!.use { it.readBytes().toString(Charsets.UTF_8) }
-                    ListFile.read(text)
-                } catch (e: Exception) {
-                    null
-                }
-                main.post {
-                    if (result == null || result.apps.isEmpty()) {
-                        Toast.makeText(this, R.string.open_failed, Toast.LENGTH_LONG).show()
-                        return@post
-                    }
-                    showSnapshot(result)
-                }
-            }
-        }
+        handleFileResult(requestCode, uri)
     }
+
+    internal var settingsWithPassword = false
 
     // ---------- список ----------
 
