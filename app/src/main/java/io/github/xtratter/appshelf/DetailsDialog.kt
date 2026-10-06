@@ -188,7 +188,7 @@ object DetailsDialog {
             }
             // системные удалить нельзя; AppShelf сам себя не удаляет
             if (!app.system && app.pkg != a.packageName)
-                action(a.getString(R.string.uninstall), danger = true, help = R.string.h_uninstall) { ApkInstaller.uninstall(a, app.pkg, app.label) }
+                action(a.getString(R.string.uninstall), danger = true, help = R.string.h_uninstall) { Uninstaller.one(a, app.pkg, app.label) }
         }
         action(a.getString(R.string.copy_pkg), help = R.string.h_copy) {
             a.getSystemService(ClipboardManager::class.java).setPrimaryClip(ClipData.newPlainText(app.label, app.pkg))

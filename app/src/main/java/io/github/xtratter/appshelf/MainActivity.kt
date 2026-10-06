@@ -623,7 +623,7 @@ class MainActivity : Activity() {
             .setTitle(resources.getQuantityString(R.plurals.sel_uninstall_title, apps.size, apps.size))
             .setMessage(apps.joinToString(", ") { it.label } + "\n\n" + getString(R.string.sel_uninstall_text))
             .setPositiveButton(R.string.sel_uninstall) { _, _ ->
-                ApkInstaller.uninstallAll(this, apps.map { it.pkg to it.label })
+                Uninstaller.all(this, apps.map { it.pkg to it.label })
                 clearSelection()
             }
             .setNegativeButton(android.R.string.cancel, null)
@@ -763,7 +763,7 @@ class MainActivity : Activity() {
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.upd_all_confirm, items.size))
             .setView(android.widget.ScrollView(this).apply { addView(box) })
-            .setPositiveButton(R.string.upd_all_go) { _, _ -> ApkInstaller.updateAll(this, items) }
+            .setPositiveButton(R.string.upd_all_go) { _, _ -> UpdateAll.start(this, items) }
             .setNegativeButton(android.R.string.cancel, null)
             .show().also { Ui.glassDialog(it) }
     }
