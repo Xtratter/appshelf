@@ -381,6 +381,10 @@
     </plurals>
     <string name="catalog_title">Link catalog</string>
     <string name="catalog_explain">A shared list of download links (GitHub, Telegram, sites) — sources.json on GitHub. AppShelf downloads it whole, at most once a day; nothing about your apps is sent.</string>
+    <string name="catalog_ask_title">Suggest download links?</string>
+    <string name="catalog_ask_text">AppShelf can download a shared list of app links (a JSON file on raw.githubusercontent.com, at most once a day) and use it to suggest links and check for updates through api.github.com. Nothing about your apps is sent. You can change this any time in the link catalog.</string>
+    <string name="catalog_ask_yes">Turn on</string>
+    <string name="catalog_ask_no">Not now</string>
     <string name="catalog_off_hint">Empty — catalog off</string>
     <string name="catalog_off">The catalog is off.</string>
     <string name="catalog_never">Not downloaded yet.</string>

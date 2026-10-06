@@ -130,8 +130,10 @@ class Prefs(ctx: Context) {
     var syncLast by long("sync_last", 0L)
     var syncOk by bool("sync_ok", false)
     var syncMsg by str("sync_msg", "")
-    /** Каталог ссылок (sources.json); пустой адрес — каталог выключен. */
-    var catalogUrl by str("catalog_url", LinkStore.DEFAULT_CATALOG)
+    /** Каталог ссылок (sources.json); пустой адрес — каталог выключен. По умолчанию выключен, пока пользователь не ответил на вопрос. */
+    var catalogUrl by str("catalog_url", "")
+    /** Пользователь уже выбирал: адрес записан (даже пустой). Тогда вопрос про каталог не задаём. */
+    val catalogChosen get() = sp.contains("catalog_url")
     var catalogFetched by long("catalog_fetched", 0L)
     var catalogFetchedUrl by str("catalog_fetched_url", "")
     var catalogEtag by str("catalog_etag", "")

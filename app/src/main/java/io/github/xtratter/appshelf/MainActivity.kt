@@ -255,6 +255,7 @@ class MainActivity : Activity() {
         super.onStart()
         reload()
         refreshLinks()
+        askCatalog()
         // будильник WebDAV мог пропасть (остановка приложения); пропущенная отправка — догоняем
         Sync.ensure(this)
     }
@@ -769,6 +770,21 @@ class MainActivity : Activity() {
         selected.clear()
         list.setSelection(0)
         render()
+    }
+
+    private var catalogAsking = false
+
+    /** Один раз спросить, нужен ли каталог ссылок: пока ответа нет, приложение не обращается к GitHub. */
+    private fun askCatalog() {
+        if (prefs.catalogChosen || catalogAsking) return
+        catalogAsking = true
+        AlertDialog.Builder(this)
+            .setTitle(R.string.catalog_ask_title)
+            .setMessage(R.string.catalog_ask_text)
+            .setPositiveButton(R.string.catalog_ask_yes) { _, _ -> prefs.catalogUrl = LinkStore.DEFAULT_CATALOG; refreshLinks() }
+            .setNegativeButton(R.string.catalog_ask_no) { _, _ -> prefs.catalogUrl = "" }
+            .setCancelable(false)
+            .show().also { Ui.glassDialog(it); it.setOnDismissListener { catalogAsking = false } }
     }
 
     private fun restoredDialog() {

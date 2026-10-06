@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.38.3 — 2026-10-06
+
+- **The link catalog is now asked about**: on first launch AppShelf asks whether to download the shared list of links (raw.githubusercontent.com, once a day) and use it for link suggestions and update checks through api.github.com. Until you answer "Turn on", the app makes no network requests on its own. Your own links and WebDAV work as before; the choice can be changed any time in the link catalog
+
 ## 1.38.2 — 2026-10-06
 
 - **Notifications about app updates**: after a scheduled send to WebDAV the app checks GitHub releases of your apps and shows one notice about the updates that appeared since the last one ("3 app updates available — DroidTop 1.11 → 1.12, …"); tapping it opens the list with the "Updates" filter. Turn it on in the WebDAV schedule ("Notify about app updates"); Android 13+ asks for the notification permission

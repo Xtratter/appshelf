@@ -137,4 +137,9 @@ class LinksTest {
         val (onlyA, onlyB) = History.compare(listOf(tg, zoom), listOf(tg))
         assertEquals(listOf(zoom), onlyA); assertEquals(emptyList<AppInfo>(), onlyB)
     }
+
+    @Test fun defaultCatalogIsValidUrl() {
+        // «Включить» в вопросе про каталог записывает именно его
+        assertTrue(Links.valid(LinkStore.DEFAULT_CATALOG))
+    }
 }

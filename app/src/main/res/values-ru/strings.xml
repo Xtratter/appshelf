@@ -383,6 +383,10 @@
     </plurals>
     <string name="catalog_title">Каталог ссылок</string>
     <string name="catalog_explain">Общий список ссылок для скачивания (GitHub, Telegram, сайты) — sources.json на GitHub. AppShelf скачивает его целиком, не чаще раза в день; сведения о ваших приложениях никуда не уходят.</string>
+    <string name="catalog_ask_title">Подсказывать ссылки?</string>
+    <string name="catalog_ask_text">AppShelf может скачивать общий список ссылок на приложения (JSON-файл на raw.githubusercontent.com, не чаще раза в день) и по нему предлагать ссылки и проверять обновления через api.github.com. Сведения о ваших приложениях никуда не уходят. Передумать можно в любой момент в каталоге ссылок.</string>
+    <string name="catalog_ask_yes">Включить</string>
+    <string name="catalog_ask_no">Не сейчас</string>
     <string name="catalog_off_hint">Пусто — каталог выключен</string>
     <string name="catalog_off">Каталог выключен.</string>
     <string name="catalog_never">Ещё не загружен.</string>
