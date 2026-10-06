@@ -8,20 +8,58 @@ import android.os.Build
 
 /** Установленные приложения из PackageManager. */
 object Apps {
-    /** Все приложения; системные без обновлений из магазина отмечены [AppInfo.system]. */
-    fun load(ctx: Context): List<AppInfo> {
+    /** Меньше стольких изменившихся приложений опрашиваем прямо в этом потоке — пул потоков дороже. */
+    private const val INLINE = 8
+
+    /**
+     * Запись из [known], если приложение с тех пор не менялось (тот же [lastUpdate] и [versionCode]) — тогда название
+     * и источник не спрашиваем у системы заново; null — читать заново.
+     */
+    fun reusable(known: Map<String, AppInfo>, pkg: String, lastUpdate: Long, versionCode: Long): AppInfo? =
+        known[pkg]?.takeIf { it.lastUpdate == lastUpdate && it.versionCode == versionCode }
+
+    /**
+     * Все приложения; системные без обновлений из магазина отмечены [AppInfo.system].
+     * [previous] — список с прошлого раза: у неизменившихся приложений берём из него название и источник, а не читаем
+     * их заново (это самое долгое в загрузке); у остальных и при смене языка или прошивки — читаем.
+     */
+    fun load(ctx: Context, previous: List<AppInfo>? = null): List<AppInfo> {
+        val t0 = android.os.SystemClock.elapsedRealtime()
         val pm = ctx.packageManager
         val list = if (Build.VERSION.SDK_INT >= 33) pm.getInstalledPackages(PackageManager.PackageInfoFlags.of(0))
         else @Suppress("DEPRECATION") pm.getInstalledPackages(0)
-        // название и источник — отдельный запрос к системе на каждое приложение; опрашиваем в несколько потоков
-        val threads = Runtime.getRuntime().availableProcessors().coerceIn(2, 6)
-        val pool = java.util.concurrent.Executors.newFixedThreadPool(threads)
-        try {
-            return list.map { p -> pool.submit<AppInfo?> { info(pm, p) } }.mapNotNull { it.get() }
-        } finally {
-            pool.shutdown()
+        val known = if (previous != null && stampFile(ctx).readTextOrNull() == stamp()) previous.associateBy { it.pkg } else emptyMap()
+        val out = arrayOfNulls<AppInfo>(list.size)
+        val todo = ArrayList<Int>()
+        for ((i, p) in list.withIndex()) {
+            val same = reusable(known, p.packageName, p.lastUpdateTime, versionCodeOf(p))
+            if (same != null) out[i] = same else todo += i
         }
+        // название и источник — отдельный запрос к системе на каждое приложение; много — опрашиваем в несколько потоков
+        if (todo.size <= INLINE) for (i in todo) out[i] = info(pm, list[i])
+        else {
+            val threads = Runtime.getRuntime().availableProcessors().coerceIn(2, 6)
+            val pool = java.util.concurrent.Executors.newFixedThreadPool(threads)
+            try {
+                val futures = todo.map { i -> pool.submit<AppInfo?> { info(pm, list[i]) } }
+                for ((k, i) in todo.withIndex()) out[i] = futures[k].get()
+            } finally {
+                pool.shutdown()
+            }
+        }
+        android.util.Log.d("AppShelf", "load: ${list.size} apps, ${todo.size} read, ${android.os.SystemClock.elapsedRealtime() - t0} ms")
+        return out.filterNotNull()
     }
+
+    private fun versionCodeOf(p: PackageInfo): Long =
+        if (Build.VERSION.SDK_INT >= 28) p.longVersionCode else @Suppress("DEPRECATION") p.versionCode.toLong()
+
+    /** Что должно совпасть, чтобы сохранённые названия и источники ещё годились: язык и сборка прошивки. */
+    private fun stamp() = java.util.Locale.getDefault().toLanguageTag() + "|" + Build.FINGERPRINT
+
+    private fun stampFile(ctx: Context) = java.io.File(ctx.cacheDir, "apps.stamp")
+
+    private fun java.io.File.readTextOrNull(): String? = runCatching { readText() }.getOrNull()
 
     private fun cacheFile(ctx: Context) = java.io.File(ctx.cacheDir, "apps.json")
 
@@ -39,7 +77,7 @@ object Apps {
         val a = org.json.JSONArray()
         for (x in apps) a.put(org.json.JSONArray().put(x.label).put(x.pkg).put(x.versionName).put(x.versionCode)
             .put(x.installer).put(x.initiator).put(x.firstInstall).put(x.lastUpdate).put(x.system))
-        runCatching { cacheFile(ctx).writeText(a.toString()) }
+        runCatching { cacheFile(ctx).writeText(a.toString()); stampFile(ctx).writeText(stamp()) }
     }
 
     fun isInstalled(ctx: Context, pkg: String): Boolean = try {
@@ -73,7 +111,7 @@ object Apps {
             label = ai.loadLabel(pm).toString().trim().ifEmpty { p.packageName },
             pkg = p.packageName,
             versionName = p.versionName.orEmpty(),
-            versionCode = if (Build.VERSION.SDK_INT >= 28) p.longVersionCode else @Suppress("DEPRECATION") p.versionCode.toLong(),
+            versionCode = versionCodeOf(p),
             installer = installer,
             initiator = initiator,
             firstInstall = p.firstInstallTime,

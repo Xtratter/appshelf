@@ -35,3 +35,19 @@ class ListModelTest {
         assertFalse(memo.needsLink(apps[0]))   // не APK — ссылки не нужны
     }
 }
+
+class AppsReuseTest {
+    private val tg = AppInfo("Telegram", "org.telegram", versionName = "10", versionCode = 100, installer = "com.android.vending", lastUpdate = 5)
+    private val known = mapOf(tg.pkg to tg)
+
+    @Test fun reusesUnchangedApp() {
+        org.junit.Assert.assertSame(tg, Apps.reusable(known, "org.telegram", 5, 100))
+    }
+
+    @Test fun rereadsWhenUpdatedReinstalledOrNew() {
+        org.junit.Assert.assertNull(Apps.reusable(known, "org.telegram", 6, 100))   // обновили
+        org.junit.Assert.assertNull(Apps.reusable(known, "org.telegram", 5, 101))   // другая версия
+        org.junit.Assert.assertNull(Apps.reusable(known, "org.new", 5, 100))        // нового в кэше нет
+        org.junit.Assert.assertNull(Apps.reusable(emptyMap(), "org.telegram", 5, 100))
+    }
+}

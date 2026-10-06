@@ -430,8 +430,10 @@ class MainActivity : Activity() {
                 render()
             }
         }.start()
+        val before = installed
         io.execute {
-            val apps = Apps.load(this)
+            // у неизменившихся приложений название и источник берём из прошлого списка (в памяти или из кэша на диске)
+            val apps = Apps.load(this, before ?: Apps.cached(this))
             Apps.saveCache(this, apps)
             History.record(this, apps)   // журнал «Что изменилось»: новые и пропавшие приложения
             main.post {
