@@ -38,7 +38,7 @@ object SettingsDialog {
             val with = pass.isChecked
             Thread {
                 val err = runCatching { SettingsIO.upload(a, with) }.exceptionOrNull()
-                a.runOnUiThread {
+                a.ui {
                     Haptics.play(if (err == null) Haptics.Kind.SUCCESS else Haptics.Kind.ERROR)
                     Toast.makeText(a, if (err == null) a.getString(R.string.st_uploaded, Sync.deviceFolder(a, p))
                     else Sync.error(a, err as? Exception ?: Exception(err)), Toast.LENGTH_LONG).show()
@@ -62,14 +62,14 @@ object SettingsDialog {
         Toast.makeText(a, R.string.dav_connecting, Toast.LENGTH_SHORT).show()
         Thread {
             val r = runCatching { SettingsIO.phones(a) }
-            a.runOnUiThread {
-                val phones = r.getOrElse { e -> Toast.makeText(a, Sync.error(a, e as? Exception ?: Exception(e)), Toast.LENGTH_LONG).show(); return@runOnUiThread }
-                if (phones.isEmpty()) { Toast.makeText(a, R.string.st_none_on_server, Toast.LENGTH_LONG).show(); return@runOnUiThread }
+            a.ui {
+                val phones = r.getOrElse { e -> Toast.makeText(a, Sync.error(a, e as? Exception ?: Exception(e)), Toast.LENGTH_LONG).show(); return@ui }
+                if (phones.isEmpty()) { Toast.makeText(a, R.string.st_none_on_server, Toast.LENGTH_LONG).show(); return@ui }
                 AlertDialog.Builder(a).setTitle(R.string.st_pick_phone)
                     .setItems(phones.toTypedArray()) { _, i ->
                         Thread {
                             val text = runCatching { SettingsIO.download(a, phones[i]) }
-                            a.runOnUiThread {
+                            a.ui {
                                 text.onSuccess { a.importSettings(it) }
                                     .onFailure { e -> Toast.makeText(a, Sync.error(a, e as? Exception ?: Exception(e)), Toast.LENGTH_LONG).show() }
                             }

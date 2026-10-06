@@ -1,39 +1,11 @@
 package io.github.xtratter.appshelf
 
-import io.github.xtratter.uikit.Expressive
-import io.github.xtratter.uikit.EdgeBlur
 import io.github.xtratter.uikit.Haptics
-import io.github.xtratter.uikit.Help
-import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.OpenableColumns
-import android.text.Editable
-import android.text.TextWatcher
-import android.text.method.LinkMovementMethod
-import android.view.Gravity
-import android.view.View
-import android.view.ViewGroup
-import android.view.WindowInsets
-import android.view.inputmethod.InputMethodManager
-import android.widget.BaseAdapter
-import android.widget.EditText
-import android.widget.HorizontalScrollView
-import android.widget.ImageButton
-import android.widget.LinearLayout
-import android.widget.ListView
-import android.widget.ScrollView
-import android.widget.TextView
 import android.widget.Toast
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.concurrent.Executors
 
 private fun MainActivity.sourceName(s: Source) = getString(s.title)
 

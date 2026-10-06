@@ -92,7 +92,7 @@ object ApkBackupDialog {
             val apk = ApkBackup.targets(a, ApkBackup.Scope.APK_ONLY).size
             val all = ApkBackup.targets(a, ApkBackup.Scope.ALL).size
             val have = runCatching { ApkBackup.index(a).size }.getOrNull()
-            a.runOnUiThread {
+            a.ui {
                 counts.text = a.getString(R.string.bk_counts, apk, all)
                 status.text = if (have == null) "" else a.resources.getQuantityString(R.plurals.bk_have, have, have)
             }
@@ -126,12 +126,12 @@ object ApkBackupDialog {
         Thread {
             val scope = runCatching { ApkBackup.Scope.valueOf(p.apkScope) }.getOrDefault(ApkBackup.Scope.APK_ONLY)
             val r = ApkBackup.run(a, ApkBackup.targets(a, scope), stop) { i, n, label ->
-                a.runOnUiThread {
+                a.ui {
                     bar.isIndeterminate = false; bar.max = n; bar.progress = i
                     info.text = a.getString(R.string.bk_progress, i, n, label)
                 }
             }
-            a.runOnUiThread {
+            a.ui {
                 a.window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 dialog.dismiss()
                 Haptics.play(if (r.failed == 0 && r.error == null) Haptics.Kind.SUCCESS else Haptics.Kind.ERROR)

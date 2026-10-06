@@ -98,7 +98,7 @@ object CatalogDialog {
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
             if (busy || !save()) return@setOnClickListener
             dialog.dismiss()
-            Thread { runCatching { LinkStore.refreshCatalog(a.applicationContext) }; a.runOnUiThread { a.refresh() } }.start()
+            Thread { runCatching { LinkStore.refreshCatalog(a.applicationContext) }; a.ui { a.refresh() } }.start()
         }
     }
 }

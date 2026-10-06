@@ -12,10 +12,8 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.provider.OpenableColumns
 import android.text.Editable
 import android.text.TextWatcher
-import android.text.method.LinkMovementMethod
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -33,6 +31,7 @@ import android.widget.Toast
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.io.File
 import java.util.concurrent.Executors
 
 class MainActivity : Activity() {
@@ -104,7 +103,52 @@ class MainActivity : Activity() {
         setTheme(if (Ui.light) R.style.AppTheme_Light else R.style.AppTheme)
         super.onCreate(savedInstanceState)
         Ui.forgetDialogs()
+        restoreState(savedInstanceState)
         buildUi()
+    }
+
+    // ---------- состояние при пересоздании экрана (поворот, язык, системная тема, нехватка памяти) ----------
+
+    private val stateFile get() = File(cacheDir, "state-restore.json")
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("query", query)
+        outState.putBoolean("searchOpen", searchOpen)
+        outState.putString("filter", filter?.name)
+        outState.putBoolean("noLink", noLink)
+        outState.putBoolean("onlyUpdates", onlyUpdates)
+        outState.putBoolean("missingOnly", missingOnly)
+        outState.putStringArrayList("selected", ArrayList(selected))
+        // открытый сохранённый список слишком велик для Bundle — кладём в файл кэша
+        val snap = restore
+        if (snap != null) {
+            runCatching { stateFile.writeText(ListFile.write(snap, Format.JSON)) }
+            outState.putBoolean("restore", true)
+            outState.putStringArrayList("queue", ArrayList(queue.map { it.pkg }))
+            outState.putInt("qIndex", qIndex)
+            outState.putInt("qDone", qDone)
+        } else stateFile.delete()
+    }
+
+    private fun restoreState(b: Bundle?) {
+        if (b == null) { stateFile.delete(); return }
+        query = b.getString("query").orEmpty()
+        searchOpen = b.getBoolean("searchOpen")
+        filter = b.getString("filter")?.let { n -> Source.entries.firstOrNull { it.name == n } }
+        noLink = b.getBoolean("noLink")
+        onlyUpdates = b.getBoolean("onlyUpdates")
+        missingOnly = b.getBoolean("missingOnly")
+        selected.addAll(b.getStringArrayList("selected").orEmpty())
+        if (!b.getBoolean("restore")) return
+        val snap = runCatching { ListFile.read(stateFile.readText()) }.getOrNull() ?: return
+        restore = snap
+        val byPkg = snap.apps.associateBy { it.pkg }
+        queue = b.getStringArrayList("queue").orEmpty().mapNotNull { byPkg[it] }
+        qIndex = b.getInt("qIndex"); qDone = b.getInt("qDone")
+        // что было с установкой, неизвестно: после перечитывания списка queueReturned() сама решит, ставить дальше или спросить
+        queueWaiting = queue.isNotEmpty()
+        refreshBackups()
     }
 
     /** Весь экран заново в текущих цветах: при запуске и при смене темы (без пересоздания экрана — без вспышки). */
@@ -148,12 +192,21 @@ class MainActivity : Activity() {
             true
         }
         buildSelectionBar()
+        // при смене темы и пересоздании: поиск и панель очереди собираем заново из сохранённого состояния
+        if (searchOpen) {
+            searchBox.visibility = View.VISIBLE
+            summary.visibility = View.GONE
+            chipsScroll.visibility = View.GONE
+            searchField.setText(query)
+        }
+        if (queue.isNotEmpty()) { buildQueueBar(); showQueueBar(waitingFor = queueWaiting) }
         render()
     }
 
     override fun onResume() {
         super.onResume()
         current = java.lang.ref.WeakReference(this)
+        UpdateAll.attach(this)
         // вернулись из настроек с разрешением на установку — продолжаем отложенную установку APK
         ApkInstaller.resume(this)
 
@@ -161,6 +214,8 @@ class MainActivity : Activity() {
 
     override fun onDestroy() {
         if (current?.get() === this) current = null
+        UpdateAll.detach()
+        io.shutdown()   // фоновый поток этого экрана не должен жить после него
         super.onDestroy()
     }
 
@@ -315,7 +370,10 @@ class MainActivity : Activity() {
         })
     }
 
+    private var searchOpen = false
+
     private fun showSearch(show: Boolean) {
+        searchOpen = show
         val imm = getSystemService(InputMethodManager::class.java)
         /** Сводка и фильтры на время поиска прячутся (сам заголовок списка при этом сжимается до нуля). */
         fun layoutFor(searchOn: Boolean) {

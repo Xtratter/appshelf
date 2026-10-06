@@ -38,6 +38,8 @@ class Row(
 class AppItemView(ctx: Context) : View(ctx) {
     private fun dp(v: Float) = Ui.dp(context, v)
     private val padH = dp(12f)
+    /** Крупный шрифт в настройках: вертикальные размеры строки растут вместе с ним, чтобы строки текста не налезали друг на друга. */
+    private val grow get() = 1f + (context.resources.configuration.fontScale.coerceIn(1f, 1.8f) - 1f) * 0.7f
     private val card = RectF()
     private val glass = GlassDrawable(ctx, 22f)
     private val groupRect = RectF()
@@ -54,10 +56,18 @@ class AppItemView(ctx: Context) : View(ctx) {
     private val r = RectF()
 
     var row: Row? = null
-        set(v) { field = v; invalidate() }
+        set(v) {
+            field = v
+            // строка рисуется на холсте — без этого TalkBack ничего не прочитает
+            contentDescription = v?.let { r ->
+                listOfNotNull(r.app.label, r.app.versionName.takeIf { it.isNotBlank() }, r.source,
+                    r.update?.let { "→ $it" }, r.note.takeIf { it.isNotBlank() }).joinToString(", ")
+            }
+            invalidate()
+        }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), dp(84f).toInt())
+        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), (dp(84f) * grow).toInt())
     }
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
@@ -123,7 +133,7 @@ class AppItemView(ctx: Context) : View(ctx) {
             true -> { status = context.getString(R.string.st_installed); dateP.color = Ui.OK }
             false -> { status = rw.link?.let { "$it ›" } ?: context.getString(R.string.st_missing); dateP.color = Ui.primary }
         }
-        val y1 = card.top + dp(26f)
+        val y1 = card.top + dp(26f) * grow
         c.drawText(status, right, y1, dateP)
         val statusW = if (status.isEmpty()) 0f else dateP.measureText(status) + dp(10f)
 
@@ -132,12 +142,12 @@ class AppItemView(ctx: Context) : View(ctx) {
         // под датой справа — версия приложения (если она не показана выше в «→»), слева — пакет
         val ver = if (rw.update == null || rw.installed != null) Ui.versionShort(a.versionName) else ""
         val verW = if (ver.isEmpty()) 0f else dateP.measureText(ver) + dp(10f)
-        if (ver.isNotEmpty()) { dateP.color = Ui.TEXT3; c.drawText(ver, right, y1 + dp(19f), dateP) }
-        c.drawText(Ui.ellipsize(pkgP, a.pkg, right - x - verW), x, y1 + dp(19f), pkgP)
+        if (ver.isNotEmpty()) { dateP.color = Ui.TEXT3; c.drawText(ver, right, y1 + dp(19f) * grow, dateP) }
+        c.drawText(Ui.ellipsize(pkgP, a.pkg, right - x - verW), x, y1 + dp(19f) * grow, pkgP)
 
         // плашка источника: цветная точка и название
-        val pillTop = y1 + dp(28f)
-        val ph = dp(20f)
+        val pillTop = y1 + dp(28f) * grow
+        val ph = dp(20f) * grow
         val text = Ui.ellipsize(pillP, rw.source, right - x - dp(28f))
         val pw = pillP.measureText(text) + dp(26f)
         r.set(x, pillTop, x + pw, pillTop + ph)

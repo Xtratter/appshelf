@@ -114,7 +114,7 @@ object HistoryDialog {
                 setText(R.string.dav_connecting)
                 Thread {
                     val r = runCatching { loadVersions(a) }
-                    a.runOnUiThread {
+                    a.ui {
                         r.onSuccess { History.fromServer = History.fromVersions(it); setText(a.getString(R.string.hi_loaded, it.size)); rebuild() }
                             .onFailure { e -> setText(Sync.error(a, e as? Exception ?: Exception(e))) }
                     }
@@ -152,9 +152,9 @@ object HistoryDialog {
                     newest?.let { d.name to it.name }
                 }
             }
-            a.runOnUiThread {
-                val phones = r.getOrElse { e -> Toast.makeText(a, Sync.error(a, e as? Exception ?: Exception(e)), Toast.LENGTH_LONG).show(); return@runOnUiThread }
-                if (phones.isEmpty()) { Toast.makeText(a, R.string.hi_no_phones, Toast.LENGTH_LONG).show(); return@runOnUiThread }
+            a.ui {
+                val phones = r.getOrElse { e -> Toast.makeText(a, Sync.error(a, e as? Exception ?: Exception(e)), Toast.LENGTH_LONG).show(); return@ui }
+                if (phones.isEmpty()) { Toast.makeText(a, R.string.hi_no_phones, Toast.LENGTH_LONG).show(); return@ui }
                 AlertDialog.Builder(a).setTitle(R.string.hi_compare)
                     .setItems(phones.map { it.first }.toTypedArray()) { _, i -> compare(a, phones[i].first, phones[i].second) }
                     .setNegativeButton(android.R.string.cancel, null)
@@ -167,8 +167,8 @@ object HistoryDialog {
         val p = Prefs(a)
         Thread {
             val r = runCatching { ListFile.read(Sync.dav(p).get("$phone/$file").toString(Charsets.UTF_8)) }
-            a.runOnUiThread {
-                val other = r.getOrElse { e -> Toast.makeText(a, Sync.error(a, e as? Exception ?: Exception(e)), Toast.LENGTH_LONG).show(); return@runOnUiThread }
+            a.ui {
+                val other = r.getOrElse { e -> Toast.makeText(a, Sync.error(a, e as? Exception ?: Exception(e)), Toast.LENGTH_LONG).show(); return@ui }
                 val here = a.installedApps().filter { !it.system }
                 val (onlyHere, onlyThere) = History.compare(here, other.apps.filter { !it.system })
                 val dp = a.resources.displayMetrics.density

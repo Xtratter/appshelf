@@ -2,21 +2,12 @@ package io.github.xtratter.appshelf
 
 import io.github.xtratter.uikit.Haptics
 import android.app.AlertDialog
-import android.app.TimePickerDialog
-import android.content.res.ColorStateList
 import android.text.InputType
 import android.view.Gravity
-import android.view.View
-import android.widget.CheckBox
-import android.widget.EditText
 import android.widget.LinearLayout
-import android.widget.RadioButton
-import android.widget.RadioGroup
 import android.widget.ScrollView
 import android.widget.TextView
-import java.text.DateFormatSymbols
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 

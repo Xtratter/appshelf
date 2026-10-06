@@ -1,22 +1,7 @@
 package io.github.xtratter.appshelf
 
-import io.github.xtratter.uikit.Haptics
 import android.app.AlertDialog
-import android.app.TimePickerDialog
-import android.content.res.ColorStateList
-import android.text.InputType
-import android.view.Gravity
-import android.view.View
-import android.widget.CheckBox
-import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.RadioButton
-import android.widget.RadioGroup
-import android.widget.ScrollView
-import android.widget.TextView
-import java.text.DateFormatSymbols
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -62,7 +47,7 @@ object ServerLists {
         android.widget.Toast.makeText(a, R.string.dav_connecting, android.widget.Toast.LENGTH_SHORT).show()
         Thread {
             val r = try { load(p) } catch (e: Exception) { e }
-            a.runOnUiThread {
+            a.ui {
                 when {
                     r is Exception -> android.widget.Toast.makeText(a, Sync.error(a, r), android.widget.Toast.LENGTH_LONG).show()
                     (r as List<*>).isEmpty() -> android.widget.Toast.makeText(a, R.string.dav_no_files, android.widget.Toast.LENGTH_LONG).show()
@@ -85,7 +70,7 @@ object ServerLists {
             .setItems(items) { _, i ->
                 Thread {
                     val snap = try { ListFile.read(Sync.dav(p).get(if (g.folder.isEmpty()) files[i].name else g.folder + "/" + files[i].name).toString(Charsets.UTF_8)) } catch (e: Exception) { e }
-                    a.runOnUiThread {
+                    a.ui {
                         if (snap is Snapshot && snap.apps.isNotEmpty()) { opened(); a.showSnapshot(snap) }
                         else android.widget.Toast.makeText(a, if (snap is Exception && snap !is IllegalArgumentException &&
                                 snap !is org.json.JSONException) Sync.error(a, snap) else a.getString(R.string.open_failed),

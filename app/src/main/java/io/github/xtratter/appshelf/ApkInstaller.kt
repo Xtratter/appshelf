@@ -62,7 +62,7 @@ object ApkInstaller {
             val err = try {
                 ApkBackup.fetch(a, name, file) { done ->
                     if (stop.get()) throw java.io.InterruptedIOException()
-                    if (done - shown > 512 * 1024) { shown = done; a.runOnUiThread { info.text = Formatter.formatShortFileSize(a, done) } }
+                    if (done - shown > 512 * 1024) { shown = done; a.ui { info.text = Formatter.formatShortFileSize(a, done) } }
                 }
                 null
             } catch (e: Exception) { e }
@@ -130,12 +130,17 @@ object ApkInstaller {
         val inFile = @Suppress("DEPRECATION") a.packageManager.getPackageArchiveInfo(file.path, 0)?.packageName
         when {
             inFile == null -> Toast.makeText(a, R.string.inst_not_apk, Toast.LENGTH_LONG).show()
-            pkg != null && inFile != pkg -> AlertDialog.Builder(a)
-                .setTitle(R.string.inst_other_title)
-                .setMessage(a.getString(R.string.inst_other_text, label, pkg, inFile))
-                .setPositiveButton(R.string.inst_anyway) { _, _ -> commit(a, file) }
-                .setNegativeButton(android.R.string.cancel) { _, _ -> file.delete() }
-                .show().also { Ui.glassDialog(it) }
+            pkg != null && inFile != pkg -> {
+                // экран мог пересоздаться, пока качали; без живого экрана чужой файл молча не ставим
+                val h = liveHost(a)
+                if (h == null) file.delete()
+                else AlertDialog.Builder(h)
+                    .setTitle(R.string.inst_other_title)
+                    .setMessage(h.getString(R.string.inst_other_text, label, pkg, inFile))
+                    .setPositiveButton(R.string.inst_anyway) { _, _ -> commit(h, file) }
+                    .setNegativeButton(android.R.string.cancel) { _, _ -> file.delete() }
+                    .show().also { Ui.glassDialog(it) }
+            }
             else -> commit(a, file)
         }
     }

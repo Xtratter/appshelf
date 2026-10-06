@@ -157,7 +157,7 @@ object SaveDialog {
             Toast.makeText(a, R.string.dav_connecting, Toast.LENGTH_SHORT).show()
             Thread {
                 val r = Sync.run(a)
-                a.runOnUiThread {
+                a.ui {
                     Haptics.play(if (r.ok) Haptics.Kind.SUCCESS else Haptics.Kind.ERROR)
                     Toast.makeText(a, if (r.ok) a.getString(R.string.sv_sent, r.message) else r.message, Toast.LENGTH_LONG).show()
                     a.refreshSummary()
