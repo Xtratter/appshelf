@@ -428,4 +428,11 @@
     <string name="rp_search">Источника нет — только поиск, ставить вручную</string>
     <string name="rp_skip">Пропустить приложения без источника (%d)</string>
     <string name="rp_go">Начать</string>
+    <string name="hi_differ">Версии отличаются (%d)</string>
+    <string name="hi_differ_row">%1$s: здесь %2$s, там %3$s</string>
+    <string name="hi_newer_there">(там новее)</string>
+    <string name="hi_newer_here">(здесь новее)</string>
+    <string name="hi_compare_short">Сравнить</string>
+    <string name="sel_install">Поставить (%d)</string>
+    <string name="sel_all_missing">Все недостающие</string>
 </resources>

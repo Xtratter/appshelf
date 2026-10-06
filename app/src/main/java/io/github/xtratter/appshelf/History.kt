@@ -69,6 +69,22 @@ object History {
         return ListFile.sorted(a.filter { it.pkg !in bp }) to ListFile.sorted(b.filter { it.pkg !in ap })
     }
 
+    /**
+     * Приложения, которые есть в обоих списках, но в разных версиях: пары (из [a], из [b]). Сравнивается versionCode,
+     * а если его в одном из списков нет (CSV) — versionName.
+     */
+    fun differ(a: List<AppInfo>, b: List<AppInfo>): List<Pair<AppInfo, AppInfo>> {
+        val bp = b.associateBy { it.pkg }
+        val out = a.mapNotNull { x ->
+            val y = bp[x.pkg] ?: return@mapNotNull null
+            val differ = if (x.versionCode > 0 && y.versionCode > 0) x.versionCode != y.versionCode
+                else x.versionName.isNotBlank() && y.versionName.isNotBlank() && x.versionName != y.versionName
+            if (differ) x to y else null
+        }
+        val byPkg = out.associateBy { it.first.pkg }
+        return ListFile.sorted(out.map { it.first }).map { byPkg.getValue(it.pkg) }
+    }
+
     // ---------- с Android ----------
 
     private fun file(ctx: Context) = File(ctx.filesDir, "history.json")

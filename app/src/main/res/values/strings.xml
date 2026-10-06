@@ -424,4 +424,11 @@
     <string name="rp_search">No source — search only, install by hand</string>
     <string name="rp_skip">Skip apps without a source (%d)</string>
     <string name="rp_go">Start</string>
+    <string name="hi_differ">Different versions (%d)</string>
+    <string name="hi_differ_row">%1$s: %2$s here, %3$s there</string>
+    <string name="hi_newer_there">(newer there)</string>
+    <string name="hi_newer_here">(newer here)</string>
+    <string name="hi_compare_short">Compare</string>
+    <string name="sel_install">Install (%d)</string>
+    <string name="sel_all_missing">All missing</string>
 </resources>

@@ -78,6 +78,11 @@ object ServerLists {
                     }
                 }.start()
             }
+            .setNeutralButton(R.string.hi_compare_short) { _, _ ->
+                // сравнить этот телефон с самым свежим списком выбранной папки
+                val newest = files.first().name
+                PhoneCompare.fromServer(a, g.folder.ifEmpty { a.getString(R.string.dav_root_files) }, if (g.folder.isEmpty()) newest else g.folder + "/" + newest)
+            }
             .setNegativeButton(android.R.string.cancel, null)
             .show().also { Ui.glassDialog(it) }
     }

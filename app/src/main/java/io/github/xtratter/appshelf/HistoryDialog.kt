@@ -163,38 +163,5 @@ object HistoryDialog {
         }.start()
     }
 
-    private fun compare(a: MainActivity, phone: String, file: String) {
-        val p = Prefs(a)
-        Thread {
-            val r = runCatching { ListFile.read(Sync.dav(p).get("$phone/$file").toString(Charsets.UTF_8)) }
-            a.ui {
-                val other = r.getOrElse { e -> Toast.makeText(a, Sync.error(a, e as? Exception ?: Exception(e)), Toast.LENGTH_LONG).show(); return@ui }
-                val here = a.installedApps().filter { !it.system }
-                val (onlyHere, onlyThere) = History.compare(here, other.apps.filter { !it.system })
-                val dp = a.resources.displayMetrics.density
-                val box = LinearLayout(a).apply {
-                    orientation = LinearLayout.VERTICAL
-                    setPadding((22 * dp).toInt(), (20 * dp).toInt(), (22 * dp).toInt(), 0)
-                }
-                fun section(title: String, apps: List<AppInfo>) {
-                    box.addView(TextView(a).apply {
-                        text = title; textSize = 15f; typeface = Ui.medium; setTextColor(Ui.primary); setPadding(0, (12 * dp).toInt(), 0, (6 * dp).toInt())
-                    })
-                    box.addView(TextView(a).apply {
-                        text = if (apps.isEmpty()) "—" else apps.joinToString("\n") { "• " + it.label }
-                        textSize = 14.5f; setTextColor(Ui.TEXT); setLineSpacing(0f, 1.2f)
-                    })
-                }
-                box.addView(TextView(a).apply {
-                    text = a.getString(R.string.hi_compare_title, phone); textSize = 20f; typeface = Ui.medium; setTextColor(Ui.TEXT)
-                })
-                section(a.getString(R.string.hi_only_here, onlyHere.size), onlyHere)
-                section(a.getString(R.string.hi_only_there, phone, onlyThere.size), onlyThere)
-                AlertDialog.Builder(a).setView(ScrollView(a).apply { addView(box) })
-                    .setPositiveButton(R.string.hi_open_restore) { _, _ -> a.showSnapshot(other) }
-                    .setNegativeButton(R.string.close, null)
-                    .show().also { Ui.glassDialog(it) }
-            }
-        }.start()
-    }
+    private fun compare(a: MainActivity, phone: String, file: String) = PhoneCompare.fromServer(a, phone, "$phone/$file")
 }

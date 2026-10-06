@@ -80,6 +80,9 @@ class MainActivity : Activity() {
     private lateinit var selBar: LinearLayout
     private lateinit var selTitle: TextView
     private lateinit var selExclude: TextView
+    private lateinit var selRow: LinearLayout
+    private lateinit var selRestoreRow: LinearLayout
+    private lateinit var selInstall: TextView
     /** Строки, видимые сейчас (для «Все»). */
     private var shownApps: List<AppInfo> = emptyList()
 
@@ -180,14 +183,14 @@ class MainActivity : Activity() {
         list.adapter = adapter
         list.setOnItemClickListener { parent, view, pos, _ ->
             val r = parent.getItemAtPosition(pos) as? Row ?: return@setOnItemClickListener
-            if (selecting) { toggleSelected(r.app.pkg); return@setOnItemClickListener }
+            if (selecting) { if (selectable(r.app)) toggleSelected(r.app.pkg); return@setOnItemClickListener }
             Haptics.play(Haptics.Kind.TAP)
             DetailsDialog.show(this, r, sourceText(r.app))
         }
         // долгое нажатие — выбор нескольких приложений (не в режиме восстановления)
         list.setOnItemLongClickListener { parent, _, pos, _ ->
             val r = parent.getItemAtPosition(pos) as? Row ?: return@setOnItemLongClickListener false
-            if (restore != null) return@setOnItemLongClickListener false
+            if (!selectable(r.app)) return@setOnItemLongClickListener false
             toggleSelected(r.app.pkg)
             true
         }
@@ -491,12 +494,14 @@ class MainActivity : Activity() {
     private lateinit var qSub: TextView
     private lateinit var qRetry: TextView
 
-    private fun startQueue() {
+    /** Поставить недостающее из открытого списка; [only] — только эти пакеты (отмеченные), иначе всё. */
+    private fun startQueue(only: Set<String>? = null) {
         val snap = restore ?: return
-        val missing = ListFile.sorted(visible(snap.apps).filter { it.pkg !in installedPkgs })
+        val missing = ListFile.sorted(visible(snap.apps).filter { it.pkg !in installedPkgs && (only == null || it.pkg in only) })
         if (missing.isEmpty()) return
         // сначала показываем план: откуда что поставится, и даём пропустить то, у чего нет источника
         RestorePlanDialog.show(this, missing) { chosen ->
+            clearSelection()
             queue = chosen
             if (queue.isEmpty()) return@show
             qIndex = 0; qDone = 0
@@ -593,6 +598,9 @@ class MainActivity : Activity() {
 
     // ---------- выбор нескольких приложений ----------
 
+    /** Что можно отметить: в обычном списке — любое приложение, в режиме восстановления — только недостающие (их и ставим). */
+    private fun selectable(a: AppInfo) = if (restore == null) true else queue.isEmpty() && a.pkg !in installedPkgs
+
     private fun toggleSelected(pkg: String) {
         if (!selected.remove(pkg)) selected += pkg
         Haptics.play(Haptics.Kind.TICK)
@@ -640,6 +648,16 @@ class MainActivity : Activity() {
         act(getString(R.string.sel_share), false) { shareSelected() }
         act(getString(R.string.sel_uninstall), true) { uninstallSelected() }
         selBar.addView(row, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8f) })
+        // в режиме восстановления у панели другие действия: отметить все недостающие и поставить отмеченные
+        selRestoreRow = LinearLayout(this).apply { isBaselineAligned = false; visibility = View.GONE }
+        selRestoreRow.addView(button(getString(R.string.sel_all_missing), false) {
+            selected.addAll(shownApps.filter { it.pkg !in installedPkgs }.map { it.pkg }
+                .ifEmpty { restore?.apps?.filter { it.pkg !in installedPkgs }?.map { it.pkg }.orEmpty() }); render()
+        }, LinearLayout.LayoutParams(0, dp(42f), 1f))
+        selInstall = button("", true) { startQueue(only = selected.toSet()) }
+        selRestoreRow.addView(selInstall, LinearLayout.LayoutParams(0, dp(42f), 1f).apply { leftMargin = dp(8f) })
+        selBar.addView(selRestoreRow, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8f) })
+        this.selRow = row
         root.addView(selBar, android.widget.FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM).apply {
             leftMargin = dp(12f); rightMargin = dp(12f); bottomMargin = insetBottom + dp(12f)
         })
@@ -649,9 +667,13 @@ class MainActivity : Activity() {
     /** Показать или спрятать панель выбора и обновить её надписи. */
     private fun updateSelectionBar() {
         if (!::selBar.isInitialized) return
-        val show = selecting && restore == null
+        val show = selecting
         if (show) {
+            val restoring = restore != null
+            selRow.visibility = if (restoring) View.GONE else View.VISIBLE
+            selRestoreRow.visibility = if (restoring) View.VISIBLE else View.GONE
             selTitle.text = getString(R.string.sel_count, selected.size)
+            selInstall.text = getString(R.string.sel_install, selected.size)
             selExclude.text = getString(if (selected.all { it in prefs.excluded }) R.string.sel_include else R.string.sel_exclude)
             val lp = selBar.layoutParams as android.widget.FrameLayout.LayoutParams
             if (lp.bottomMargin != insetBottom + dp(12f)) { lp.bottomMargin = insetBottom + dp(12f); selBar.layoutParams = lp }
@@ -718,6 +740,7 @@ class MainActivity : Activity() {
     private fun closeRestore() {
         stopQueue()
         restore = null; missingOnly = false; filter = null; noLink = false; onlyUpdates = false
+        selected.clear()
         list.setSelection(0)
         render()
     }
@@ -773,8 +796,9 @@ class MainActivity : Activity() {
             shown = shown.filter { model.matches(it, q) { LinkStore.note(this, it.pkg) } }
         }
         shownApps = if (restoring) emptyList() else shown
-        // отмеченные, которых больше нет (удалили), из выбора убираем
-        installed?.let { all -> val have = all.mapTo(HashSet()) { it.pkg }; selected.retainAll(have) }
+        // отмеченные, которых больше нет, из выбора убираем (в режиме восстановления — которых нет в открытом списке)
+        val have = (restore?.apps ?: installed)?.mapTo(HashSet()) { it.pkg }
+        if (have != null) selected.retainAll(have)
         updateSelectionBar()
         updateListPadding()
         val items = ArrayList<Any>()
@@ -981,6 +1005,7 @@ class MainActivity : Activity() {
         refreshLinks(catalogAge = 60 * 60 * 1000L, forceDav = true)
         refreshBackups()   // для каких недостающих есть резервные копии APK
         restore = s
+        selected.clear()
         missingOnly = s.apps.any { it.pkg !in installedPkgs }
         filter = null
         list.setSelection(0)

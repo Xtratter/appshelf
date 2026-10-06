@@ -51,3 +51,22 @@ class AppsReuseTest {
         org.junit.Assert.assertNull(Apps.reusable(emptyMap(), "org.telegram", 5, 100))
     }
 }
+
+class HistoryDifferTest {
+    private fun app(label: String, pkg: String, name: String, code: Long = 0) = AppInfo(label, pkg, versionName = name, versionCode = code)
+
+    @Test fun listsAppsWithDifferentVersionsOnly() {
+        val here = listOf(app("Telegram", "tg", "10.9", 109), app("Zoom", "zm", "5.0", 50), app("Alpha", "al", "1.0", 10), app("Solo", "so", "1", 1))
+        val there = listOf(app("Telegram", "tg", "11.2", 112), app("Zoom", "zm", "5.0", 50), app("Alpha", "al", "0.9", 9))
+        val d = History.differ(here, there)
+        assertEquals(listOf("al", "tg"), d.map { it.first.pkg })       // по алфавиту, без одинаковых и без «только здесь»
+        assertEquals("11.2", d.last().second.versionName)
+    }
+
+    @Test fun fallsBackToVersionNameWhenCodeIsMissing() {
+        val csv = listOf(app("App", "p", "2.0"))                       // из CSV — versionCode нет
+        assertEquals(1, History.differ(listOf(app("App", "p", "1.0", 10)), csv).size)
+        assertEquals(0, History.differ(listOf(app("App", "p", "2.0", 20)), csv).size)
+        assertEquals(0, History.differ(listOf(app("App", "p", "", 0)), csv).size)   // версия неизвестна — не считаем отличием
+    }
+}
