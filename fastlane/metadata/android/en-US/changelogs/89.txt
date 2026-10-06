@@ -1,0 +1,1 @@
+Notifications about new app updates after a scheduled send; fixed a crash on Save in WebDAV settings.

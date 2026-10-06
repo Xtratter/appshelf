@@ -2,6 +2,12 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.38.2 — 2026-10-06
+
+- **Notifications about app updates**: after a scheduled send to WebDAV the app checks GitHub releases of your apps and shows one notice about the updates that appeared since the last one ("3 app updates available — DroidTop 1.11 → 1.12, …"); tapping it opens the list with the "Updates" filter. Turn it on in the WebDAV schedule ("Notify about app updates"); Android 13+ asks for the notification permission
+- Fix: pressing "Save" in the WebDAV settings could close the app (the "Wi-Fi only" switch of the schedule was not connected since 1.37.0)
+- Tests for the notice logic
+
 ## 1.38.1 — 2026-10-06
 
 - **Choose what to install when restoring**: in an opened saved list, long-press a missing app to mark it; the bottom bar offers "All missing" and "Install (N)", which goes through the restore plan and installs only the marked apps
