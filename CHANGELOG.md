@@ -2,6 +2,10 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.36.4 — 2026-10-06
+
+- Code cleanup, no changes in behavior: `ApkInstaller` split into installation (`ApkInstaller.kt`), "Update all" (`UpdateAll.kt`), uninstall queue (`Uninstaller.kt`) and the system reply receiver (`InstallReceiver.kt`); the three copies of the progress window code replaced by shared helpers (`InstallUi.kt`)
+
 ## 1.36.3 — 2026-10-06
 
 - Code cleanup, no changes in behavior: saving to file, settings transfer, links export, sharing and autosave moved out of `MainActivity` into `FileActions.kt` (`MainActivity` is now ~30% smaller than at 1.36.1)
