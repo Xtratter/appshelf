@@ -2,6 +2,13 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.38.1 — 2026-10-06
+
+- **Choose what to install when restoring**: in an opened saved list, long-press a missing app to mark it; the bottom bar offers "All missing" and "Install (N)", which goes through the restore plan and installs only the marked apps
+- **Different versions in the phone comparison**: a third section lists apps that exist on both phones in different versions and where the newer one is
+- **Compare button** in the picker of lists on the server (after choosing a phone), next to the existing "What changed → Compare with a phone…"
+- Tests for the version comparison
+
 ## 1.38.0 — 2026-10-06
 
 - **Restore plan**: "Install missing" now first shows where every app will come from — your APK backup, direct download (GitHub or APK link), a saved link page, the store it came from, or nothing (search only) — with counts and the first names of each group. Apps without a source can be skipped, so the queue does not waste steps on them

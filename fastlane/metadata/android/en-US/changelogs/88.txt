@@ -1,0 +1,1 @@
+Restore: choose which missing apps to install; comparison shows different versions; Compare button when picking a list on the server.
