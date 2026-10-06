@@ -176,7 +176,7 @@ object SaveDialog {
         val p = Prefs(a)
         val items = ArrayList<Pair<String, () -> Unit>>()
         items += a.getString(R.string.sv_r_list_file) to { a.openList() }
-        if (p.davUrl.isNotEmpty()) items += a.getString(R.string.sv_r_list_server) to { SyncDialog.openFromServer(a) }
+        if (p.davUrl.isNotEmpty()) items += a.getString(R.string.sv_r_list_server) to { ServerLists.open(a) }
         items += a.getString(R.string.sv_r_settings) to { SettingsDialog.restore(a) }
         menu(a, R.string.sv_restore, items)
     }
