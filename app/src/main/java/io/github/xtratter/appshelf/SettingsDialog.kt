@@ -33,17 +33,21 @@ object SettingsDialog {
         box.addView(pass); box.addView(warn)
         val b = AlertDialog.Builder(a).setView(box)
             .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.st_to_file) { _, _ -> a.saveSettingsFile(pass.isChecked) }
-        if (p.davUrl.isNotEmpty()) b.setNeutralButton(R.string.st_to_server) { _, _ ->
-            val with = pass.isChecked
+            .setPositiveButton(R.string.st_to_file) { _, _ ->
+                if (pass.isChecked) PassphraseDialog.askNew(a) { a.saveSettingsFile(it) } else a.saveSettingsFile(null)
+            }
+        fun send(phrase: String?) {
             Thread {
-                val err = runCatching { SettingsIO.upload(a, with) }.exceptionOrNull()
+                val err = runCatching { SettingsIO.upload(a, phrase) }.exceptionOrNull()
                 a.ui {
                     Haptics.play(if (err == null) Haptics.Kind.SUCCESS else Haptics.Kind.ERROR)
                     Toast.makeText(a, if (err == null) a.getString(R.string.st_uploaded, Sync.deviceFolder(a, p))
                     else Sync.error(a, err as? Exception ?: Exception(err)), Toast.LENGTH_LONG).show()
                 }
             }.start()
+        }
+        if (p.davUrl.isNotEmpty()) b.setNeutralButton(R.string.st_to_server) { _, _ ->
+            if (pass.isChecked) PassphraseDialog.askNew(a) { send(it) } else send(null)
         }
         b.show().also { Ui.glassDialog(it) }
     }

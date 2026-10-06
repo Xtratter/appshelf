@@ -6,13 +6,18 @@ import org.json.JSONObject
 
 /**
  * Перенос настроек AppShelf: в файл или на WebDAV (в папку этого телефона, settings.json).
- * Пароль WebDAV — только если выбрали (в файле он открытым текстом).
+ * Пароль WebDAV — только если выбрали, и только зашифрованный парольной фразой ([Passphrase]). Старые файлы с паролем
+ * открытым текстом (до 1.37.2) по-прежнему читаются.
  */
 object SettingsIO {
     private const val FORMAT = "AppShelf-settings"
     const val DAV_FILE = "settings.json"
 
-    fun write(ctx: Context, withPassword: Boolean): String {
+    /** Есть ли в файле пароль, зашифрованный фразой (тогда при восстановлении фразу нужно спросить). */
+    fun needsPassphrase(text: String): Boolean = try { JSONObject(text).has("davPasswordEnc") } catch (e: Exception) { false }
+
+    /** [passphrase] не null — положить в файл пароль WebDAV, зашифрованный этой фразой. */
+    fun write(ctx: Context, passphrase: String?): String {
         val p = Prefs(ctx)
         val values = JSONObject()
         for ((k, v) in p.exportMap()) values.put(k, JSONObject().apply {
@@ -29,14 +34,18 @@ object SettingsIO {
             put("device", Apps.device(ctx))
             put("created", System.currentTimeMillis())
             put("settings", values)
-            if (withPassword) put("davPassword", p.davPass)
+            if (passphrase != null && p.davPass.isNotEmpty()) put("davPasswordEnc", Passphrase.encrypt(p.davPass, passphrase))
         }.toString(2) + "\n"
     }
 
-    /** Разобрать и применить; true — в файле был пароль WebDAV. */
-    fun apply(ctx: Context, text: String): Boolean {
+    /**
+     * Разобрать и применить; true — в файле был пароль WebDAV. Если пароль зашифрован, нужна [passphrase];
+     * при неверной фразе бросает [Passphrase.Wrong] до того, как что-либо изменено.
+     */
+    fun apply(ctx: Context, text: String, passphrase: String? = null): Boolean {
         val o = JSONObject(text)
         require(o.optString("format") == FORMAT) { "not AppShelf settings" }
+        val encrypted = o.optJSONObject("davPasswordEnc")?.let { Passphrase.decrypt(it, passphrase ?: throw Passphrase.Wrong()) }
         val vals = o.getJSONObject("settings")
         val m = LinkedHashMap<String, Any>()
         for (k in vals.keys()) {
@@ -51,15 +60,15 @@ object SettingsIO {
         }
         val p = Prefs(ctx)
         p.importMap(m)
-        val pass = o.optString("davPassword", "")
-        if (o.has("davPassword")) p.davPass = pass
-        return o.has("davPassword")
+        if (encrypted != null) { p.davPass = encrypted; return true }
+        if (o.has("davPassword")) { p.davPass = o.optString("davPassword", ""); return true }   // старый файл, пароль открытым текстом
+        return false
     }
 
     /** На сервер, в папку этого телефона. Только в фоне. */
-    fun upload(ctx: Context, withPassword: Boolean) {
+    fun upload(ctx: Context, passphrase: String?) {
         val p = Prefs(ctx)
-        Sync.dav(p).put(Sync.deviceFolder(ctx, p) + "/" + DAV_FILE, write(ctx, withPassword).toByteArray(), "application/json")
+        Sync.dav(p).put(Sync.deviceFolder(ctx, p) + "/" + DAV_FILE, write(ctx, passphrase).toByteArray(), "application/json")
         p.settingsSaved = System.currentTimeMillis()
     }
 

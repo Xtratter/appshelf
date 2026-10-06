@@ -1078,7 +1078,8 @@ class MainActivity : Activity() {
         handleFileResult(requestCode, uri)
     }
 
-    internal var settingsWithPassword = false
+    /** Фраза для пароля в файле настроек, пока открыт системный выбор файла; не сохраняется нигде. */
+    internal var settingsPassphrase: String? = null
 
     // ---------- список ----------
 

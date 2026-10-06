@@ -8,7 +8,16 @@
     <string name="st_save_sub">В файл или в папку этого телефона на сервере WebDAV</string>
     <string name="st_save_text">Все настройки AppShelf: сервер WebDAV и расписание, копии APK, исключённые из списка приложения, каталог, вибрация и тема. Свои ссылки и заметки синхронизируются отдельно.</string>
     <string name="st_with_pass">Включить пароль WebDAV</string>
-    <string name="st_pass_warn">Пароль будет в файле открытым текстом — не передавайте файл посторонним.</string>
+    <string name="st_pass_warn">Пароль в файле будет зашифрован парольной фразой, которую вы зададите дальше. Запомните её: восстановить фразу нельзя.</string>
+    <string name="st_phrase_new_title">Парольная фраза для пароля</string>
+    <string name="st_phrase_new_text">Пароль WebDAV в файле шифруется этой фразой. Она понадобится при восстановлении настроек.</string>
+    <string name="st_phrase_ask_title">Парольная фраза</string>
+    <string name="st_phrase_ask_text">В файле зашифрованный пароль WebDAV. Введите фразу, с которой он сохранён.</string>
+    <string name="st_phrase_hint">Парольная фраза</string>
+    <string name="st_phrase_repeat">Повторите фразу</string>
+    <string name="st_phrase_short">Не короче %d символов</string>
+    <string name="st_phrase_mismatch">Фразы не совпадают</string>
+    <string name="st_wrong_phrase">Неверная фраза — ничего не изменено</string>
     <string name="st_to_file">В файл</string>
     <string name="st_to_server">На сервер</string>
     <string name="st_uploaded">Настройки сохранены на сервере: %s/settings.json</string>

@@ -9,7 +9,16 @@
     <string name="st_save_sub">To a file or to this phone\'s folder on the WebDAV server</string>
     <string name="st_save_text">All AppShelf settings: WebDAV server and schedule, APK backups, apps left out of the list, catalog, vibration and theme. Your links and notes are synced separately.</string>
     <string name="st_with_pass">Include the WebDAV password</string>
-    <string name="st_pass_warn">The password will be stored in the file as plain text — keep the file private.</string>
+    <string name="st_pass_warn">The password is stored in the file encrypted with a passphrase you choose next — remember it, it cannot be recovered.</string>
+    <string name="st_phrase_new_title">Passphrase for the password</string>
+    <string name="st_phrase_new_text">The WebDAV password in the file is encrypted with this passphrase. You will need it to restore the settings.</string>
+    <string name="st_phrase_ask_title">Passphrase</string>
+    <string name="st_phrase_ask_text">The file contains an encrypted WebDAV password. Enter the passphrase it was saved with.</string>
+    <string name="st_phrase_hint">Passphrase</string>
+    <string name="st_phrase_repeat">Repeat passphrase</string>
+    <string name="st_phrase_short">At least %d characters</string>
+    <string name="st_phrase_mismatch">The passphrases do not match</string>
+    <string name="st_wrong_phrase">Wrong passphrase — nothing was changed</string>
     <string name="st_to_file">To a file</string>
     <string name="st_to_server">To the server</string>
     <string name="st_uploaded">Settings saved on the server: %s/settings.json</string>

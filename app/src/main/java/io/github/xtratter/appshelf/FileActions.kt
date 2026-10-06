@@ -33,8 +33,8 @@ internal fun MainActivity.saveToFile() {
 
 
 /** Сохранить настройки в файл на телефоне (системный выбор места). */
-internal fun MainActivity.saveSettingsFile(withPassword: Boolean) {
-    settingsWithPassword = withPassword
+internal fun MainActivity.saveSettingsFile(passphrase: String?) {
+    settingsPassphrase = passphrase
     startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
         addCategory(Intent.CATEGORY_OPENABLE)
         type = "application/json"
@@ -51,7 +51,17 @@ internal fun MainActivity.openSettingsFile() {
 
 /** Применить настройки из текста: всё сразу на экране, расписание WebDAV — заново. */
 internal fun MainActivity.importSettings(text: String) {
-    val withPass = try { SettingsIO.apply(this, text) } catch (e: Exception) {
+    // пароль в файле зашифрован — сначала спросим фразу, настройки при неверной фразе не меняются
+    if (SettingsIO.needsPassphrase(text)) PassphraseDialog.ask(this) { applySettings(text, it) } else applySettings(text, null)
+}
+
+private fun MainActivity.applySettings(text: String, passphrase: String?) {
+    val withPass = try { SettingsIO.apply(this, text, passphrase) } catch (e: Passphrase.Wrong) {
+        Haptics.play(Haptics.Kind.ERROR)
+        Toast.makeText(this, R.string.st_wrong_phrase, Toast.LENGTH_LONG).show()
+        importSettings(text)   // спросить ещё раз
+        return
+    } catch (e: Exception) {
         Haptics.play(Haptics.Kind.ERROR)
         Toast.makeText(this, R.string.st_bad_file, Toast.LENGTH_LONG).show(); return
     }
@@ -183,10 +193,11 @@ internal fun MainActivity.handleFileResult(requestCode: Int, uri: Uri) {
         }
         MainActivity.REQ_SETTINGS_SAVE -> io.execute {
             val err = try {
-                contentResolver.openOutputStream(uri, "wt")!!.use { it.write(SettingsIO.write(this, settingsWithPassword).toByteArray()) }
+                contentResolver.openOutputStream(uri, "wt")!!.use { it.write(SettingsIO.write(this, settingsPassphrase).toByteArray()) }
                 null
             } catch (e: Exception) { e }
             main.post {
+                settingsPassphrase = null
                 if (err == null) prefs.settingsSaved = System.currentTimeMillis()
                 Haptics.play(if (err == null) Haptics.Kind.SUCCESS else Haptics.Kind.ERROR)
                 Toast.makeText(this, if (err == null) getString(R.string.saved_to, fileName(uri))
@@ -195,7 +206,7 @@ internal fun MainActivity.handleFileResult(requestCode: Int, uri: Uri) {
         }
         MainActivity.REQ_SETTINGS_OPEN -> io.execute {
             val text = try { contentResolver.openInputStream(uri)!!.use { it.readBytes().toString(Charsets.UTF_8) } } catch (e: Exception) { "" }
-            main.post { importSettings(text) }
+            main.post { if (!isDestroyed) importSettings(text) }
         }
         MainActivity.REQ_APK_FOLDER -> {
             try {
