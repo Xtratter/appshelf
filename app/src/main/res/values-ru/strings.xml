@@ -435,4 +435,13 @@
     <string name="hi_compare_short">Сравнить</string>
     <string name="sel_install">Поставить (%d)</string>
     <string name="sel_all_missing">Все недостающие</string>
+    <string name="dav_notify">Уведомлять об обновлениях приложений</string>
+    <string name="nt_channel">Обновления приложений</string>
+    <string name="nt_denied">Уведомления не разрешены, поэтому сообщения об обновлениях выключены</string>
+    <plurals name="nt_title">
+        <item quantity="one">Доступно %d обновление приложения</item>
+        <item quantity="few">Доступно %d обновления приложений</item>
+        <item quantity="many">Доступно %d обновлений приложений</item>
+        <item quantity="other">Доступно %d обновления приложений</item>
+    </plurals>
 </resources>

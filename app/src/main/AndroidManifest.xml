@@ -16,6 +16,7 @@
     <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
     <!-- отклик вибрацией (меню ⋮ → «Вибрация», можно выключить) -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- восстановить расписание после перезагрузки -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 

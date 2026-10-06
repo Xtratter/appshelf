@@ -43,7 +43,7 @@ class Prefs(ctx: Context) {
         /** Не переносятся: пароль (по отдельному выбору), файлы этого телефона, служебные отметки. */
         val NOT_EXPORTED = setOf("dav_pass", "autosave_uri", "apk_folder_uri", "last_saved", "last_saved_name",
             "sync_next", "sync_last", "sync_ok", "sync_msg", "sync_pending", "links_dirty", "links_synced",
-            "catalog_fetched", "catalog_fetched_url", "catalog_etag", "apk_last", "apk_last_count", "settings_saved")
+            "upd_notified", "catalog_fetched", "catalog_fetched_url", "catalog_etag", "apk_last", "apk_last_count", "settings_saved")
     }
 
     var theme: String
@@ -111,6 +111,11 @@ class Prefs(ctx: Context) {
     var syncMinute by int("sync_minute", 0)
     var syncAnchor by long("sync_anchor", 0L)
     var syncWifi by bool("sync_wifi", false)
+    /** Уведомлять о новых обновлениях приложений после плановой отправки; [updNotified] — о каких уже сообщали ("пакет:тег"). */
+    var updNotify by bool("upd_notify", false)
+    var updNotified: Set<String>
+        get() = sp.getStringSet("upd_notified", null)?.toSet() ?: emptySet()
+        set(v) = sp.edit().putStringSet("upd_notified", HashSet(v)).apply()
 
     fun schedule() = Schedule(runCatching { Repeat.valueOf(syncRepeat) }.getOrDefault(Repeat.OFF),
         syncHour, syncMinute, syncDays, syncEvery, syncAnchor)

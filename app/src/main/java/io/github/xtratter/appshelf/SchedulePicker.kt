@@ -21,7 +21,9 @@ internal class SchedulePicker(private val kit: DialogKit, private val p: Prefs, 
         private set
     private lateinit var refresh: () -> Unit
     private lateinit var wifi: CheckBox
+    private lateinit var notify: CheckBox
     val wifiOnly get() = wifi.isChecked
+    val notifyUpdates get() = notify.isChecked
     val view: LinearLayout = build()
 
     /** Расписание для сохранения: отсчёт «каждые N дней» начинаем заново, только если что-то в нём поменялось. */
@@ -98,6 +100,11 @@ internal class SchedulePicker(private val kit: DialogKit, private val p: Prefs, 
             isChecked = p.syncWifi; minHeight = px(44f)
         }
         plan.addView(wifi, gap(4f))
+        notify = CheckBox(a).apply {
+            setText(R.string.dav_notify); textSize = 15f; setTextColor(Ui.TEXT); buttonTintList = tint
+            isChecked = p.updNotify; minHeight = px(44f)
+        }
+        plan.addView(notify)
         val nextText = label("", 13.5f, Ui.TEXT2, 6f)
         plan.addView(nextText)
 
@@ -107,6 +114,7 @@ internal class SchedulePicker(private val kit: DialogKit, private val p: Prefs, 
             everyRow.visibility = if (r == Repeat.EVERY_N) View.VISIBLE else View.GONE
             timeRow.visibility = if (r == Repeat.OFF) View.GONE else View.VISIBLE
             wifi.visibility = timeRow.visibility
+            notify.visibility = timeRow.visibility
             everyText.text = a.resources.getQuantityString(R.plurals.every_days, sched.every, sched.every)
             timeBtn.text = String.format(Locale.ROOT, "%02d:%02d", sched.hour, sched.minute)
             val preview = if (r == Repeat.EVERY_N) sched.anchoredAt(System.currentTimeMillis()) else sched

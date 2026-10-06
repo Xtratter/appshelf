@@ -7,6 +7,7 @@ import io.github.xtratter.uikit.Help
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -46,6 +47,7 @@ class MainActivity : Activity() {
         internal const val REQ_APK_FOLDER = 5
         internal const val REQ_SETTINGS_SAVE = 6
         internal const val REQ_SETTINGS_OPEN = 7
+        internal const val REQ_NOTIFY = 8
     }
 
     internal lateinit var prefs: Prefs
@@ -107,6 +109,7 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         Ui.forgetDialogs()
         restoreState(savedInstanceState)
+        showUpdatesFilter(intent)   // открыли из уведомления об обновлениях
         buildUi()
     }
 
@@ -204,6 +207,29 @@ class MainActivity : Activity() {
         }
         if (queue.isNotEmpty()) { buildQueueBar(); showQueueBar(waitingFor = queueWaiting) }
         render()
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQ_NOTIFY && grantResults.firstOrNull() != PackageManager.PERMISSION_GRANTED) {
+            prefs.updNotify = false
+            Toast.makeText(this, R.string.nt_denied, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    /** Нажали на уведомление «Доступны обновления» — сразу показать фильтр «Обновления». */
+    private fun showUpdatesFilter(i: Intent?) {
+        if (i?.getBooleanExtra(UpdateNotifier.EXTRA_UPDATES, false) != true) return
+        i.removeExtra(UpdateNotifier.EXTRA_UPDATES)
+        restore = null; missingOnly = false; filter = null; noLink = false; onlyUpdates = true
+        selected.clear()
+        if (::list.isInitialized) render()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        showUpdatesFilter(intent)
     }
 
     override fun onResume() {

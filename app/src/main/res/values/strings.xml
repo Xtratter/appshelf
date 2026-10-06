@@ -431,4 +431,11 @@
     <string name="hi_compare_short">Compare</string>
     <string name="sel_install">Install (%d)</string>
     <string name="sel_all_missing">All missing</string>
+    <string name="dav_notify">Notify about app updates</string>
+    <string name="nt_channel">App updates</string>
+    <string name="nt_denied">Notifications are not allowed, so update notices are off</string>
+    <plurals name="nt_title">
+        <item quantity="one">%d app update available</item>
+        <item quantity="other">%d app updates available</item>
+    </plurals>
 </resources>

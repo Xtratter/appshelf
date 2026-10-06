@@ -161,6 +161,10 @@ object SyncDialog {
                 }
                 p.setSchedule(plan.forSaving())
                 p.syncWifi = plan.wifiOnly
+                p.updNotify = plan.notifyUpdates
+                // с Android 13 для уведомлений нужно разрешение; откажут — MainActivity снимет галочку
+                if (p.updNotify && !UpdateNotifier.canNotify(a))
+                    a.requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), MainActivity.REQ_NOTIFY)
                 Sync.schedule(a)
                 dialog.dismiss()
                 a.refreshSummary()

@@ -45,7 +45,7 @@ object Sync {
 
     /** Отправить список сейчас. Только в фоновом потоке. */
     @Synchronized
-    fun run(ctx: Context): Result {
+    fun run(ctx: Context, scheduled: Boolean = false): Result {
         val p = Prefs(ctx)
         val r = try {
             if (p.davUrl.isBlank()) throw IllegalStateException(ctx.getString(R.string.dav_no_server))
@@ -77,6 +77,8 @@ object Sync {
         p.syncLast = System.currentTimeMillis()
         p.syncOk = r.ok
         p.syncMsg = r.message
+        // после плановой отправки — проверить обновления приложений и, если есть новые, уведомить
+        if (scheduled && r.ok) runCatching { UpdateNotifier.afterSync(ctx) }
         return r
     }
 
@@ -140,7 +142,7 @@ object Sync {
         val p = Prefs(ctx)
         val missed = catchUp(p)
         schedule(ctx)
-        if (missed) run(ctx)
+        if (missed) run(ctx, scheduled = true)
     }
 
     /**
@@ -157,7 +159,7 @@ object Sync {
         val p = Prefs(ctx)
         p.syncPending = true   // снимется только успешной отправкой
         if (p.syncWifi && !unmetered(ctx)) return enqueue(ctx)
-        val r = run(ctx)
+        val r = run(ctx, scheduled = true)
         if (!r.ok && r.retry) enqueue(ctx)
     }
 
@@ -218,7 +220,7 @@ class SyncJob : JobService() {
                 Sync.watch(applicationContext)
                 jobFinished(params, false)
             } else {
-                val r = Sync.run(applicationContext)
+                val r = Sync.run(applicationContext, scheduled = true)
                 jobFinished(params, !r.ok && r.retry)
             }
         }.start()
