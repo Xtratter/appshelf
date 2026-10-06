@@ -13,14 +13,14 @@ RepoType: git
 Repo: https://github.com/Xtratter/appshelf.git
 
 Builds:
-  - versionName: 1.36.1
-    versionCode: 79
-    commit: 77d8d8d4098cc66a961c4b520e13bb57c66d9f1d
+  - versionName: 1.36.2
+    versionCode: 80
+    commit: 90a84e72270a1a74865cd6be9e4d32474aa13f3f
     subdir: app
     gradle:
       - yes
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.36.1
-CurrentVersionCode: 79
+CurrentVersion: 1.36.2
+CurrentVersionCode: 80
