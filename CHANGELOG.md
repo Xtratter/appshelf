@@ -2,6 +2,11 @@
 
 [Русский](CHANGELOG.ru.md) · **English**
 
+## 1.38.0 — 2026-10-06
+
+- **Restore plan**: "Install missing" now first shows where every app will come from — your APK backup, direct download (GitHub or APK link), a saved link page, the store it came from, or nothing (search only) — with counts and the first names of each group. Apps without a source can be skipped, so the queue does not waste steps on them
+- Tests for the grouping rules
+
 ## 1.37.2 — 2026-10-06
 
 - **WebDAV password in exported settings is now encrypted** with a passphrase you choose (PBKDF2-HMAC-SHA256 + AES-GCM) instead of being written as plain text; the passphrase is asked when saving to a file or to the server and when restoring. A wrong passphrase changes nothing; old files with a plain-text password are still read

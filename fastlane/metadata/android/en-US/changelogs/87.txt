@@ -1,0 +1,1 @@
+Restore plan: see where every missing app will come from before installing; skip apps without a source.
